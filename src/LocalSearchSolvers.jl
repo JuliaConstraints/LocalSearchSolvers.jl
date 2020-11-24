@@ -10,5 +10,6 @@ export domain, ∈, variable
 
 include("domain.jl")
 include("variable.jl")
+include("constraint.jl")
 
 end
