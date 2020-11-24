@@ -1,7 +1,7 @@
 module LocalSearchSolvers
 
 # Imports
-import Dictionaries: Dictionary, Indices
+import Dictionaries: Dictionary, Indices, insert!
 import Base: ∈
 import Lazy: @forward
 
