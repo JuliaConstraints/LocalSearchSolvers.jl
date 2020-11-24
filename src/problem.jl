@@ -14,9 +14,9 @@ function Problem(;
     constraints::Dictionary{Int,Constraint} = Dictionary{Int,Constraint}(),
     objectives::Dictionary{Int,Objective} = Dictionary{Int,Objective}(),
 )
-    max_vars = Ref{zero(Int)}
-    max_cons = Ref{zero(Int)}
-    max_objs = Ref{zero(Int)}
+    max_vars = Ref(zero(Int))
+    max_cons = Ref(zero(Int))
+    max_objs = Ref(zero(Int))
 
     Problem(variables, constraints, objectives, max_vars, max_cons, max_objs)
 end
