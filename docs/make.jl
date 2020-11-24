@@ -17,5 +17,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/azzaare/LocalSearchSolvers.jl",
+    repo="github.com/azzaare/LocalSearchSolvers.jl.git",
+    devbranch="main",
 )
