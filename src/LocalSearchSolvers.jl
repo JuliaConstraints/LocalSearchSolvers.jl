@@ -1,5 +1,12 @@
 module LocalSearchSolvers
 
-# Write your package code here.
+# Imports
+import Dictionaries: Dictionary
+import Base: ∈
+
+# Exports
+export domain, ∈
+
+include("domain.jl")
 
 end
