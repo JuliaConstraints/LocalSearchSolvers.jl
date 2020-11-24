@@ -26,10 +26,10 @@ end
 ## test variables
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
-variables = Dictionary(1:2, [x1, x2])
+vars = Dictionary{Int, Variable}(1:2, [x1, x2])
 
 @test LocalSearchSolvers._get(x2, 2) == 3
-for x in variables
+for x in vars
     # add and delete from constraint
     LocalSearchSolvers._add_to_constraint!(x, 1)
     LocalSearchSolvers._add_to_constraint!(x, 2)
@@ -49,13 +49,13 @@ for x in variables
 end
 
 ## test constraint
-values = [1,3]
+values = [1, 2, 3]
 inds = [1, 2]
 c1 = constraint(all_different, inds, values)
-c2 = constraint(all_different, inds, variables)
-constraints = Dictionary(1:2, [c1, c2])
+c2 = constraint(all_different, inds, vars)
+cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 
-for c in constraints
+for c in cons
     LocalSearchSolvers._add!(c, 3)
     @test 3 ∈ c
     LocalSearchSolvers._delete!(c, 3)
@@ -65,5 +65,51 @@ for c in constraints
 end
 
 ## test objective
-o1 = objective(sum, "Objective 1")
-o2 = objective(prod, "Objective 2")
+o1 = objective(sum, "Objective 1: sum")
+o2 = objective(prod, "Objective 2: product")
+objs = Dictionary(1:2, [o1, o2])
+
+for o in objs
+    @test o.f(values) == 6
+end
+
+## test Problem
+p = Problem(variables=vars, objectives=objs, constraints=cons)
+p = Problem()
+describe(p)
+
+x1 = variable([4,3,2,1], "x1")
+x2 = variable(d2, "x2")
+vars = Dictionary{Int, Variable}(1:2, [x1, x2])
+for x in vars
+    add!(p, x)
+end
+variable!(p, d1)
+
+values = [1, 2, 3]
+inds = [1, 2]
+c1 = constraint(all_different, inds, values)
+c2 = constraint(all_different, inds, vars)
+cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
+for c in cons
+    add!(p, c)
+end
+constraint!(p, all_different, [1,2])
+
+o1 = objective(sum, "Objective 1: sum")
+o2 = objective(prod, "Objective 2: product")
+objs = Dictionary(1:2, [o1, o2])
+for o in objs
+    add!(p, o)
+end
+objective!(p, max)
+
+length_var(p, 1)
+length_cons(p, 1)
+
+constriction(p, 1)
+draw(p, 1)
+
+get_objective(p, 1)
+
+println(describe(p))
