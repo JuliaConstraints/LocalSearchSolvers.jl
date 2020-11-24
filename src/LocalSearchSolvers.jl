@@ -6,7 +6,7 @@ import Base: ∈
 import Lazy: @forward
 
 # Exports internal
-export domain, ∈, variable, constraint
+export domain, ∈, variable, constraint, objective
 
 # Exports error/predicate functions
 export all_different
@@ -14,5 +14,6 @@ export all_different
 include("domain.jl")
 include("variable.jl")
 include("constraint.jl")
+include("objective.jl")
 
 end
