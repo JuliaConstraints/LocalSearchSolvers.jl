@@ -18,7 +18,7 @@ struct ContinuousIntervals{T <: AbstractFloat} <: ContinuousDomain{T}
 end
 
 ## Abstract Discrete Domain
-abstract type DiscreteDomain{T <: Number} end
+abstract type DiscreteDomain{T <: Number} <: AbstractDomain end
 
 # Set Domain
 struct SetDomain{T <: Number} <: DiscreteDomain{T}
@@ -75,4 +75,10 @@ end
 
 _domain(::Val{:set}, values::Vector) = SetDomain(values)
 _domain(::Val{:indices}, values::Vector) = IndicesDomain(values)
-domain(values::Vector{T}; domain = :set) where T <: Number = _domain(Val(domain), values)
+
+"""
+    domain(values::Vector; domain = :set)
+Discrete domain constructor.
+The `type` keyword can be set to `:set` (default) or `:indices`.
+"""
+domain(values::Vector{T}; type = :set) where T <: Number = _domain(Val(type), values)
