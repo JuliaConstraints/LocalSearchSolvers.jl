@@ -3,7 +3,7 @@ using Documenter
 
 makedocs(;
     modules=[LocalSearchSolvers],
-    authors="Jean-Francois Baffier",
+    authors="Jean-François Baffier",
     repo="https://github.com/azzaare/LocalSearchSolvers.jl/blob/{commit}{path}#L{line}",
     sitename="LocalSearchSolvers.jl",
     format=Documenter.HTML(;
@@ -14,9 +14,4 @@ makedocs(;
     pages=[
         "Home" => "index.md",
     ],
-)
-
-deploydocs(;
-    repo="github.com/azzaare/LocalSearchSolvers.jl.git",
-    devbranch="main",
 )
