@@ -49,7 +49,7 @@ for x in variables
 end
 
 ## test constraint
-values = [1,3]
+values = [1, 2, 3]
 inds = [1, 2]
 c1 = constraint(all_different, inds, values)
 c2 = constraint(all_different, inds, variables)
@@ -65,5 +65,10 @@ for c in constraints
 end
 
 ## test objective
-o1 = objective(sum, "Objective 1")
-o2 = objective(prod, "Objective 2")
+o1 = objective(sum, "Objective 1: sum")
+o2 = objective(prod, "Objective 2: product")
+objs = Dictionary(1:2, [o1, o2])
+
+for o in objs
+    @test o.f(values) == 6
+end
