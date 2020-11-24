@@ -1,7 +1,7 @@
 ## test domains
 d1 = domain([4,3,2,1])
 d2 = domain([4,3,2,1]; type=:indices)
-domains = [d1, d2]
+domains = Dictionary(1:2, [d1, d2])
 
 # get
 @test LocalSearchSolvers._get(d2, 2) == 3
@@ -26,7 +26,7 @@ end
 ## test variables
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
-variables = [x1, x2]
+variables = Dictionary(1:2, [x1, x2])
 
 @test LocalSearchSolvers._get(x2, 2) == 3
 for x in variables
@@ -46,4 +46,19 @@ for x in variables
     @test 5 ∈ x
     LocalSearchSolvers._delete!(x, 5)
     @test 5 ∉ x
+end
+
+## test constraint
+values = [1,3]
+inds = [1, 2]
+c1 = constraint(all_different, inds, values)
+c2 = constraint(all_different, inds, variables)
+constraints = Dictionary(1:2, [c1, c2])
+
+for c in constraints
+    LocalSearchSolvers._add!(c, 3)
+    @test 3 ∈ c
+    LocalSearchSolvers._delete!(c, 3)
+    @test 3 ∉ c
+    @test LocalSearchSolvers._length(c) == 2
 end

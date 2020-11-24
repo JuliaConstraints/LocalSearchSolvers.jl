@@ -1,4 +1,5 @@
 using LocalSearchSolvers
+using Dictionaries
 using Test
 
 @testset "LocalSearchSolvers.jl" begin
