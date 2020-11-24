@@ -1,0 +1,13 @@
+name = "LocalSearchSolvers"
+uuid = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
+authors = ["Jean-Francois Baffier"]
+version = "0.1.0"
+
+[compat]
+julia = "1.5"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
