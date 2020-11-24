@@ -28,9 +28,11 @@ end
 function SetDomain(values::Vector{T}) where T <: Number
     SetDomain(Set(values))
 end
-function SetDomain(values::OrdinalRange{T}) where T <: Number
-    SetDomain(Set(values))
-end
+
+# TODO: automatic conversion ?
+# function SetDomain(values::OrdinalRange{T}) where T <: Number
+#     SetDomain(Set(values))
+# end
 
 # Indices Domain
 struct IndicesDomain{T <: Number} <: DiscreteDomain{T}
