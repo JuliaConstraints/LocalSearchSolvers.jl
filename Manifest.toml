@@ -5,9 +5,15 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[Dictionaries]]
 deps = ["Indexing", "Random"]
+<<<<<<< HEAD
 git-tree-sha1 = "56f85b0aeec74fe82fb2fba3efbab86ad38504d2"
 uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 version = "0.3.4"
+=======
+git-tree-sha1 = "0e3fd3b20e7ad88bf912cea6a2693bfc6253e221"
+uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
+version = "0.3.2"
+>>>>>>> 894143126eeb306142474672e0b5ebc4601558e3
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
