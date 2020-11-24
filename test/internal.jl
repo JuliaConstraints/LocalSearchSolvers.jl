@@ -1,7 +1,12 @@
 ## test domains
 d1 = domain([4,3,2,1])
+<<<<<<< HEAD
 d2 = domain([4,3,2,1]; type=:indices)
 domains = Dictionary(1:2, [d1, d2])
+=======
+d2 = domain([4,3,2,1]; domain = :indices)
+domains = [d1, d2]
+>>>>>>> Test for domain types and methods. Added Dictionaries.jl
 
 # get
 @test LocalSearchSolvers._get(d2, 2) == 3
@@ -19,6 +24,7 @@ for d in domains
     @test 5 ∈ d
     # delete!
     LocalSearchSolvers._delete!(d, 5)
+<<<<<<< HEAD
     @test 5 ∉ d
 end
 
@@ -61,4 +67,7 @@ for c in constraints
     LocalSearchSolvers._delete!(c, 3)
     @test 3 ∉ c
     @test LocalSearchSolvers._length(c) == 2
+=======
+    @test !(5 ∈ d)
+>>>>>>> Test for domain types and methods. Added Dictionaries.jl
 end
