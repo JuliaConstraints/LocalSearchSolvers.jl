@@ -61,4 +61,9 @@ for c in constraints
     LocalSearchSolvers._delete!(c, 3)
     @test 3 ∉ c
     @test LocalSearchSolvers._length(c) == 2
+    c.f(values...)
 end
+
+## test objective
+o1 = objective(sum, "Objective 1")
+o2 = objective(prod, "Objective 2")
