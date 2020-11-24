@@ -5,15 +5,9 @@ uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
 [[Dictionaries]]
 deps = ["Indexing", "Random"]
-<<<<<<< HEAD
 git-tree-sha1 = "56f85b0aeec74fe82fb2fba3efbab86ad38504d2"
 uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 version = "0.3.4"
-=======
-git-tree-sha1 = "0e3fd3b20e7ad88bf912cea6a2693bfc6253e221"
-uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-version = "0.3.2"
->>>>>>> Test for domain types and methods. Added Dictionaries.jl
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]
@@ -29,7 +23,6 @@ version = "1.1.0"
 deps = ["Markdown"]
 uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
-<<<<<<< HEAD
 [[Lazy]]
 deps = ["MacroTools"]
 git-tree-sha1 = "1370f8202dac30758f3c345f9909b97f53d87d3f"
@@ -45,11 +38,6 @@ git-tree-sha1 = "6a8a2a625ab0dea913aba95c11370589e0239ff0"
 uuid = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 version = "0.5.6"
 
-=======
-[[Logging]]
-uuid = "56ddb016-857b-54e1-b83d-db4d58db5568"
-
->>>>>>> Test for domain types and methods. Added Dictionaries.jl
 [[Markdown]]
 deps = ["Base64"]
 uuid = "d6f4376e-aef5-505a-96c1-9c027394607a"
