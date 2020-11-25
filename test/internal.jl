@@ -112,4 +112,10 @@ draw(p, 1)
 
 get_objective(p, 1)
 
+delete_value!(p, 1, 1)
+add_value!(p, 1, 1)
+
+delete_var_from_cons!(p, 1, 1)
+add_var_to_cons!(p, 1, 1)
+
 println(describe(p))
