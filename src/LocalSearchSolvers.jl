@@ -8,7 +8,7 @@ import Lazy: @forward
 # Exports internal
 export domain, ∈, variable, constraint, objective
 export Problem, Constraint, Objective, Variable
-export add!
+export add!, delete!
 
 # Exports error/predicate functions
 export all_different

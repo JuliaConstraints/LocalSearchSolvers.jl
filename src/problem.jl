@@ -39,9 +39,8 @@ _variable(p::Problem, ind::Int) = _variables(p)[ind]
 _constraint(p::Problem, ind::Int) = _constraints(p)[ind]
 _objective(p::Problem, ind::Int) = _objectives(p)[ind]
 
-_length(p::Problem, ind::Int, type=Val(:var)) = _length(type, p::Problem, ind::Int)
-_length(::Val{:var}, p::Problem, ind::Int) = _length(_variable(p, ind))
-_length(::Val{:obj}, p::Problem, ind::Int) = _length(_constraint(p, ind))
+_length_var(p::Problem, ind::Int) = _length(_variable(p, ind))
+_length_cons(p::Problem, ind::Int) = _length(_constraint(p, ind))
 
 _draw(p::Problem, x::Int) = _draw(_variable(p, x))
 # TODO: _get! for Indices domain
@@ -62,7 +61,7 @@ _add!(::Val{:obj}, p::Problem, c::Int, x::Int) = _add!(_objective(p, c), x)
 # Add variable
 function add!(p::Problem, x::Variable)
     _inc_vars!(p)
-    insert!(p.variables, _max_vars(p), x)
+    insert!(_variables(p), _max_vars(p), x)
 end
 function add!(p::Problem, d::D) where D <: AbstractDomain
     add!(p, variable(d, "x" * string(_max_vars(p) + 1)))
@@ -71,7 +70,7 @@ end
 # Add constraint
 function add!(p::Problem, c::Constraint)
     _inc_cons!(p)
-    insert!(p.constraints, _max_cons(p), c)
+    insert!(_constraints(p), _max_cons(p), c)
     foreach(x -> _add_to_constraint!(p.variables[x], _max_cons(p)), c.vars)
 end
 function add!(p::Problem, f::F, vars::Vector{Int}) where {F <: Function}
@@ -81,13 +80,14 @@ end
 # Add Objective
 function add!(p::Problem, o::Objective)
     _inc_objs!(p)
-    insert!(p.objectives, _max_objs(p), o)
+    insert!(_objectives(p), _max_objs(p), o)
 end
 function add!(p::Problem, f::F) where {F <: Function}
     add!(p, objective(f, "o" * string(_max_objs(p) + 1)))
 end
 
 # I/O
+# TODO: rewrite _describe
 function _describe(p::Problem)
     objectives = ""
     if length(p.objectives) == 0
@@ -95,7 +95,7 @@ function _describe(p::Problem)
     else
         objectives = "Constraint Optimization Program (COP) with Objective(s)\n"
         objectives *=
-            mapreduce(o -> "\t\t" * o.name * "\n", *, p.objectives; init="")[1:end - 1]
+            mapreduce(o -> "\t\t" * o.name * "\n", *, _objectives(p); init="")[1:end - 1]
     end
     variables = mapreduce(
         x -> "\t\t" * x[2].name * "($(x[1])): " * string(x[2].domain.points) * "\n",
