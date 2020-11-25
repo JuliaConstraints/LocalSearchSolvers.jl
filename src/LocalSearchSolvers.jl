@@ -6,9 +6,11 @@ import Base: ∈
 import Lazy: @forward
 
 # Exports internal
-export domain, ∈, variable, constraint, objective
+export constraint!, variable!, objective!, add!, delete!
+export domain, variable, constraint, objective
 export Problem, Constraint, Objective, Variable
-export add!, delete!
+export length_var, length_cons, constriction, draw, ∈, describe
+export get_variable, get_variables, get_constraint, get_constraints, get_objective, get_objectives
 
 # Exports error/predicate functions
 export all_different

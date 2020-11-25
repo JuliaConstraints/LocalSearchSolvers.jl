@@ -31,65 +31,65 @@ _inc_vars!(p::Problem) = p.max_vars.x += 1
 _inc_cons!(p::Problem) = p.max_cons.x += 1
 _inc_objs!(p::Problem) = p.max_objs.x += 1
 
-_variables(p::Problem) = p.variables
-_constraints(p::Problem) = p.constraints
-_objectives(p::Problem) = p.objectives
+get_variables(p::Problem) = p.variables
+get_constraints(p::Problem) = p.constraints
+get_objectives(p::Problem) = p.objectives
 
-_variable(p::Problem, ind::Int) = _variables(p)[ind]
-_constraint(p::Problem, ind::Int) = _constraints(p)[ind]
-_objective(p::Problem, ind::Int) = _objectives(p)[ind]
+get_variable(p::Problem, ind::Int) = get_variables(p)[ind]
+get_constraint(p::Problem, ind::Int) = get_constraints(p)[ind]
+get_objective(p::Problem, ind::Int) = get_objectives(p)[ind]
 
-_length_var(p::Problem, ind::Int) = _length(_variable(p, ind))
-_length_cons(p::Problem, ind::Int) = _length(_constraint(p, ind))
+length_var(p::Problem, ind::Int) = _length(get_variable(p, ind))
+length_cons(p::Problem, ind::Int) = _length(get_constraint(p, ind))
 
-_draw(p::Problem, x::Int) = _draw(_variable(p, x))
+draw(p::Problem, x::Int) = _draw(get_variable(p, x))
 # TODO: _get! for Indices domain
-_constriction(p::Problem, x::Int) = _constriction(_variable(p, x))
+constriction(p::Problem, x::Int) = _constriction(get_variable(p, x))
 
-_delete_value!(p::Problem, x::Int, value::Int) = _delete!(_variable(p, x), value)
-_delete_var_from_cons!(p::Problem, c::Int, x::Int) = _delete!(_constraint(p, c), x)
+delete_value!(p::Problem, x::Int, value::Int) = _delete!(get_variable(p, x), value)
+delete_var_from_cons!(p::Problem, c::Int, x::Int) = _delete!(get_constraint(p, c), x)
 
-_add_value!(p::Problem, x::Int, value::Int) = _add!(_variable(p, x), value)
-_add_var_to_cons!(p::Problem, c::Int, x::Int) = _add!(_constraint(p, c), x)
+add_value!(p::Problem, x::Int, value::Int) = _add!(get_variable(p, x), value)
+add_var_to_cons!(p::Problem, c::Int, x::Int) = _add!(get_constraint(p, c), x)
 
 # Add variable
 function add!(p::Problem, x::Variable)
     _inc_vars!(p)
-    insert!(_variables(p), _max_vars(p), x)
+    insert!(get_variables(p), _max_vars(p), x)
 end
-function add!(p::Problem, d::D) where D <: AbstractDomain
+function variable!(p::Problem, d::D) where D <: AbstractDomain
     add!(p, variable(d, "x" * string(_max_vars(p) + 1)))
 end
 
 # Add constraint
 function add!(p::Problem, c::Constraint)
     _inc_cons!(p)
-    insert!(_constraints(p), _max_cons(p), c)
+    insert!(get_constraints(p), _max_cons(p), c)
     foreach(x -> _add_to_constraint!(p.variables[x], _max_cons(p)), c.vars)
 end
-function add!(p::Problem, f::F, vars::Vector{Int}) where {F <: Function}
+function constraint!(p::Problem, f::F, vars::Vector{Int}) where {F <: Function}
     add!(p, constraint(f, vars, p.variables))
 end
 
 # Add Objective
 function add!(p::Problem, o::Objective)
     _inc_objs!(p)
-    insert!(_objectives(p), _max_objs(p), o)
+    insert!(get_objectives(p), _max_objs(p), o)
 end
-function add!(p::Problem, f::F) where {F <: Function}
+function objective!(p::Problem, f::F) where {F <: Function}
     add!(p, objective(f, "o" * string(_max_objs(p) + 1)))
 end
 
 # I/O
 # TODO: rewrite _describe
-function _describe(p::Problem)
+function describe(p::Problem)
     objectives = ""
     if length(p.objectives) == 0
         objectives = "Constraint Satisfaction Program (CSP)"
     else
         objectives = "Constraint Optimization Program (COP) with Objective(s)\n"
         objectives *=
-            mapreduce(o -> "\t\t" * o.name * "\n", *, _objectives(p); init="")[1:end - 1]
+            mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(p); init="")[1:end - 1]
     end
     variables = mapreduce(
         x -> "\t\t" * x[2].name * "($(x[1])): " * string(x[2].domain.points) * "\n",

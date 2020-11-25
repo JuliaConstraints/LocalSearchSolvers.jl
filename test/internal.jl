@@ -76,7 +76,7 @@ end
 ## test Problem
 p = Problem(variables=vars, objectives=objs, constraints=cons)
 p = Problem()
-LocalSearchSolvers._describe(p)
+describe(p)
 
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
@@ -84,7 +84,7 @@ vars = Dictionary{Int, Variable}(1:2, [x1, x2])
 for x in vars
     add!(p, x)
 end
-add!(p, d1)
+variable!(p, d1)
 
 values = [1, 2, 3]
 inds = [1, 2]
@@ -94,7 +94,7 @@ cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 for c in cons
     add!(p, c)
 end
-add!(p, all_different, [1,2])
+constraint!(p, all_different, [1,2])
 
 o1 = objective(sum, "Objective 1: sum")
 o2 = objective(prod, "Objective 2: product")
@@ -102,13 +102,14 @@ objs = Dictionary(1:2, [o1, o2])
 for o in objs
     add!(p, o)
 end
-add!(p, max)
+objective!(p, max)
 
-LocalSearchSolvers._length_var(p, 1)
-LocalSearchSolvers._length_cons(p, 1)
+length_var(p, 1)
+length_cons(p, 1)
 
-LocalSearchSolvers._constriction(p, 1)
-LocalSearchSolvers._draw(p, 1)
-LocalSearchSolvers._objective(p, 1)
+constriction(p, 1)
+draw(p, 1)
 
-println(LocalSearchSolvers._describe(p))
+get_objective(p, 1)
+
+println(describe(p))
