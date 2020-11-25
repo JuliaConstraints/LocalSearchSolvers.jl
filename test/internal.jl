@@ -75,8 +75,8 @@ end
 
 ## test Problem
 p = Problem(variables=vars, objectives=objs, constraints=cons)
-LocalSearchSolvers._describe(p)
 p = Problem()
+LocalSearchSolvers._describe(p)
 
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
@@ -97,3 +97,8 @@ end
 o1 = objective(sum, "Objective 1: sum")
 o2 = objective(prod, "Objective 2: product")
 objs = Dictionary(1:2, [o1, o2])
+for o in objs
+    add!(p, o)
+end
+
+println(LocalSearchSolvers._describe(p))
