@@ -75,4 +75,25 @@ end
 
 ## test Problem
 p = Problem(variables=vars, objectives=objs, constraints=cons)
+LocalSearchSolvers._describe(p)
 p = Problem()
+
+x1 = variable([4,3,2,1], "x1")
+x2 = variable(d2, "x2")
+vars = Dictionary{Int, Variable}(1:2, [x1, x2])
+for x in vars
+    add!(p, x)
+end
+
+values = [1, 2, 3]
+inds = [1, 2]
+c1 = constraint(all_different, inds, values)
+c2 = constraint(all_different, inds, vars)
+cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
+for c in cons
+    add!(p, c)
+end
+
+o1 = objective(sum, "Objective 1: sum")
+o2 = objective(prod, "Objective 2: product")
+objs = Dictionary(1:2, [o1, o2])
