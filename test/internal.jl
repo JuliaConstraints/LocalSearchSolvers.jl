@@ -115,3 +115,6 @@ add_value!(p, 1, 1)
 delete_var_from_cons!(p, 1, 1)
 add_var_to_cons!(p, 1, 1)
 println(describe(p))
+
+## Test Solver
+s = Solver()
