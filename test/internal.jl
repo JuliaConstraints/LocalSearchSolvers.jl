@@ -84,6 +84,7 @@ vars = Dictionary{Int, Variable}(1:2, [x1, x2])
 for x in vars
     add!(p, x)
 end
+add!(p, d1)
 
 values = [1, 2, 3]
 inds = [1, 2]
@@ -93,6 +94,7 @@ cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 for c in cons
     add!(p, c)
 end
+add!(p, all_different, [1,2])
 
 o1 = objective(sum, "Objective 1: sum")
 o2 = objective(prod, "Objective 2: product")
@@ -100,5 +102,6 @@ objs = Dictionary(1:2, [o1, o2])
 for o in objs
     add!(p, o)
 end
+add!(p, max)
 
 println(LocalSearchSolvers._describe(p))

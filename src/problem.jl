@@ -65,8 +65,7 @@ function add!(p::Problem, x::Variable)
     insert!(p.variables, _max_vars(p), x)
 end
 function add!(p::Problem, d::D) where D <: AbstractDomain
-    variable(d, "x_" * string(_max_vars(p) + 1))
-    add!(p, x)
+    add!(p, variable(d, "x" * string(_max_vars(p) + 1)))
 end
 
 # Add constraint
@@ -85,7 +84,7 @@ function add!(p::Problem, o::Objective)
     insert!(p.objectives, _max_objs(p), o)
 end
 function add!(p::Problem, f::F) where {F <: Function}
-    add!(p, objective(f, "c_" * string(_max_objs(p) + 1)))
+    add!(p, objective(f, "o" * string(_max_objs(p) + 1)))
 end
 
 # I/O
