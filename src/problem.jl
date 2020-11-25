@@ -46,17 +46,11 @@ _draw(p::Problem, x::Int) = _draw(_variable(p, x))
 # TODO: _get! for Indices domain
 _constriction(p::Problem, x::Int) = _constriction(_variable(p, x))
 
-function _delete!(p::Problem, x::Int, value::Int, type=Val(:var))
-    _delete!(type, p::Problem, x::Int, value::Int)
-end
-_delete!(::Val{:var}, p::Problem, x::Int, value::Int) = _delete!(_variable(p, x), value)
-_delete!(::Val{:obj}, p::Problem, c::Int, x::Int) = _delete!(_objective(p, c), x)
+_delete_value!(p::Problem, x::Int, value::Int) = _delete!(_variable(p, x), value)
+_delete_var_from_cons!(p::Problem, c::Int, x::Int) = _delete!(_constraint(p, c), x)
 
-function _add!(p::Problem, x::Int, value::Int, type=Val(:var))
-    _add!(type, p::Problem, x::Int, value::Int)
-end
-_add!(::Val{:var}, p::Problem, x::Int, value::Int) = _add!(_variable(p, x), value)
-_add!(::Val{:obj}, p::Problem, c::Int, x::Int) = _add!(_objective(p, c), x)
+_add_value!(p::Problem, x::Int, value::Int) = _add!(_variable(p, x), value)
+_add_var_to_cons!(p::Problem, c::Int, x::Int) = _add!(_constraint(p, c), x)
 
 # Add variable
 function add!(p::Problem, x::Variable)

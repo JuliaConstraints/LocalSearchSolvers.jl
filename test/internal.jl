@@ -108,5 +108,7 @@ LocalSearchSolvers._length_var(p, 1)
 LocalSearchSolvers._length_cons(p, 1)
 
 LocalSearchSolvers._constriction(p, 1)
+LocalSearchSolvers._draw(p, 1)
+LocalSearchSolvers._objective(p, 1)
 
 println(LocalSearchSolvers._describe(p))
