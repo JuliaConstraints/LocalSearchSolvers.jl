@@ -102,20 +102,16 @@ objs = Dictionary(1:2, [o1, o2])
 for o in objs
     add!(p, o)
 end
-objective!(p, max)
 
+# TODO: make related test to coverage below
+objective!(p, max)
 length_var(p, 1)
 length_cons(p, 1)
-
 constriction(p, 1)
 draw(p, 1)
-
 get_objective(p, 1)
-
 delete_value!(p, 1, 1)
 add_value!(p, 1, 1)
-
 delete_var_from_cons!(p, 1, 1)
 add_var_to_cons!(p, 1, 1)
-
 println(describe(p))
