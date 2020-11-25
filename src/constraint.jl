@@ -31,6 +31,7 @@ function constraint(f::F, inds::Vector{Int}, vars::Dictionary{Int,Variable}
     Constraint{F}(f, inds, vars)
 end
 
+_get_vars(c::Constraint) = c.vars
 
 _add!(c::Constraint, x::Int) = push!(c.vars, x)
 _delete!(c::Constraint, x::Int) = deleteat!(c.vars, findfirst(y -> y == x, c.vars))

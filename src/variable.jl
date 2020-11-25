@@ -5,7 +5,7 @@ struct Variable{D <: AbstractDomain}
 end
 
 # Methods: lazy forwarding from domain.jl
-@forward Variable.domain _length, _get, _draw, _delete!, _add!
+@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain
 
 # Constraint related Methods
 function _add_to_constraint!(x::Variable, id::Int)
@@ -15,6 +15,9 @@ end
 function _delete_from_constraint!(x::Variable, id::Int)
     delete!(x.constraints, id)
 end
+
+_get_constraints(x::Variable) = x.constraints
+_get_name(x::Variable) = x.name
 
 _constriction(x::Variable) = length(x.constraints)
 ∈(x::Variable, constraint::Int) = constraint ∈ x.constraints

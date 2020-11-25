@@ -38,9 +38,16 @@ get_objectives(p::Problem) = p.objectives
 get_variable(p::Problem, ind::Int) = get_variables(p)[ind]
 get_constraint(p::Problem, ind::Int) = get_constraints(p)[ind]
 get_objective(p::Problem, ind::Int) = get_objectives(p)[ind]
+get_domain(p::Problem, ind::Int) = _get_domain(get_variable(p, ind))
+get_name(p::Problem, x::Int) = _get_name(get_variable(p, x))
+
+get_cons_from_var(p::Problem, x::Int) = _get_constraints(get_variable(p, x))
+get_vars_from_cons(p::Problem, c::Int) = _get_vars(get_constraint(p, c))
 
 length_var(p::Problem, ind::Int) = _length(get_variable(p, ind))
 length_cons(p::Problem, ind::Int) = _length(get_constraint(p, ind))
+length_objs(p::Problem) = length(get_objectives(p))
+length_vars(p::Problem) = length(get_variables(p))
 
 draw(p::Problem, x::Int) = _draw(get_variable(p, x))
 # TODO: _get! for Indices domain
@@ -109,3 +116,16 @@ function describe(p::Problem)
 
     return str
 end
+
+# Neighbours
+function _neighbours(p::Problem, x::Int)
+    neighbours = Set{Int}()
+    foreach(
+        c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(p, c)),
+        get_cons_from_var(p, x)
+    )
+    return delete!(neighbours, x)
+end
+
+# is the problem a Satisfaction one
+is_sat(p::Problem) = length_objs(p) == 0
