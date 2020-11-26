@@ -117,4 +117,4 @@ add_var_to_cons!(p, 1, 1)
 println(describe(p))
 
 ## Test Solver
-s = Solver{Int}()
+s1 = Solver{Int}()

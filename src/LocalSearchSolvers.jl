@@ -35,6 +35,7 @@ include("problem.jl")
 include("problems/sudoku.jl")
 
 # Includes solvers
+include("state.jl")
 include("solver.jl")
 
 end
