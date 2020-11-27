@@ -34,7 +34,7 @@ for p in problems
         delete_var_from_cons!(s, c, 17)
         @test length_cons(s, c) == 4
     end
-    solve!(s, max_iteration = 10, verbose = true)
+    solve!(s, max_iteration = 1000, verbose = true)
     
     # TODO: temp patch for coverage, make it nice
     for x in keys(LocalSearchSolvers._tabu(s))
