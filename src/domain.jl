@@ -84,3 +84,5 @@ Discrete domain constructor.
 The `type` keyword can be set to `:set` (default) or `:indices`.
 """
 domain(values::Vector{T}; type = :set) where T <: Number = _domain(Val(type), values)
+
+_get_domain(d::D) where D <: DiscreteDomain = d.points
