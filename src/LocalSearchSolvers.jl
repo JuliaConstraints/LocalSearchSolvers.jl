@@ -42,4 +42,7 @@ include("solver.jl")
 # Includes specific problems
 include("problems/sudoku.jl")
 
+# Includes usual constraints
+include("constraints.jl")
+
 end

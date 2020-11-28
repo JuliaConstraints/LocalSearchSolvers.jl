@@ -3,6 +3,35 @@ struct Solver{T <: Number}
     state::_State{T}
 end
 
+"""
+    Solver{T}(p::Problem; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
+    Solver{T}(;
+        variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
+        constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
+        objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
+        values::Dictionary{Int,T}=Dictionary{Int,T}(),
+    ) where T <: Number
+    
+Constructor for a solver. Optional starting values can be provided.
+
+```julia
+# Model a sudoku problem of size 4×4
+p = sudoku(2)
+
+# Create a solver instance with variables taking integral values
+s = Solver{Int}(p)
+
+# Solver with an empty problem to be filled later and expected Float64 values
+s = Solver{Float64}() 
+
+# Construct a solver from a sets of constraints, objectives, and variables.
+s = Solver{Int}(
+    variables = get_constraints(p),
+    constraints = get_constraints(p),
+    objectives = get_objectives(p)
+) 
+```
+"""
 function Solver{T}(p::Problem; values::Dictionary{Int,T}=Dictionary{Int,T}()
 ) where T <: Number
     vars, cons = zeros(Float64, get_variables(p)), zeros(Float64, get_constraints(p))
@@ -164,6 +193,19 @@ function _permutation_move!(s::Solver, x::Int, verbose::Bool)
     return best_swap, tabu
 end
 
+"""
+    solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
+Run the solver until a solution is found or `max_iteration` is reached. 
+`verbose=true` will print out details of the run.
+
+```julia
+# Simply run the solver with default max_iteration
+solve!(s)
+
+# Run indefinitely the solver with verbose behavior.
+solve!(s, max_iteration = Inf, verbose = true)
+```
+"""
 function solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
     # if no objectives are provided, the problem is a satisfaction one
     sat = is_sat(s)
