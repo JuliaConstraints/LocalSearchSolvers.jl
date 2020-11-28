@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/Humans-of-Julia/GraknClient.jl.git",
+    repo="github.com/azzaare/LocalSearchSolvers.jl.git",
     devbranch="main",
 )
