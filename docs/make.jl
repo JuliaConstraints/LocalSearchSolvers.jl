@@ -5,11 +5,11 @@ using Documenter
 makedocs(;
     modules=[LocalSearchSolvers],
     authors="Jean-François Baffier",
-    repo="https://github.com/azzaare/LocalSearchSolvers.jl/blob/{commit}{path}#L{line}",
+    repo="https://github.com/Azzaare/LocalSearchSolvers.jl/blob/{commit}{path}#L{line}",
     sitename="LocalSearchSolvers.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://azzaare.github.io/LocalSearchSolvers.jl",
+        canonical="https://Azzaare.github.io/LocalSearchSolvers.jl",
         assets = ["assets/favicon.ico"; "assets/github_buttons.js"; "assets/custom.css"],
     ),
     pages=[
@@ -18,6 +18,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/azzaare/LocalSearchSolvers.jl.git",
+    repo="github.com/Azzaare/LocalSearchSolvers.jl.git",
     devbranch="main",
 )
