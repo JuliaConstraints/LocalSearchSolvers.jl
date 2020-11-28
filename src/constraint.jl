@@ -19,8 +19,15 @@ struct Constraint{F <: Function}
     end
 end
 
-# methods
+# Constructors
 
+"""
+    constraint(f::F, inds::Vector{Int}, values::Vector{T}) where {F <: Function,T <: Real}
+    constraint(f::F, inds::Vector{Int}, vars::Dictionary{Int,Variable}) where F <: Function
+
+Test the validity of `f` over a set of `values` or draw them from a set of variables `vars`.
+Return a constraint if the test is succesful, otherwise raise an error.
+"""
 function constraint(f::F, inds::Vector{Int}, values::Vector{T}
 ) where {F <: Function,T <: Real}
     Constraint{F}(f, inds, values)
@@ -30,6 +37,8 @@ function constraint(f::F, inds::Vector{Int}, vars::Dictionary{Int,Variable}
 ) where {F <: Function}
     Constraint{F}(f, inds, vars)
 end
+
+# Methods
 
 _get_vars(c::Constraint) = c.vars
 
@@ -44,9 +53,3 @@ function _insert_or_inc(d::Dictionary{Int, Int}, ind::Int)
     set!(d, ind, isassigned(d, ind) ? d[ind] + 1 : 1)
 end
 
-# TODO: make a better function
-function all_different(x::Int...)
-    acc = Dictionary{Int, Int}()
-    foreach(y -> _insert_or_inc(acc, y), x)
-    return Float64(sum(acc .- 1))
-end

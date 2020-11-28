@@ -75,6 +75,8 @@ function _add!(d::IndicesDomain{T}, value::T) where {T <: Real}
     end
 end
 
+_get_domain(d::D) where D <: DiscreteDomain = d.points
+
 _domain(::Val{:set}, values::Vector) = SetDomain(values)
 _domain(::Val{:indices}, values::Vector) = IndicesDomain(values)
 
@@ -82,7 +84,11 @@ _domain(::Val{:indices}, values::Vector) = IndicesDomain(values)
     domain(values::Vector; domain = :set)
 Discrete domain constructor.
 The `type` keyword can be set to `:set` (default) or `:indices`.
+
+```julia
+d1 = domain([1,2,3,4], types = :indices)
+d2 = domain([53.69, 89.2, 0.12])
+d3 = domain([2//3, 89//123])
+```
 """
 domain(values::Vector{T}; type = :set) where T <: Number = _domain(Val(type), values)
-
-_get_domain(d::D) where D <: DiscreteDomain = d.points

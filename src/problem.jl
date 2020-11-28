@@ -88,8 +88,14 @@ function objective!(p::Problem, f::F) where {F <: Function}
 end
 
 # I/O
-# TODO: rewrite _describe
-function describe(p::Problem)
+
+"""
+    describe(p::Problem)
+    describe(s::Solver)
+
+Describe the model of either a `Problem` or a `Solver`.
+"""
+function describe(p::Problem) # TODO: rewrite _describe
     objectives = ""
     if length(p.objectives) == 0
         objectives = "Constraint Satisfaction Program (CSP)"
