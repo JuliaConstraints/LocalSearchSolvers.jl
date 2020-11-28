@@ -75,7 +75,7 @@ function _find_rand_argmax(d::DictionaryView{Int,Float64})
             push!(argmax, k)
         end
     end
-    println("argmax : $argmax\n") # TODO: verbose/log
+    # println("argmax : $argmax\n") # TODO: verbose/log
     return rand(argmax)
 end
 
@@ -103,7 +103,7 @@ function _local_move!(s::Solver, x::Int, verbose::Bool)
         # _verbose("values: " * string(values(s)), verbose)
         # _verbose("variables costs = $(vars_cost(s))", verbose)
         # _verbose("constraints costs = $(cons_cost(s))", verbose)
-        _print_sudoku(s)
+        # _print_sudoku(s)
         cost = sum(_cons_costs(s))
         if cost < old_cost
             _verbose("cost = $cost, old = $old_cost", verbose)
@@ -142,7 +142,7 @@ function _permutation_move!(s::Solver, x::Int, verbose::Bool)
         # _verbose("values: " * string(values(s)), verbose)
         # _verbose("variables costs = $(vars_cost(s))", verbose)
         # _verbose("constraints costs = $(cons_cost(s))", verbose)
-        _print_sudoku(s)
+        # _print_sudoku(s)
         cost = sum(_cons_costs(s))
         if cost < old_cost
             _verbose("cost = $cost, old = $old_cost", verbose)
@@ -178,7 +178,7 @@ function solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T 
         _draw!(s)
     end
     _verbose("Initial values = ", verbose) # * string(values(s)), verbose -# )
-    _print_sudoku(s)
+    # _print_sudoku(s)
 
     # compute initial constraints and variables costs
     _compute_costs!(s)
@@ -210,7 +210,7 @@ function solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T 
         # _verbose("Initial constraints costs = $(s.state.cons_costs)", verbose)
         # _verbose("Initial variables costs = $(s.state.vars_costs)", verbose)
         # _verbose("values: " * string(values(s)), verbose)
-        _print_sudoku(s)
+        # _print_sudoku(s)
         if sum(s.state.cons_costs) == 0.0
             break
         end
