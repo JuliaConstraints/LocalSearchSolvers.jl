@@ -1,6 +1,7 @@
 using LocalSearchSolvers
 using Documenter
 
+@info "Makeing documentation..."
 makedocs(;
     modules=[LocalSearchSolvers],
     authors="Jean-François Baffier",
@@ -9,9 +10,14 @@ makedocs(;
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://azzaare.github.io/LocalSearchSolvers.jl",
-        assets=String[],
+        assets = ["assets/favicon.ico"; "assets/github_buttons.js"; "assets/custom.css"],
     ),
     pages=[
         "Home" => "index.md",
     ],
+)
+
+deploydocs(;
+    repo="github.com/Humans-of-Julia/GraknClient.jl.git",
+    devbranch="main",
 )
