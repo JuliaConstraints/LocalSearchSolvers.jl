@@ -4,3 +4,6 @@
 /docs/build/
 .gitignore
 _git2_*
+
+/.benchmarkci
+/benchmark/*.json
