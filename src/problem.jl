@@ -21,6 +21,32 @@ function Problem(;
     Problem(variables, constraints, objectives, max_vars, max_cons, max_objs)
 end
 
+function problem(;
+    var_types::Vector{DataType} = [Float64],
+    values_type::DataType = Float64,
+    domain::Symbol = :mixed, # discrete or continuous
+    discrete::Symbol = :set, # set or indices (or eventually ranges), or mixed
+    continuous::Symbol = :single, # single or multiple intervals, or mixed
+)
+    var_type = Union{values_types...}
+
+    domain_types = Vector{DataType}()
+    if domain ∈ [:mixed, :discrete]
+        if discrete ∈ [:mixed, :set]
+            push!(domain_types, SetDomain)
+        end
+        if discrete ∈ [:mixed, :indices]
+            push!(domain_types, IndicesDomain)
+        end
+    end
+    if domain == :mixed || domain == :continuous
+        push!(domain_types, ContinuousInterval, ContinuousIntervals)
+    end
+    dom_type = Union{domain_types...}
+
+    return var_type, dom_type
+end
+
 ## methods
 
 # accessors
