@@ -1,5 +1,5 @@
 # TODO: use log instead
-function _verbose(str::String, verbose::Bool)
+function _verbose(str::AbstractString, verbose::Bool)
     if verbose
         println(str)
     end

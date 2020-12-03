@@ -25,12 +25,12 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
 
     # TODO: Insert starting values (assuming they are correct)
     # foreach(((k,v),) -> , pairs(start))
-    
+
     return p
 end
 
 # TODO: make a generic print problem function with :sudoku
-function _print_sudoku(s::Solver)
+function _print_sudoku(s::AbstractSolver)
     N = length_vars(s)
     n = Int(√N)
     str = ""

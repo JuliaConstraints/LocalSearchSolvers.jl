@@ -1,6 +1,12 @@
-struct Solver{T <: Number}
-    problem::Problem
+abstract type AbstractSolver end
+
+struct _Solver{T <: Number, D <: AbstractDomain{T}, F <: Function} <: AbstractSolver
+    problem::_Problem{T, D, F}
     state::_State{T}
+end
+struct Solver <: AbstractSolver
+    problem::Problem
+    state::_State
 end
 
 """
@@ -11,7 +17,7 @@ end
         objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
         values::Dictionary{Int,T}=Dictionary{Int,T}(),
     ) where T <: Number
-    
+
 Constructor for a solver. Optional starting values can be provided.
 
 ```julia
@@ -22,66 +28,66 @@ p = sudoku(2)
 s = Solver{Int}(p)
 
 # Solver with an empty problem to be filled later and expected Float64 values
-s = Solver{Float64}() 
+s = Solver{Float64}()
 
 # Construct a solver from a sets of constraints, objectives, and variables.
 s = Solver{Int}(
     variables = get_constraints(p),
     constraints = get_constraints(p),
     objectives = get_objectives(p)
-) 
+)
 ```
 """
-function Solver{T}(p::Problem; values::Dictionary{Int,T}=Dictionary{Int,T}()
+function Solver(p::Problem; values::Dictionary{Int,T}=Dictionary{Int,Number}()
 ) where T <: Number
     vars, cons = zeros(Float64, get_variables(p)), zeros(Float64, get_constraints(p))
     state = _State(values, vars, cons, Dictionary{Int,Int}())
-    Solver{T}(p, state)
+    Solver(p, state)
 end
 
-function Solver{T}(;
+function Solver(;
     variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
     constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
-    values::Dictionary{Int,T}=Dictionary{Int,T}(),
+    values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where T <: Number
     p = Problem(; variables=variables, constraints=constraints, objectives=objectives)
-    Solver{T}(p; values=values)
+    Solver(p; values=values)
 end
 
 # Forwards from problem field
-@forward Solver.problem get_constraints, get_objectives, get_variables
-@forward Solver.problem get_constraint, get_objective, get_variable, get_domain
-@forward Solver.problem get_cons_from_var, get_vars_from_cons
-@forward Solver.problem add!, add_value!, add_var_to_cons!
-@forward Solver.problem delete_value!, delete_var_from_cons!
-@forward Solver.problem draw, constriction, describe, is_sat
-@forward Solver.problem length_var, length_cons, length_vars, length_objs
-@forward Solver.problem constraint!, objective!, variable!
-@forward Solver.problem _neighbours, get_name
+@forward AbstractSolver.problem get_constraints, get_objectives, get_variables
+@forward AbstractSolver.problem get_constraint, get_objective, get_variable, get_domain
+@forward AbstractSolver.problem get_cons_from_var, get_vars_from_cons
+@forward AbstractSolver.problem add!, add_value!, add_var_to_cons!
+@forward AbstractSolver.problem delete_value!, delete_var_from_cons!
+@forward AbstractSolver.problem draw, constriction, describe, is_sat
+@forward AbstractSolver.problem length_var, length_cons, length_vars, length_objs
+@forward AbstractSolver.problem constraint!, objective!, variable!
+@forward AbstractSolver.problem _neighbours, get_name
 
 # Forwards from state field
-@forward Solver.state _cons_costs, _vars_costs, _values, _tabu
-@forward Solver.state _cons_costs!, _vars_costs!, _values!, _tabu!
-@forward Solver.state _cons_cost, _var_cost, _value
-@forward Solver.state _cons_cost!, _var_cost!, _value!
-@forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
-@forward Solver.state _set!, _swap_value!, _insert_tabu!
+@forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
+@forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
+@forward AbstractSolver.state _cons_cost, _var_cost, _value
+@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!
+@forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
+@forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!
 
 ## Internal to solve! function
-function _draw!(s::Solver)
+function _draw!(s::AbstractSolver)
     foreach(x -> _set!(s, x, draw(s, x)), keys(get_variables(s)))
 end
 
 # Compute costs functions
-function _compute_cost!(s::Solver, ind::Int, c::Constraint)
+function _compute_cost!(s::AbstractSolver, ind::Int, c::Constraint)
     old_cost = _cons_cost(s, ind)
     new_cost = c.f(map(x -> _value(s, x), c.vars)...)
     _cons_cost!(s, ind, new_cost)
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
 
-function _compute_costs!(s::Solver; cons_lst::Indices{Int}=Indices{Int}())
+function _compute_costs!(s::AbstractSolver; cons_lst::Indices{Int}=Indices{Int}())
     if isempty(cons_lst)
         foreach(((id, c),) -> _compute_cost!(s, id, c), pairs(get_constraints(s)))
     else
@@ -109,7 +115,7 @@ function _find_rand_argmax(d::DictionaryView{Int,Float64})
 end
 
 # Local move
-function _local_move!(s::Solver, x::Int, verbose::Bool)
+function _local_move!(s::AbstractSolver, x::Int, verbose::Bool)
     old_v = _value(s, x)
     old_cost = sum(_cons_costs(s))
 
@@ -151,7 +157,7 @@ function _local_move!(s::Solver, x::Int, verbose::Bool)
     return best_values, tabu
 end
 
-function _permutation_move!(s::Solver, x::Int, verbose::Bool)
+function _permutation_move!(s::AbstractSolver, x::Int, verbose::Bool)
     old_cost = sum(_cons_costs(s))
 
     best_swap = [x]
@@ -195,7 +201,7 @@ end
 
 """
     solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
-Run the solver until a solution is found or `max_iteration` is reached. 
+Run the solver until a solution is found or `max_iteration` is reached.
 `verbose=true` will print out details of the run.
 
 ```julia
@@ -206,7 +212,7 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
+function solve!(s::AbstractSolver; max_iteration=1000, verbose::Bool=false)
     # if no objectives are provided, the problem is a satisfaction one
     sat = is_sat(s)
 
