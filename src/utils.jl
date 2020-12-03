@@ -4,3 +4,6 @@ function _verbose(str::AbstractString, verbose::Bool)
         println(str)
     end
 end
+
+# Union to encapsulate single value or a vector
+ValOrVect{T} = Union{T, AbstractVector{T}}

@@ -35,12 +35,13 @@ function Problem(;
 end
 
 function problem(;
-    var_types::AbstractVector{DataType}=[Float64],
-    values_type::DataType=Float64,
+    var_types::ValOrVect{DataType}=Float64,
+    values_types::ValOrVect{DataType}=Float64,
     domain::Symbol=:mixed, # discrete or continuous
     discrete::Symbol=:set, # set or indices (or eventually ranges), or mixed
     continuous::Symbol=:single, # single or multiple intervals, or mixed
 )
+    # var_type =
     var_type = Union{values_types...}
 
     domain_types = Vector{DataType}()
