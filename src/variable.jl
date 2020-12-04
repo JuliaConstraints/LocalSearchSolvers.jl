@@ -1,29 +1,22 @@
-abstract type AbstractVariable end
-
-struct _Variable{T <: Number,D <: AbstractDomain{T}} <: AbstractVariable
-    name::String
-    domain::D
-    constraints::Indices{Int}
-end
-struct Variable{D <: AbstractDomain} <: AbstractVariable
+struct Variable{D <: AbstractDomain}
     name::String
     domain::D
     constraints::Indices{Int}
 end
 
 # Methods: lazy forwarding from domain.jl
-@forward AbstractVariable.domain _length, _get, _draw, _delete!, _add!, _get_domain
+@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain
 
 # Accessors
-_get_constraints(x::AbstractVariable) = x.constraints
-_get_name(x::AbstractVariable) = x.name
+_get_constraints(x::Variable) = x.constraints
+_get_name(x::Variable) = x.name
 
 # Constraint related Methods
-_add_to_constraint!(x::AbstractVariable, id::Int) = insert!(_get_constraints(x), id)
-_delete_from_constraint!(x::AbstractVariable, id::Int) = delete!(x.constraints, id)
-_constriction(x::AbstractVariable) = length(x.constraints)
-∈(x::AbstractVariable, constraint::Int) = constraint ∈ x.constraints
-∈(value::Number, x::AbstractVariable) = value ∈ x.domain
+_add_to_constraint!(x::Variable, id::Int) = insert!(_get_constraints(x), id)
+_delete_from_constraint!(x::Variable, id::Int) = delete!(x.constraints, id)
+_constriction(x::Variable) = length(x.constraints)
+∈(x::Variable, constraint::Int) = constraint ∈ x.constraints
+∈(value::Number, x::Variable) = value ∈ x.domain
 
 """
     variable(values::AbstractVector{T}, name::AbstractString; domain = :set) where T <: Number

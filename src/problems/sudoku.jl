@@ -2,7 +2,7 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     N = n^2
     d = domain(Vector{Int}(1:N))
 
-    p = Problem()
+    p = problem(vars_types = Int)
 
     # Add variables
     foreach(_ -> variable!(p, d), 1:(N^2))

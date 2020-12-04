@@ -1,7 +1,7 @@
 abstract type AbstractProblem end
 
-struct _Problem{T <: Number,D <: AbstractDomain{T},F <: Function} <: AbstractProblem
-    variables::Dictionary{Int,_Variable{T,D}}
+struct _Problem{D <: AbstractDomain,F <: Function} <: AbstractProblem
+    variables::Dictionary{Int,Variable{D}}
     constraints::Dictionary{Int,_Constraint{F}}
     objectives::Dictionary{Int,_Objective{F}}
 
@@ -9,6 +9,17 @@ struct _Problem{T <: Number,D <: AbstractDomain{T},F <: Function} <: AbstractPro
     max_vars::Ref{Int} # TODO: UInt ?
     max_cons::Ref{Int}
     max_objs::Ref{Int}
+end
+
+function _Problem(D::Type, F::Type)
+    variables = Dictionary{Int,Variable{D}}()
+    constraints = Dictionary{Int,_Constraint{F}}()
+    objectives = Dictionary{Int,_Objective{F}}()
+    max_vars = Ref(zero(Int))
+    max_cons = Ref(zero(Int))
+    max_objs = Ref(zero(Int))
+
+    _Problem(variables, constraints, objectives, max_vars, max_cons, max_objs)
 end
 
 struct Problem <: AbstractProblem
@@ -35,30 +46,36 @@ function Problem(;
 end
 
 function problem(;
-    var_types::ValOrVect{DataType}=Float64,
-    values_types::ValOrVect{DataType}=Float64,
-    domain::Symbol=:mixed, # discrete or continuous
+    vars_types::_ValOrVect=Float64,
+    func_types::_ValOrVect=Function,
+    domain::Symbol=:discrete, # discrete or continuous or mixed
     discrete::Symbol=:set, # set or indices (or eventually ranges), or mixed
     continuous::Symbol=:single, # single or multiple intervals, or mixed
 )
-    # var_type =
-    var_type = Union{values_types...}
+    float_union = _datatype_to_union(_filter(vars_types, AbstractFloat))
+    vars_union = _datatype_to_union(vars_types)
+    func_union = _datatype_to_union(func_types)
 
-    domain_types = Vector{DataType}()
+    dom_types = Vector{DataType}()
     if domain ∈ [:mixed, :discrete]
         if discrete ∈ [:mixed, :set]
-            push!(domain_types, SetDomain)
+            push!(dom_types, SetDomain{vars_union})
         end
         if discrete ∈ [:mixed, :indices]
-            push!(domain_types, IndicesDomain)
+            push!(dom_types, IndicesDomain{vars_union})
         end
     end
-    if domain == :mixed || domain == :continuous
-        push!(domain_types, ContinuousInterval, ContinuousIntervals)
+    if domain ∈ [:mixed, :continuous]
+        if continuous ∈ [:mixed, :single]
+            push!(dom_types, ContinuousInterval{float_union})
+        end
+        if continuous ∈ [:mixed, :multiple]
+            push!(dom_types, ContinuousIntervals{float_union})
+        end
     end
-    dom_type = Union{domain_types...}
+    dom_union = _datatype_to_union(dom_types)
 
-    return var_type, dom_type
+    return _Problem(dom_union, func_union)
 end
 
 ## methods
@@ -100,7 +117,7 @@ add_value!(p::AbstractProblem, x::Int, value::Int) = _add!(get_variable(p, x), v
 add_var_to_cons!(p::AbstractProblem, c::Int, x::Int) = _add!(get_constraint(p, c), x)
 
 # Add variable
-function add!(p::AbstractProblem, x::AbstractVariable)
+function add!(p::AbstractProblem, x::Variable)
     _inc_vars!(p)
     insert!(get_variables(p), _max_vars(p), x)
 end

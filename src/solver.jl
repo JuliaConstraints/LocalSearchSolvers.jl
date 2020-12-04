@@ -1,7 +1,7 @@
 abstract type AbstractSolver end
 
 struct _Solver{T <: Number, D <: AbstractDomain{T}, F <: Function} <: AbstractSolver
-    problem::_Problem{T, D, F}
+    problem::_Problem{D, F}
     state::_State{T}
 end
 struct Solver <: AbstractSolver
