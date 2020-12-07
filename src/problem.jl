@@ -8,52 +8,10 @@ struct Problem{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: 
     max_cons::Ref{Int}
     max_objs::Ref{Int}
 
-    # bool to indicate if a problem structure is statically typed or not
+    # Bool to indicate if the Problem instance has been specialized (relatively to types)
     specialized::Ref{Bool}
-
-    # constructor
-    # function Problem(;D::Type, C::Type, O::Type)
-    #     vars = Dictionary{Int,Variable{D}}()
-    #     cons = Dictionary{Int,Constraint{C}}()
-    #     objs = Dictionary{Int,Objective{O}}()
-
-    #     max_vars = Ref(zero(Int))
-    #     max_cons = Ref(zero(Int))
-    #     max_objs = Ref(zero(Int))
-
-    #     opt_types = Ref(false)
-
-    #     new{D,C,O}(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
-    # end
-
-    # function Problem(;
-    #     vars = Dictionary{Int,Variable}(),
-    #     cons = Dictionary{Int,Constraint}(),
-    #     objs = Dictionary{Int,Objective}(),
-    # )
-
-    #     max_vars = Ref(zero(Int))
-    #     max_cons = Ref(zero(Int))
-    #     max_objs = Ref(zero(Int))
-
-    #     opt_types = Ref(false)
-
-    #     new(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
-    # end
 end
 
-# function MyProblem4()
-#     vars = Dictionary{Int,Variable}()
-#     cons = Dictionary{Int,Union{Constraint{typeof(all_different)},Constraint{typeof(print)}}}()
-#     objs = Dictionary{Int,Union{Objective{typeof(all_different)},Objective{typeof(print)}}}()
-
-#     max_vars = Ref(zero(Int))
-#     max_cons = Ref(zero(Int))
-#     max_objs = Ref(zero(Int))
-
-#     opt_types = Ref(false)
-#     Problem(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
-# end
 function Problem(;
     vars=Dictionary{Int,Variable}(),
     cons=Dictionary{Int,Constraint}(),
@@ -69,43 +27,7 @@ function Problem(;
     Problem(vars, cons, objs, max_vars, max_cons, max_objs, specialized)
 end
 
-function problem(;
-    vars_types::_ValOrVect=Float64,
-    cons_types::_ValOrVect=Function,
-    objs_types::_ValOrVect=Function,
-    domain::Symbol=:discrete, # discrete or continuous or mixed
-    discrete::Symbol=:set, # set or indices (or eventually ranges), or mixed
-    continuous::Symbol=:single, # single or multiple intervals, or mixed
-)
-    float_union = _datatype_to_union(_filter(vars_types, AbstractFloat))
-    vars_union = _datatype_to_union(vars_types)
-    cons_union = _datatype_to_union(cons_types)
-    objs_union = _datatype_to_union(objs_types)
-
-    dom_types = Vector{DataType}()
-    if domain ∈ [:mixed, :discrete]
-        if discrete ∈ [:mixed, :set]
-            push!(dom_types, SetDomain{vars_union})
-        end
-        if discrete ∈ [:mixed, :indices]
-            push!(dom_types, IndicesDomain{vars_union})
-        end
-    end
-    if domain ∈ [:mixed, :continuous]
-        if continuous ∈ [:mixed, :single]
-            push!(dom_types, ContinuousInterval{float_union})
-        end
-        if continuous ∈ [:mixed, :multiple]
-            push!(dom_types, ContinuousIntervals{float_union})
-        end
-    end
-    dom_union = _datatype_to_union(dom_types)
-
-    return Problem(D=dom_union, C=cons_union, O=objs_union)
-end
-
 ## methods
-
 # accessors
 _max_vars(p::Problem) = p.max_vars.x
 _max_cons(p::Problem) = p.max_cons.x
@@ -222,6 +144,11 @@ Return `true` if `p` is a satisfaction problem.
 """
 is_sat(p::Problem) = length_objs(p) == 0
 
+"""
+    specialize(p::Problem)
+    specialize(s::Solver)
+Specialize the structure of a problem to avoid dynamic type attribution at runtime.
+"""
 function specialize(p::Problem)
     vars_types = Set{Type}()
     cons_types = Set{Type}()

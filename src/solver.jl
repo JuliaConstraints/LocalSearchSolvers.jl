@@ -1,4 +1,4 @@
-struct Solver{T <: Number,V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
+mutable struct Solver{T <: Number,V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
     problem::Problem{V,C,O}
     state::_State{T}
 end
@@ -67,6 +67,11 @@ end
 @forward Solver.state _cons_cost!, _var_cost!, _value!
 @forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward Solver.state _set!, _swap_value!, _insert_tabu!
+
+# Replace the problem field by its specialized version
+function specialize!(s::Solver)
+    s.problem = specialize(s.problem)
+end
 
 ## Internal to solve! function
 function _draw!(s::Solver)
