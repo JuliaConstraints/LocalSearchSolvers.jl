@@ -4,7 +4,7 @@ problems = [
 
 for p in problems
     println(describe(p))
-    s = Solver{Int}(p)
+    s = Solver(p)
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)
@@ -34,12 +34,14 @@ for p in problems
         delete_var_from_cons!(s, c, 17)
         @test length_cons(s, c) == 4
     end
-    solve!(s, max_iteration = 1000, verbose = true)
-    
+    solve!(s, verbose = true)
+
     # TODO: temp patch for coverage, make it nice
     for x in keys(LocalSearchSolvers._tabu(s))
         LocalSearchSolvers._tabu(s, x)
     end
     LocalSearchSolvers._tabu!(s, Dictionary{Int, Int}())
-    LocalSearchSolvers._values!(s, Dictionary{Int, typeof(s).parameters[1]}())
+    LocalSearchSolvers._values!(s, Dictionary{Int, Number}())
 end
+
+solve!(Solver(sudoku(3)))

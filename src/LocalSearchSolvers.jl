@@ -23,7 +23,7 @@ export Problem, sudoku
 export all_different
 
 # Exports Solver
-export Solver, solve!
+export Solver, solve!, specialize, specialize!
 
 # Includes utils
 include("utils.jl")

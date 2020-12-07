@@ -3,6 +3,7 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     d = domain(Vector{Int}(1:N))
 
     p = Problem()
+    # p = problem(vars_types = Int)
 
     # Add variables
     foreach(_ -> variable!(p, d), 1:(N^2))
@@ -25,30 +26,30 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
 
     # TODO: Insert starting values (assuming they are correct)
     # foreach(((k,v),) -> , pairs(start))
-    
+
     return p
 end
 
 # TODO: make a generic print problem function with :sudoku
-function _print_sudoku(s::Solver)
-    N = length_vars(s)
-    n = Int(√N)
-    str = ""
-    for j in 0:(n - 1)
-        aux = ""
-        for i in 1:n
-            v = _value(s, i + n * j)
-            aux *= "$v | "
-        end
-        str *= aux[1:(end - 3)] * "\t"
-        aux = ""
-        for i in 1:n
-            v = _var_cost(s, i + n * j)
-            aux *= "$v | "
-        end
-        str *= aux[1:(end - 3)] * "\n"
-        l = 4 * n + length(aux[1:(end - 3)])
-        str *= j == n - 1 ? "" : repeat("-", l) * "\n"
-    end
-    println(str)
-end
+# function _print_sudoku(s::Solver)
+#     N = length_vars(s)
+#     n = Int(√N)
+#     str = ""
+#     for j in 0:(n - 1)
+#         aux = ""
+#         for i in 1:n
+#             v = _value(s, i + n * j)
+#             aux *= "$v | "
+#         end
+#         str *= aux[1:(end - 3)] * "\t"
+#         aux = ""
+#         for i in 1:n
+#             v = _var_cost(s, i + n * j)
+#             aux *= "$v | "
+#         end
+#         str *= aux[1:(end - 3)] * "\n"
+#         l = 4 * n + length(aux[1:(end - 3)])
+#         str *= j == n - 1 ? "" : repeat("-", l) * "\n"
+#     end
+#     println(str)
+# end

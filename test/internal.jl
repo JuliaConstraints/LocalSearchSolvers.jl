@@ -74,7 +74,8 @@ for o in objs
 end
 
 ## test Problem
-p = Problem(variables=vars, objectives=objs, constraints=cons)
+# TODO: update tests
+# p = Problem(variables=vars, objectives=objs, constraints=cons)
 p = Problem()
 describe(p)
 
@@ -117,4 +118,4 @@ add_var_to_cons!(p, 1, 1)
 println(describe(p))
 
 ## Test Solver
-s1 = Solver{Int}()
+s1 = Solver()
