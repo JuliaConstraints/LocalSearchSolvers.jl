@@ -1,13 +1,6 @@
-abstract type AbstractObjective end
-
-struct _Objective{F <: Function} <: AbstractObjective
+struct Objective{F <: Function}
     name::String
     f::F
-end
-
-struct Objective <: AbstractObjective
-    name::String
-    f::Function
 end
 
 """

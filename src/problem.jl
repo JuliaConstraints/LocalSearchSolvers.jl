@@ -1,60 +1,86 @@
-abstract type AbstractProblem end
-
-struct _Problem{D <: AbstractDomain,F <: Function} <: AbstractProblem
-    variables::Dictionary{Int,Variable{D}}
-    constraints::Dictionary{Int,_Constraint{F}}
-    objectives::Dictionary{Int,_Objective{F}}
+struct Problem{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
+    variables::Dictionary{Int,V}
+    constraints::Dictionary{Int,C}
+    objectives::Dictionary{Int,O}
 
     # counter to add new variables: vars, cons, objs
     max_vars::Ref{Int} # TODO: UInt ?
     max_cons::Ref{Int}
     max_objs::Ref{Int}
+
+    # bool to indicate if a problem structure is statically typed or not
+    opt_types::Ref{Bool}
+
+    # constructor
+    # function Problem(;D::Type, C::Type, O::Type)
+    #     vars = Dictionary{Int,Variable{D}}()
+    #     cons = Dictionary{Int,Constraint{C}}()
+    #     objs = Dictionary{Int,Objective{O}}()
+
+    #     max_vars = Ref(zero(Int))
+    #     max_cons = Ref(zero(Int))
+    #     max_objs = Ref(zero(Int))
+
+    #     opt_types = Ref(false)
+
+    #     new{D,C,O}(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
+    # end
+
+    # function Problem(;
+    #     vars = Dictionary{Int,Variable}(),
+    #     cons = Dictionary{Int,Constraint}(),
+    #     objs = Dictionary{Int,Objective}(),
+    # )
+
+    #     max_vars = Ref(zero(Int))
+    #     max_cons = Ref(zero(Int))
+    #     max_objs = Ref(zero(Int))
+
+    #     opt_types = Ref(false)
+
+    #     new(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
+    # end
 end
 
-function _Problem(D::Type, F::Type)
-    variables = Dictionary{Int,Variable{D}}()
-    constraints = Dictionary{Int,_Constraint{F}}()
-    objectives = Dictionary{Int,_Objective{F}}()
-    max_vars = Ref(zero(Int))
-    max_cons = Ref(zero(Int))
-    max_objs = Ref(zero(Int))
+# function MyProblem4()
+#     vars = Dictionary{Int,Variable}()
+#     cons = Dictionary{Int,Union{Constraint{typeof(all_different)},Constraint{typeof(print)}}}()
+#     objs = Dictionary{Int,Union{Objective{typeof(all_different)},Objective{typeof(print)}}}()
 
-    _Problem(variables, constraints, objectives, max_vars, max_cons, max_objs)
-end
+#     max_vars = Ref(zero(Int))
+#     max_cons = Ref(zero(Int))
+#     max_objs = Ref(zero(Int))
 
-struct Problem <: AbstractProblem
-    variables::Dictionary{Int,Variable}
-    constraints::Dictionary{Int,Constraint}
-    objectives::Dictionary{Int,Objective}
-
-    # counter to add new variables: vars, cons, objs
-    max_vars::Ref{Int} # TODO: UInt ?
-    max_cons::Ref{Int}
-    max_objs::Ref{Int}
-end
-
+#     opt_types = Ref(false)
+#     Problem(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
+# end
 function Problem(;
-    variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
-    constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
-    objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
+    vars = Dictionary{Int,Variable}(),
+    cons = Dictionary{Int,Constraint}(),
+    objs = Dictionary{Int,Objective}(),
 )
+
     max_vars = Ref(zero(Int))
     max_cons = Ref(zero(Int))
     max_objs = Ref(zero(Int))
 
-    Problem(variables, constraints, objectives, max_vars, max_cons, max_objs)
+    opt_types = Ref(false)
+
+    Problem(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
 end
 
 function problem(;
     vars_types::_ValOrVect=Float64,
-    func_types::_ValOrVect=Function,
+    cons_types::_ValOrVect=Function,
+    objs_types::_ValOrVect=Function,
     domain::Symbol=:discrete, # discrete or continuous or mixed
     discrete::Symbol=:set, # set or indices (or eventually ranges), or mixed
     continuous::Symbol=:single, # single or multiple intervals, or mixed
 )
     float_union = _datatype_to_union(_filter(vars_types, AbstractFloat))
     vars_union = _datatype_to_union(vars_types)
-    func_union = _datatype_to_union(func_types)
+    cons_union = _datatype_to_union(cons_types)
+    objs_union = _datatype_to_union(objs_types)
 
     dom_types = Vector{DataType}()
     if domain ∈ [:mixed, :discrete]
@@ -75,84 +101,84 @@ function problem(;
     end
     dom_union = _datatype_to_union(dom_types)
 
-    return _Problem(dom_union, func_union)
+    return Problem(D=dom_union, C=cons_union, O=objs_union)
 end
 
 ## methods
 
 # accessors
-_max_vars(p::AbstractProblem) = p.max_vars.x
-_max_cons(p::AbstractProblem) = p.max_cons.x
-_max_objs(p::AbstractProblem) = p.max_objs.x
-_inc_vars!(p::AbstractProblem) = p.max_vars.x += 1
-_inc_cons!(p::AbstractProblem) = p.max_cons.x += 1
-_inc_objs!(p::AbstractProblem) = p.max_objs.x += 1
+_max_vars(p::Problem) = p.max_vars.x
+_max_cons(p::Problem) = p.max_cons.x
+_max_objs(p::Problem) = p.max_objs.x
+_inc_vars!(p::Problem) = p.max_vars.x += 1
+_inc_cons!(p::Problem) = p.max_cons.x += 1
+_inc_objs!(p::Problem) = p.max_objs.x += 1
 
-get_variables(p::AbstractProblem) = p.variables
-get_constraints(p::AbstractProblem) = p.constraints
-get_objectives(p::AbstractProblem) = p.objectives
+get_variables(p::Problem) = p.variables
+get_constraints(p::Problem) = p.constraints
+get_objectives(p::Problem) = p.objectives
 
-get_variable(p::AbstractProblem, ind::Int) = get_variables(p)[ind]
-get_constraint(p::AbstractProblem, ind::Int) = get_constraints(p)[ind]
-get_objective(p::AbstractProblem, ind::Int) = get_objectives(p)[ind]
-get_domain(p::AbstractProblem, ind::Int) = _get_domain(get_variable(p, ind))
-get_name(p::AbstractProblem, x::Int) = _get_name(get_variable(p, x))
+get_variable(p::Problem, ind::Int) = get_variables(p)[ind]
+get_constraint(p::Problem, ind::Int) = get_constraints(p)[ind]
+get_objective(p::Problem, ind::Int) = get_objectives(p)[ind]
+get_domain(p::Problem, ind::Int) = _get_domain(get_variable(p, ind))
+get_name(p::Problem, x::Int) = _get_name(get_variable(p, x))
 
-get_cons_from_var(p::AbstractProblem, x::Int) = _get_constraints(get_variable(p, x))
-get_vars_from_cons(p::AbstractProblem, c::Int) = _get_vars(get_constraint(p, c))
+get_cons_from_var(p::Problem, x::Int) = _get_constraints(get_variable(p, x))
+get_vars_from_cons(p::Problem, c::Int) = _get_vars(get_constraint(p, c))
 
-length_var(p::AbstractProblem, ind::Int) = _length(get_variable(p, ind))
-length_cons(p::AbstractProblem, ind::Int) = _length(get_constraint(p, ind))
-length_objs(p::AbstractProblem) = length(get_objectives(p))
-length_vars(p::AbstractProblem) = length(get_variables(p))
+length_var(p::Problem, ind::Int) = _length(get_variable(p, ind))
+length_cons(p::Problem, ind::Int) = _length(get_constraint(p, ind))
+length_objs(p::Problem) = length(get_objectives(p))
+length_vars(p::Problem) = length(get_variables(p))
 
-draw(p::AbstractProblem, x::Int) = _draw(get_variable(p, x))
+draw(p::Problem, x::Int) = _draw(get_variable(p, x))
 # TODO: _get! for Indices domain
-constriction(p::AbstractProblem, x::Int) = _constriction(get_variable(p, x))
+constriction(p::Problem, x::Int) = _constriction(get_variable(p, x))
 
-delete_value!(p::AbstractProblem, x::Int, value::Int) = _delete!(get_variable(p, x), value)
-delete_var_from_cons!(p::AbstractProblem, c::Int, x::Int) = _delete!(get_constraint(p, c), x)
+delete_value!(p::Problem, x::Int, value::Int) = _delete!(get_variable(p, x), value)
+delete_var_from_cons!(p::Problem, c::Int, x::Int) = _delete!(get_constraint(p, c), x)
 
-add_value!(p::AbstractProblem, x::Int, value::Int) = _add!(get_variable(p, x), value)
-add_var_to_cons!(p::AbstractProblem, c::Int, x::Int) = _add!(get_constraint(p, c), x)
+add_value!(p::Problem, x::Int, value::Int) = _add!(get_variable(p, x), value)
+add_var_to_cons!(p::Problem, c::Int, x::Int) = _add!(get_constraint(p, c), x)
 
 # Add variable
-function add!(p::AbstractProblem, x::Variable)
+function add!(p::Problem, x::Variable)
     _inc_vars!(p)
     insert!(get_variables(p), _max_vars(p), x)
 end
-function variable!(p::AbstractProblem, d::AbstractDomain)
+function variable!(p::Problem, d::AbstractDomain)
     add!(p, variable(d, "x" * string(_max_vars(p) + 1)))
 end
 
 # Add constraint
-function add!(p::AbstractProblem, c::Constraint)
+function add!(p::Problem, c::Constraint)
     _inc_cons!(p)
     insert!(get_constraints(p), _max_cons(p), c)
     foreach(x -> _add_to_constraint!(p.variables[x], _max_cons(p)), c.vars)
 end
-function constraint!(p::AbstractProblem, f::Function, vars::AbstractVector{Int})
+function constraint!(p::Problem, f::F, vars::AbstractVector{Int}) where F <: Function
     add!(p, constraint(f, vars, p.variables))
 end
 
 # Add Objective
-function add!(p::AbstractProblem, o::Objective)
+function add!(p::Problem, o::Objective)
     _inc_objs!(p)
     insert!(get_objectives(p), _max_objs(p), o)
 end
-function objective!(p::AbstractProblem, f::Function)
+function objective!(p::Problem, f::Function)
     add!(p, objective(f, "o" * string(_max_objs(p) + 1)))
 end
 
 # I/O
 
 """
-    describe(p::AbstractProblem)
+    describe(p::Problem)
     describe(s::AbstractSolver)
 
 Describe the model of either a `Problem` or a `Solver`.
 """
-function describe(p::AbstractProblem) # TODO: rewrite _describe
+function describe(p::Problem) # TODO: rewrite _describe
     objectives = ""
     if length(p.objectives) == 0
         objectives = "Constraint Satisfaction Program (CSP)"
@@ -181,7 +207,7 @@ function describe(p::AbstractProblem) # TODO: rewrite _describe
 end
 
 # Neighbours
-function _neighbours(p::AbstractProblem, x::Int)
+function _neighbours(p::Problem, x::Int)
     neighbours = Set{Int}()
     foreach(
         c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(p, c)),
@@ -194,4 +220,4 @@ end
     is_sat(p::Problem)
 Return `true` if `p` is a satisfaction problem.
 """
-is_sat(p::AbstractProblem) = length_objs(p) == 0
+is_sat(p::Problem) = length_objs(p) == 0

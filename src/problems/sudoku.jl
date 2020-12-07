@@ -2,10 +2,16 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     N = n^2
     d = domain(Vector{Int}(1:N))
 
-    p = problem(vars_types = Int)
+    p = Problem()
+
+    # p = problem(vars_types = Int)
+
+    println("Mark 1")
 
     # Add variables
     foreach(_ -> variable!(p, d), 1:(N^2))
+
+    println("Mark 2")
 
     # Add constraints: line, columns; blocks
     foreach(i -> constraint!(p, all_different, Vector{Int}((i * N + 1):((i + 1) * N))), 0:(N - 1))
@@ -30,7 +36,7 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
 end
 
 # TODO: make a generic print problem function with :sudoku
-function _print_sudoku(s::AbstractSolver)
+function _print_sudoku(s::Solver)
     N = length_vars(s)
     n = Int(√N)
     str = ""
