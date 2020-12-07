@@ -3,15 +3,10 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     d = domain(Vector{Int}(1:N))
 
     p = Problem()
-
     # p = problem(vars_types = Int)
-
-    println("Mark 1")
 
     # Add variables
     foreach(_ -> variable!(p, d), 1:(N^2))
-
-    println("Mark 2")
 
     # Add constraints: line, columns; blocks
     foreach(i -> constraint!(p, all_different, Vector{Int}((i * N + 1):((i + 1) * N))), 0:(N - 1))
@@ -32,7 +27,7 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     # TODO: Insert starting values (assuming they are correct)
     # foreach(((k,v),) -> , pairs(start))
 
-    return p
+    return specialize(p)
 end
 
 # TODO: make a generic print problem function with :sudoku

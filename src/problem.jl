@@ -9,7 +9,7 @@ struct Problem{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: 
     max_objs::Ref{Int}
 
     # bool to indicate if a problem structure is statically typed or not
-    opt_types::Ref{Bool}
+    specialized::Ref{Bool}
 
     # constructor
     # function Problem(;D::Type, C::Type, O::Type)
@@ -55,18 +55,18 @@ end
 #     Problem(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
 # end
 function Problem(;
-    vars = Dictionary{Int,Variable}(),
-    cons = Dictionary{Int,Constraint}(),
-    objs = Dictionary{Int,Objective}(),
+    vars=Dictionary{Int,Variable}(),
+    cons=Dictionary{Int,Constraint}(),
+    objs=Dictionary{Int,Objective}(),
 )
 
     max_vars = Ref(zero(Int))
     max_cons = Ref(zero(Int))
     max_objs = Ref(zero(Int))
 
-    opt_types = Ref(false)
+    specialized = Ref(false)
 
-    Problem(vars, cons, objs, max_vars, max_cons, max_objs, opt_types)
+    Problem(vars, cons, objs, max_vars, max_cons, max_objs, specialized)
 end
 
 function problem(;
@@ -221,3 +221,33 @@ end
 Return `true` if `p` is a satisfaction problem.
 """
 is_sat(p::Problem) = length_objs(p) == 0
+
+function specialize(p::Problem)
+    vars_types = Set{Type}()
+    cons_types = Set{Type}()
+    objs_types = Set{Type}()
+
+    foreach(x -> push!(vars_types, typeof(x.domain)), get_variables(p))
+    foreach(c -> push!(cons_types, typeof(c.f)), get_constraints(p))
+    foreach(o -> push!(objs_types, typeof(o.f)), get_objectives(p))
+
+    vars_union = _datatype_to_union(vars_types)
+    cons_union = _datatype_to_union(cons_types)
+    objs_union = _datatype_to_union(objs_types)
+
+    vars = similar(get_variables(p), Variable{vars_union})
+    cons = similar(get_constraints(p), Constraint{cons_union})
+    objs = similar(get_objectives(p), Objective{objs_union})
+
+    foreach(x -> vars[x] = get_variable(p, x), keys(vars))
+    foreach(c -> cons[c] = get_constraint(p, c), keys(cons))
+    foreach(o -> objs[o] = get_objective(p, o), keys(objs))
+
+    max_vars = Ref(_max_vars(p))
+    max_cons = Ref(_max_cons(p))
+    max_objs = Ref(_max_objs(p))
+
+    specialized = Ref(true)
+
+    Problem(vars, cons, objs, max_vars, max_cons, max_objs, specialized)
+end
