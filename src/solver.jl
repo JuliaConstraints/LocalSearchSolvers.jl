@@ -1,6 +1,6 @@
-mutable struct Solver{T <: Number,V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
-    problem::Problem{V,C,O}
-    state::_State{T}
+mutable struct Solver
+    problem::Problem
+    state::_State
 end
 
 """
@@ -55,7 +55,7 @@ end
 @forward Solver.problem get_cons_from_var, get_vars_from_cons
 @forward Solver.problem add!, add_value!, add_var_to_cons!
 @forward Solver.problem delete_value!, delete_var_from_cons!
-@forward Solver.problem draw, constriction, describe, is_sat
+@forward Solver.problem draw, constriction, describe, is_sat, is_specialized
 @forward Solver.problem length_var, length_cons, length_vars, length_objs
 @forward Solver.problem constraint!, objective!, variable!
 @forward Solver.problem _neighbours, get_name
@@ -71,6 +71,7 @@ end
 # Replace the problem field by its specialized version
 function specialize!(s::Solver)
     s.problem = specialize(s.problem)
+    return nothing
 end
 
 ## Internal to solve! function
@@ -211,7 +212,12 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s::Solver; max_iteration=1000, verbose::Bool=false)
+function solve!(s::Solver; max_iteration=1000, verbose::Bool=false, specialize = true)
+    # Speciliazed the problem if specialize = true (and not already done)
+    if !is_specialized(s)
+        specialize!(s)
+    end
+
     # if no objectives are provided, the problem is a satisfaction one
     sat = is_sat(s)
 

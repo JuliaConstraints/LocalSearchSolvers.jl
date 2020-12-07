@@ -39,11 +39,6 @@ function constraint(f::F, inds::AbstractVector{Int}, vars::Dictionary{Int,Variab
     Constraint(f, inds, vars)
 end
 
-function constraint(f::F, inds::AbstractVector{Int}, vars::Dictionary{Int,Variable{D}}
-) where {F <: Function, D <: AbstractDomain}
-    Constraint(f, inds, vars)
-end
-
 # Methods
 
 _get_vars(c::Constraint) = c.vars

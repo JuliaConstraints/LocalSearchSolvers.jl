@@ -145,6 +145,15 @@ Return `true` if `p` is a satisfaction problem.
 is_sat(p::Problem) = length_objs(p) == 0
 
 """
+    is_specialized(p::Problem)
+    is_specialized(s::Solver)
+Return `true` if the problem is already specialized.
+"""
+function is_specialized(p::Problem)
+    return p.specialized.x
+end
+
+"""
     specialize(p::Problem)
     specialize(s::Solver)
 Specialize the structure of a problem to avoid dynamic type attribution at runtime.
