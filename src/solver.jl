@@ -199,6 +199,36 @@ function _permutation_move!(s::Solver, x::Int, verbose::Bool)
     return best_swap, tabu
 end
 
+function _init_solve!(s::Solver, verbose::Bool, specialize::Bool)
+    # Speciliazed the problem if specialize = true (and not already done)
+    if !is_specialized(s) && specialize
+        specialize!(s)
+    end
+
+    if verbose
+        println(describe(s.problem))
+    end
+    _verbose("Starting solver", verbose)
+
+    # draw initial values unless provided
+    if isempty(_values(s))
+        _draw!(s)
+    end
+    _verbose("Initial values = ", verbose) # * string(values(s)), verbose -# )
+
+    # compute initial constraints and variables costs
+    _compute_costs!(s)
+    _verbose("Initial constraints costs = $(s.state.cons_costs)", verbose)
+    _verbose("Initial variables costs = $(s.state.vars_costs)", verbose)
+
+    # Tabu times
+    tabu_time = length_vars(s) ÷ 2 # 10 ?
+    local_tabu_time = tabu_time ÷ 2
+    δ_tabu = tabu_time - local_tabu_time # 20-30 %
+
+    return tabu_time, local_tabu_time, δ_tabu
+end
+
 """
     solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -212,45 +242,15 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s::Solver; max_iteration=1000, verbose::Bool=false, specialize = true)
-    # Speciliazed the problem if specialize = true (and not already done)
-    if !is_specialized(s)
-        specialize!(s)
-    end
+function solve!(s::Solver; max_iteration=1000, verbose::Bool=false, specialize::Bool=true)
+    tabu_time, local_tabu_time, δ_tabu = _init_solve!(s, verbose, specialize)
 
-    # if no objectives are provided, the problem is a satisfaction one
-    sat = is_sat(s)
-
-    if verbose
-        println(describe(s.problem))
-    end
-    _verbose("Starting solver", verbose)
-
-    # draw initial values unless provided
-    if isempty(_values(s))
-        _draw!(s)
-    end
-    _verbose("Initial values = ", verbose) # * string(values(s)), verbose -# )
-    # _print_sudoku(s)
-
-    # compute initial constraints and variables costs
-    _compute_costs!(s)
-    # _verbose("Initial constraints costs = $(s.state.cons_costs)", verbose)
-    # _verbose("Initial variables costs = $(s.state.vars_costs)", verbose)
-
-    # Tabu times
-    tabu_time = length_vars(s) ÷ 2 # 10 ?
-    local_tabu_time = tabu_time ÷ 2
-    δ_tabu = tabu_time - local_tabu_time # 20-30 %
-
-    count_loop = 0
-    # _verbose("Entering loop", verbose)
-
+    sat_loop = 0
+    opt_loop = 0
     # TODO rewrite with check on each var if > 0.0
-    while count_loop < max_iteration
-        # increase loop counter
-        count_loop += 1
-        _verbose("\n\n\tLoop $count_loop", verbose)
+    while sat_loop < max_iteration
+        sat_loop += 1
+        _verbose("\n\n\tLoop $sat_loop", verbose)
 
         # Restart if stuck in a local minima # TODO: restart optimal
         if rand() ≤ max(0, (_length_tabu(s) - local_tabu_time) / δ_tabu)
