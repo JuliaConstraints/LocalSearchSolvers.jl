@@ -4,7 +4,7 @@ problems = [
 
 for p in problems
     println(describe(p))
-    s = Solver(p)
+    s = Solver(p, settings = Settings([:verbose => true]))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)
@@ -34,7 +34,7 @@ for p in problems
         delete_var_from_cons!(s, c, 17)
         @test length_cons(s, c) == 4
     end
-    solve!(s, verbose = true)
+    solve!(s)
 
     # TODO: temp patch for coverage, make it nice
     for x in keys(LocalSearchSolvers._tabu(s))
