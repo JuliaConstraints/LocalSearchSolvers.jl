@@ -229,6 +229,60 @@ function _init_solve!(s::Solver, verbose::Bool, specialize::Bool)
     return tabu_time, local_tabu_time, δ_tabu
 end
 
+function _sat_step!(
+    s::Solver,
+    tabu_time::Int,
+    local_tabu_time::Int,
+    δ_tabu::Int,
+    verbose::Bool
+)
+    # Restart if stuck in a local minima # TODO: restart optimal
+    if rand() ≤ max(0, (_length_tabu(s) - local_tabu_time) / δ_tabu)
+        _verbose("\n============== RESTART!!!!================\n", verbose)
+        _draw!(s)
+    end
+
+    _compute_costs!(s)
+
+    # _verbose("Initial constraints costs = $(s.state.cons_costs)", verbose)
+    # _verbose("Initial variables costs = $(s.state.vars_costs)", verbose)
+    # _verbose("values: " * string(values(s)), verbose)
+    # _print_sudoku(s)
+    if sum(s.state.cons_costs) == 0.0
+        return true # a solution has been found
+    end
+    _verbose("Tabu list: $(_tabu(s))", verbose)
+
+    # select worst variables
+    nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
+    x = _find_rand_argmax(view(_vars_costs(s), nontabu))
+    _verbose("Selected x = $x", verbose)
+
+    # Local move (change the value of the selected variable)
+    best_values, tabu = _local_move!(s, x, verbose)
+
+    # If local move is bad (tabu), then try permutation
+    best_swap = Vector{Int}()
+    if tabu
+        best_swap, tabu = _permutation_move!(s, x, verbose)
+        _compute_costs!(s)
+    else
+        _compute_costs!(s; cons_lst=get_cons_from_var(s, x))
+    end
+
+    # decay tabu list
+    _decay_tabu!(s)
+
+    # update tabu list with either worst or selected variable
+    _insert_tabu!(s, x, tabu ? tabu_time : local_tabu_time)
+    if isempty(best_swap)
+        _value!(s, x, rand(best_values))
+    else
+        _swap_value!(s, x, rand(best_swap))
+    end
+    return false # no satisfying configuration
+end
+
 """
     solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -251,51 +305,7 @@ function solve!(s::Solver; max_iteration=1000, verbose::Bool=false, specialize::
     while sat_loop < max_iteration
         sat_loop += 1
         _verbose("\n\n\tLoop $sat_loop", verbose)
-
-        # Restart if stuck in a local minima # TODO: restart optimal
-        if rand() ≤ max(0, (_length_tabu(s) - local_tabu_time) / δ_tabu)
-            _verbose("\n============== RESTART!!!!================\n", verbose)
-            _draw!(s)
-        end
-
-        _compute_costs!(s)
-
-        # _verbose("Initial constraints costs = $(s.state.cons_costs)", verbose)
-        # _verbose("Initial variables costs = $(s.state.vars_costs)", verbose)
-        # _verbose("values: " * string(values(s)), verbose)
-        # _print_sudoku(s)
-        if sum(s.state.cons_costs) == 0.0
-            break
-        end
-        _verbose("Tabu list: $(_tabu(s))", verbose)
-
-        # select worst variables
-        nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
-        x = _find_rand_argmax(view(_vars_costs(s), nontabu))
-        _verbose("Selected x = $x", verbose)
-
-        # Local move (change the value of the selected variable)
-        best_values, tabu = _local_move!(s, x, verbose)
-
-        # If local move is bad (tabu), then try permutation
-        best_swap = Vector{Int}()
-        if tabu
-            best_swap, tabu = _permutation_move!(s, x, verbose)
-            _compute_costs!(s)
-        else
-            _compute_costs!(s; cons_lst=get_cons_from_var(s, x))
-        end
-
-        # decay tabu list
-        _decay_tabu!(s)
-
-        # update tabu list with either worst or selected variable
-        _insert_tabu!(s, x, tabu ? tabu_time : local_tabu_time)
-        if isempty(best_swap)
-            _value!(s, x, rand(best_values))
-        else
-            _swap_value!(s, x, rand(best_swap))
-        end
+        _sat_step!(s, tabu_time, local_tabu_time, δ_tabu, verbose) ? break : nothing 
     end
 
 end
