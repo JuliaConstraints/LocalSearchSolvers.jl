@@ -3,6 +3,9 @@ mutable struct _State{T <: Number} # TODO: make an abstract state type
     vars_costs::Dictionary{Int,Float64}
     cons_costs::Dictionary{Int,Float64}
     tabu::Dictionary{Int,Int}
+    optimizing::Bool
+    best_solution::Dictionary{Int,T}
+    best_solution_value::Union{Nothing,T}
 end
 
 # Accessors
@@ -10,11 +13,14 @@ _cons_costs(s::_State) = s.cons_costs
 _vars_costs(s::_State) = s.vars_costs
 _values(s::_State) = s.values
 _tabu(s::_State) = s.tabu
+_optimizing(s::_State) = s.optimizing
 
 _cons_costs!(s::_State, costs::Dictionary{Int,Float64}) = s.cons_costs = costs
 _vars_costs!(s::_State, costs::Dictionary{Int,Float64}) = s.vars_costs = costs
 _values!(s::_State{T}, values::Dictionary{Int,T}) where T <: Number = s.values = values
 _tabu!(s::_State, tabu::Dictionary{Int,Int}) = s.tabu = tabu
+_optimizing!(s::_State) = s.optimizing = true
+_satisfying!(s::_State) = s.optimizing = false
 
 _cons_cost(s::_State, c::Int) = _cons_costs(s)[c]
 _var_cost(s::_State, x::Int) = _vars_costs(s)[x]
@@ -26,6 +32,7 @@ _var_cost!(s::_State, x::Int, cost::Float64) = _vars_costs(s)[x] = cost
 _value!(s::_State{T}, x::Int, val::T) where T <: Number = _values(s)[x] = val
 _decrease_tabu!(s::_State, x::Int) = _tabu(s)[x] -= 1
 _delete_tabu!(s::_State, x::Int) = delete!(_tabu(s), x)
+_empty_tabu!(s::_State) = empty!(_tabu(s))
 
 _length_tabu(s::_State) = length(_tabu(s))
 

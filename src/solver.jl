@@ -39,7 +39,7 @@ function Solver(
     settings::Settings = Settings(),
 ) where T <: Number
     vars, cons = zeros(Float64, get_variables(p)), zeros(Float64, get_constraints(p))
-    state = _State(values, vars, cons, Dictionary{Int,Int}())
+    state = _State(values, vars, cons, Dictionary{Int,Int}(), false, copy(values), nothing)
     make_settings!(settings)
     Solver(p, state, settings)
 end
@@ -71,7 +71,8 @@ end
 @forward Solver.state _cons_cost, _var_cost, _value
 @forward Solver.state _cons_cost!, _var_cost!, _value!
 @forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
-@forward Solver.state _set!, _swap_value!, _insert_tabu!
+@forward Solver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
+@forward Solver.state _optimizing, _optimizing!, _satisfying!
 
 # Forward from utils.jl (settings)
 @forward Solver.settings _verbose, Base.get!
@@ -277,20 +278,51 @@ function _sat_step!(s::Solver)
     return false # no satisfying configuration
 end
 
-function _satisfy!(s::Solver)
-    sat_loop = 0
-    sat = false
-    while sat_loop < setting(s, :iteration)
-        sat_loop += 1
-        _verbose(s, "\n\n\tLoop $sat_loop")
-        sat = _sat_step!(s) && break 
+function _step!(s::Solver)    
+        # Restart if stuck in a local minima # TODO: restart optimal
+        if rand() ≤ max(0, (_length_tabu(s) - setting(s, :local_tabu)) / setting(s, :δ_tabu))
+            _verbose(s, "\n============== RESTART!!!!================\n")
+            _draw!(s)
+            _optimizing(s) && return true # Local optimum with high likelyhood
+        end
+    
+        if _optimizing(s)
+            _compute_objective(s)
+        else
+            _compute_costs!(s)
+            sum(_cons_costs(s)) == 0.0 && return true # a solution has been found
+        end
+        _verbose(s, "Tabu list: $(_tabu(s))")
+    
+        # select worst variables
+        nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
+        x = _find_rand_argmax(view(_vars_costs(s), nontabu))
+        _verbose(s, "Selected x = $x")
+    
+        # Local move (change the value of the selected variable)
+        best_values, tabu = _local_move!(s, x)
+    
+        # If local move is bad (tabu), then try permutation
+        best_swap = Vector{Int}()
+        if tabu
+            best_swap, tabu = _permutation_move!(s, x)
+            _compute_costs!(s)
+        else
+            _compute_costs!(s; cons_lst=get_cons_from_var(s, x))
+        end
+    
+        # decay tabu list
+        _decay_tabu!(s)
+    
+        # update tabu list with either worst or selected variable
+        _insert_tabu!(s, x, tabu ? setting(s, :tabu_time) : setting(s, :local_tabu))
+        if isempty(best_swap)
+            _value!(s, x, rand(best_values))
+        else
+            _swap_value!(s, x, rand(best_swap))
+        end
+        return false # no satisfying configuration
     end
-    return sat, sat_loop
-end
-
-function _optimize!(s::Solver, opt_loop::Int)
-
-end
 
 """
     solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
@@ -305,9 +337,21 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s::Solver)
-    # TODO: rewrite with satisfy! and optimize!
+function solve!(s::Solver, iteration::Int = 0)
     _init_solve!(s)
-    has_solution, loop_count = _satisfy!(s)
-    !is_sat(s) && has_solution && _optimize!(s, loop_count)
+    # iteration = 0
+    satisfied = false
+    stage_str = _optimizing(s) ? "optimization" : "satisfaction"
+
+    while iteration < setting(s, :iteration)
+        iteration += 1
+        _verbose(s, "\n\n\tLoop $iteration ($stage_str)")
+        satisfied = _step!(s) && break 
+    end
+
+    if !is_sat(s) && iteration < setting(s, :iteration)
+        _optimizing(s) ? _satisfying!(s) : _optimizing!(s)
+        _empty_tabu!(s)
+        solve!(s, iteration)
+    end
 end
