@@ -279,11 +279,17 @@ end
 
 function _satisfy!(s::Solver)
     sat_loop = 0
+    sat = false
     while sat_loop < setting(s, :iteration)
         sat_loop += 1
         _verbose(s, "\n\n\tLoop $sat_loop")
-        _sat_step!(s) && break 
+        sat = _sat_step!(s) && break 
     end
+    return sat, sat_loop
+end
+
+function _optimize!(s::Solver, opt_loop::Int)
+
 end
 
 """
@@ -302,6 +308,6 @@ solve!(s, max_iteration = Inf, verbose = true)
 function solve!(s::Solver)
     # TODO: rewrite with satisfy! and optimize!
     _init_solve!(s)
-    _satisfy!(s)
-    !is_sat(s)
+    has_solution, loop_count = _satisfy!(s)
+    !is_sat(s) && has_solution && _optimize!(s, loop_count)
 end
