@@ -34,9 +34,9 @@ s = Solver{Int}(
 ```
 """
 function Solver(
-    p::Problem;
+    p::Problem,
+    settings::Settings=Settings();
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
-    settings::Settings = Settings(),
 ) where T <: Number
     vars, cons = zeros(Float64, get_variables(p)), zeros(Float64, get_constraints(p))
     state = _State(values, vars, cons, Dictionary{Int,Int}(), false, copy(values), nothing)
@@ -83,6 +83,7 @@ function specialize!(s::Solver)
 end
 
 setting(s::Solver, sym::Symbol) = s.settings[sym]
+# _settings(s::Solver) = s.settings
 
 ## Internal to solve! function
 function _draw!(s::Solver)
@@ -228,23 +229,26 @@ function _init_solve!(s::Solver)
     return nothing
 end
 
-function _sat_step!(s::Solver)
-# TODO rewrite with check on each var if > 0.0
+function _restart!(s::Solver, k=10)
+    _verbose(s, "\n============== RESTART!!!!================\n")
+    _draw!(s)
+    _empty_tabu!(s)
+    δ = ((k - 1) * setting(s, :δ_tabu) + setting(s, :tabu_time)) / k
+    push!(s.settings, :δ_tabu => δ)
+end
 
-    # Restart if stuck in a local minima # TODO: restart optimal
-    if rand() ≤ max(0, (_length_tabu(s) - setting(s, :local_tabu)) / setting(s, :δ_tabu))
-        _verbose(s, "\n============== RESTART!!!!================\n")
-        _draw!(s)
-    end
+function _check_restart(s::Solver)
+    return rand() ≤ (_length_tabu(s) - setting(s, :δ_tabu)) / setting(s, :local_tabu)
+end
 
-    _compute_costs!(s)
+function _step!(s::Solver)
+    _check_restart(s) && _restart!(s)
 
-    # _verbose("Initial constraints costs = $(s.state.cons_costs)", verbose)
-    # _verbose("Initial variables costs = $(s.state.vars_costs)", verbose)
-    # _verbose("values: " * string(values(s)), verbose)
-    # _print_sudoku(s)
-    if sum(_cons_costs(s)) == 0.0
-        return true # a solution has been found
+    if _optimizing(s)
+        _compute_objective(s)
+    else
+        _compute_costs!(s)
+        sum(_cons_costs(s)) == 0.0 && return true # a solution has been found
     end
     _verbose(s, "Tabu list: $(_tabu(s))")
 
@@ -278,52 +282,6 @@ function _sat_step!(s::Solver)
     return false # no satisfying configuration
 end
 
-function _step!(s::Solver)    
-        # Restart if stuck in a local minima # TODO: restart optimal
-        if rand() ≤ max(0, (_length_tabu(s) - setting(s, :local_tabu)) / setting(s, :δ_tabu))
-            _verbose(s, "\n============== RESTART!!!!================\n")
-            _draw!(s)
-            _optimizing(s) && return true # Local optimum with high likelyhood
-        end
-    
-        if _optimizing(s)
-            _compute_objective(s)
-        else
-            _compute_costs!(s)
-            sum(_cons_costs(s)) == 0.0 && return true # a solution has been found
-        end
-        _verbose(s, "Tabu list: $(_tabu(s))")
-    
-        # select worst variables
-        nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
-        x = _find_rand_argmax(view(_vars_costs(s), nontabu))
-        _verbose(s, "Selected x = $x")
-    
-        # Local move (change the value of the selected variable)
-        best_values, tabu = _local_move!(s, x)
-    
-        # If local move is bad (tabu), then try permutation
-        best_swap = Vector{Int}()
-        if tabu
-            best_swap, tabu = _permutation_move!(s, x)
-            _compute_costs!(s)
-        else
-            _compute_costs!(s; cons_lst=get_cons_from_var(s, x))
-        end
-    
-        # decay tabu list
-        _decay_tabu!(s)
-    
-        # update tabu list with either worst or selected variable
-        _insert_tabu!(s, x, tabu ? setting(s, :tabu_time) : setting(s, :local_tabu))
-        if isempty(best_swap)
-            _value!(s, x, rand(best_values))
-        else
-            _swap_value!(s, x, rand(best_swap))
-        end
-        return false # no satisfying configuration
-    end
-
 """
     solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -337,21 +295,25 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s::Solver, iteration::Int = 0)
+function solve!(s::Solver)
     _init_solve!(s)
-    # iteration = 0
-    satisfied = false
-    stage_str = _optimizing(s) ? "optimization" : "satisfaction"
+    sat = is_sat(s)
 
-    while iteration < setting(s, :iteration)
-        iteration += 1
-        _verbose(s, "\n\n\tLoop $iteration ($stage_str)")
-        satisfied = _step!(s) && break 
+    iter = 0
+    while iter < setting(s, :iteration)
+        iter += 1
+        _verbose(s, "\n\tLoop $iter ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+        sat && _step!(s) && break
     end
 
-    if !is_sat(s) && iteration < setting(s, :iteration)
-        _optimizing(s) ? _satisfying!(s) : _optimizing!(s)
-        _empty_tabu!(s)
-        solve!(s, iteration)
-    end
+    # if iteration < setting(s, :iteration)
+    #     if !is_sat(s) && satisfied
+    #         _optimizing(s) ? _satisfying!(s) : _optimizing!(s)
+    #     end
+    #     if !is_sat(s) || !satisfied
+    #         _verbose(s, "mark")
+    #         # _empty_tabu!(s)
+    #         # solve!(s, iteration)
+    #     end
+    # end
 end
