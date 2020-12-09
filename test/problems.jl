@@ -45,3 +45,6 @@ for p in problems
 end
 
 solve!(Solver(sudoku(3)))
+
+# describe(golomb(2))
+# golomb(2)
