@@ -176,7 +176,7 @@ function specialize(p::Problem)
     objs = similar(get_objectives(p), Objective{objs_union})
 
     foreach(x -> vars[x] = get_variable(p, x), keys(vars))
-    foreach(c -> cons[c] = get_constraint(p, c), keys(cons))
+    foreach(c -> cons[c] = Constraint(cons_union, get_constraint(p, c)), keys(cons))
     foreach(o -> objs[o] = get_objective(p, o), keys(objs))
 
     max_vars = Ref(_max_vars(p))

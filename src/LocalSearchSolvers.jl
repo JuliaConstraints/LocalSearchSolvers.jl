@@ -4,7 +4,7 @@ module LocalSearchSolvers
 
 # Imports
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
-import Base: ∈
+import Base: ∈, convert
 import Lazy: @forward
 
 # Exports internal
