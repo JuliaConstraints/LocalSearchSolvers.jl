@@ -3,8 +3,6 @@ struct Constraint{F <: Function}
     vars::Vector{Int}
 
     function Constraint(F, c::Constraint{F2}) where {F2 <: Function}
-        # println("I'm in")
-        # error("I'm in again")
         return new{F}(c.f, c.vars)
     end
     function Constraint(f::F, inds::AbstractVector{Int}, values::AbstractVector{T}

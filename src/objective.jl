@@ -3,6 +3,10 @@ struct Objective{F <: Function}
     f::F
 end
 
+function Objective(F, o::Objective{F2}) where {F2 <: Function}
+    return Objective{F}(o.name, o.f)
+end
+
 """
     objective(f::Function, name::AbstractString)
 Construct an objective with a function `f` that should be applied to a set of variables.
