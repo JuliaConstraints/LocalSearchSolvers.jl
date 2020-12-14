@@ -4,7 +4,7 @@ problems = [
 
 for p in problems
     println(describe(p))
-    s = Solver(p, Settings(:verbose => true, :iteration => 100))
+    s = Solver(p, Settings(:verbose => true, :iteration => Inf))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)

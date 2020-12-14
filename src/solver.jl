@@ -118,19 +118,17 @@ _compute_objective!(s::Solver, o::Objective) = _best!(s, o.f(_values(s).values..
 _compute_objective!(s::Solver, o::Int=1) = _compute_objective!(s, get_objective(s, o))
 
 function _compute!(s::Solver; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())
-    println("mark 1.1, error = $(_error(s)), sum = $(sum(_cons_costs(s)))")
     _compute_costs!(s, cons_lst=cons_lst)
-    println("mark 1.2, error = $(_error(s))")
     _optimizing(s) && _compute_objective!(s, o)
-    println("mark 1.3, error = $(_error(s))")
-    _error(s) == 0.0 ? println("it's true") : println("nope")
     return _error(s) == 0.0
 end
 
 function _move!(s::Solver, x::Int, dim::Int=0)
     best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
-    old_cost = _error(s)
+    best_cost = old_cost = _error(s)
+    old_vars_costs = copy(_vars_costs(s))
+    old_cons_costs = copy(_cons_costs(s))
     for v in _neighbours(s, x, dim)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
@@ -140,31 +138,30 @@ function _move!(s::Solver, x::Int, dim::Int=0)
             str *= dim == 0 ? "= $v" : "⇆ x_$v"
         end)
 
-        old_vars_costs = copy(_vars_costs(s))
-        old_cons_costs = copy(_cons_costs(s))
-
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)
 
         cost = _error(s)
-        if cost < old_cost
-            _verbose(s, "cost = $cost, old = $old_cost")
+        if cost < best_cost
+            _verbose(s, "cost = $cost < $best_cost")
             tabu = false
-            old_cost = cost
-            dim == 0 ? best_values : best_swap = [v]
-        elseif cost == old_cost
-            _verbose(s, "cost = old_cost = $cost")
+            best_cost = cost
+            dim == 0 ? best_values = [v] : best_swap = [v]
+        elseif cost == best_cost
+            _verbose(s, "cost = best_cost = $cost")
             push!(dim == 0 ? best_values : best_swap, v)
         end
 
-        _verbose(s, "")
-        _vars_costs!(s, old_vars_costs)
-        _cons_costs!(s, old_cons_costs)
+        # _verbose(s, "")
+        _vars_costs!(s, copy(old_vars_costs))
+        _cons_costs!(s, copy(old_cons_costs))
+        _error!(s, old_cost)
 
         # swap back the value of x and y
         dim == 0 || _swap_value!(s, x, v)
-        return dim == 0 ? best_values : best_swap, tabu
     end
+    # TODO: check return type consistency
+    return dim == 0 ? best_values : best_swap, tabu
 end
 
 function _init_solve!(s::Solver)
@@ -175,7 +172,7 @@ function _init_solve!(s::Solver)
 
     # draw initial values unless provided and set best_values
     isempty(_values(s)) && _draw!(s)
-    _verbose(s, "Initial values = ")
+    _verbose(s, "Initial values = $(_values(s))")
 
     # compute initial constraints and variables costs
     _compute!(s)
@@ -209,11 +206,9 @@ function _step!(s::Solver)
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
     # TODO: better than _optimizing!(s) ?
-    println("mark 1")
     if _compute!(s)
         !is_sat(s) ? _optimizing!(s) : return true
     end
-    println("mark 2")
 
     # select worst variables
     x = _select_worse(s)
