@@ -73,9 +73,9 @@ end
 @forward Solver.state _cons_cost!, _var_cost!, _value!
 @forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward Solver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
-@forward Solver.state _optimizing, _optimizing!, _satisfying!, _switch!
+@forward Solver.state _optimizing, _optimizing!, _satisfying!
 @forward Solver.state _best!, _best, _select_worse
-@forward Solver.state _error, _error!, _up_error!
+@forward Solver.state _error, _error!
 
 # Forward from utils.jl (settings)
 @forward Solver.settings _verbose, Base.get!
@@ -133,10 +133,7 @@ function _move!(s::Solver, x::Int, dim::Int=0)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
-        _verbose(s, begin
-            str = "Compute constraints and variables cost: selected variables x_$x "
-            str *= dim == 0 ? "= $v" : "⇆ x_$v"
-        end)
+        _verbose(s, "Compute costs: selected var(s) x_$x " * dim == 0 ? "= $v" : "⇆ x_$v")
 
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)

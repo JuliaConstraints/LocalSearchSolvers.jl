@@ -23,7 +23,7 @@ _values!(s::_State{T}, values::Dictionary{Int,T}) where T <: Number = s.values =
 _tabu!(s::_State, tabu::Dictionary{Int,Int}) = s.tabu = tabu
 _optimizing!(s::_State) = s.optimizing = true
 _satisfying!(s::_State) = s.optimizing = false
-_switch!(s::_State) = _optimizing(s) ? _satisfying!(s) : _optimizing!(s)
+# _switch!(s::_State) = _optimizing(s) ? _satisfying!(s) : _optimizing!(s)
 
 _cons_cost(s::_State, c::Int) = _cons_costs(s)[c]
 _var_cost(s::_State, x::Int) = _vars_costs(s)[x]
@@ -47,7 +47,7 @@ end
 
 _error!(s::_State, val::T) where {T <: Number} = s.error = val
 _error(s::_State) = s.error
-_up_error!(s::_State, old_v::T, v::T) where {T <: Number} = s.error += v - old_v
+# _up_error!(s::_State, old_v::T, v::T) where {T <: Number} = s.error += v - old_v
 
 function _insert_tabu!(s::_State, x::Int, tabu_time::Int)
     insert!(_tabu(s), x, max(1, tabu_time))
