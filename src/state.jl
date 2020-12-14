@@ -2,7 +2,7 @@ mutable struct _State{T <: Number} # TODO: make an abstract state type
     values::Dictionary{Int,T} # TODO: handle multiple value type
     vars_costs::Dictionary{Int,Float64}
     cons_costs::Dictionary{Int,Float64}
-    best_cost::Float64
+    error::Float64
     tabu::Dictionary{Int,Int}
     optimizing::Bool
     best_solution::Dictionary{Int,T}
@@ -45,9 +45,9 @@ function _best!(s::_State{T}, val::T) where {T <: Number}
     end
 end
 
-_best_cost!(s::_State, val::T) where {T <: Number} = s.best_cost = val
-_best_cost(s::_State) = s.best_cost
-_up_best_cost!(s::_State, old_v::T, v::T) where {T <: Number} = s.best_cost += v - old_v
+_error!(s::_State, val::T) where {T <: Number} = s.error = val
+_error(s::_State) = s.error
+_up_error!(s::_State, old_v::T, v::T) where {T <: Number} = s.error += v - old_v
 
 function _insert_tabu!(s::_State, x::Int, tabu_time::Int)
     insert!(_tabu(s), x, tabu_time)

@@ -75,7 +75,7 @@ end
 @forward Solver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
 @forward Solver.state _optimizing, _optimizing!, _satisfying!, _switch!
 @forward Solver.state _best!, _best, _select_worse
-@forward Solver.state _best_cost, _best_cost!, _up_best_cost!
+@forward Solver.state _error, _error!, _up_error!
 
 # Forward from utils.jl (settings)
 @forward Solver.settings _verbose, Base.get!
@@ -98,7 +98,7 @@ function _compute_cost!(s::Solver, ind::Int, c::Constraint)
     old_cost = _cons_cost(s, ind)
     new_cost = c.f(map(x -> _value(s, x), c.vars)...)
     _cons_cost!(s, ind, new_cost)
-    _up_best_cost!(s, old_cost, new_cost)
+    # _up_error!(s, old_cost, new_cost) TODO: make it right
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
 
@@ -111,21 +111,26 @@ function _compute_costs!(s::Solver; cons_lst::Indices{Int}=Indices{Int}())
             pairs(view(get_constraints(s), cons_lst))
         )
     end
+    _error!(s, sum(_cons_costs(s)))
 end
 
 _compute_objective!(s::Solver, o::Objective) = _best!(s, o.f(_values(s).values...))
 _compute_objective!(s::Solver, o::Int=1) = _compute_objective!(s, get_objective(s, o))
 
 function _compute!(s::Solver; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())
+    println("mark 1.1, error = $(_error(s)), sum = $(sum(_cons_costs(s)))")
     _compute_costs!(s, cons_lst=cons_lst)
+    println("mark 1.2, error = $(_error(s))")
     _optimizing(s) && _compute_objective!(s, o)
-    return _best_cost(s) == 0.0
+    println("mark 1.3, error = $(_error(s))")
+    _error(s) == 0.0 ? println("it's true") : println("nope")
+    return _error(s) == 0.0
 end
 
 function _move!(s::Solver, x::Int, dim::Int=0)
     best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
-    old_cost = _best_cost(s)
+    old_cost = _error(s)
     for v in _neighbours(s, x, dim)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
@@ -141,7 +146,7 @@ function _move!(s::Solver, x::Int, dim::Int=0)
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)
 
-        cost = _best_cost(s)
+        cost = _error(s)
         if cost < old_cost
             _verbose(s, "cost = $cost, old = $old_cost")
             tabu = false
@@ -173,7 +178,7 @@ function _init_solve!(s::Solver)
     _verbose(s, "Initial values = ")
 
     # compute initial constraints and variables costs
-    _compute_costs!(s)
+    _compute!(s)
     _verbose(s, "Initial constraints costs = $(s.state.cons_costs)")
     _verbose(s, "Initial variables costs = $(s.state.vars_costs)")
 
@@ -204,7 +209,11 @@ function _step!(s::Solver)
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
     # TODO: better than _optimizing!(s) ?
-    _compute!(s) && !is_sat(s) ? _optimizing!(s) : return true
+    println("mark 1")
+    if _compute!(s)
+        !is_sat(s) ? _optimizing!(s) : return true
+    end
+    println("mark 2")
 
     # select worst variables
     x = _select_worse(s)
@@ -233,6 +242,9 @@ function _step!(s::Solver)
         _swap_value!(s, x, rand(best_swap))
     end
     _verbose(s, "Tabu list: $(_tabu(s))")
+
+    _error!(s, sum(_cons_costs(s)))
+
     return false # no satisfying configuration or optimizing
 end
 

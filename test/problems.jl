@@ -4,7 +4,7 @@ problems = [
 
 for p in problems
     println(describe(p))
-    s = Solver(p, Settings(:verbose => true, :iteration => Inf))
+    s = Solver(p, Settings(:verbose => true, :iteration => 100))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)
@@ -44,9 +44,9 @@ for p in problems
     LocalSearchSolvers._values!(s, Dictionary{Int, Number}())
 end
 
-solve!(Solver(sudoku(3)))
+# solve!(Solver(sudoku(3), Settings(:verbose => true)))
 
-# println(describe(golomb(10)))
-s = Solver(golomb(2), Settings(:verbose => true, :iteration => 20))
-solve!(s)
-println(s.state.values)
+# # println(describe(golomb(10)))
+# s = Solver(golomb(2), Settings(:verbose => true, :iteration => 20))
+# solve!(s)
+# println(s.state.values)
