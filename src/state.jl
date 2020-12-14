@@ -50,7 +50,7 @@ _error(s::_State) = s.error
 _up_error!(s::_State, old_v::T, v::T) where {T <: Number} = s.error += v - old_v
 
 function _insert_tabu!(s::_State, x::Int, tabu_time::Int)
-    insert!(_tabu(s), x, tabu_time)
+    insert!(_tabu(s), x, max(1, tabu_time))
 end
 
 function _decay_tabu!(s::_State)

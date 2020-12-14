@@ -44,9 +44,9 @@ for p in problems
     LocalSearchSolvers._values!(s, Dictionary{Int, Number}())
 end
 
-# solve!(Solver(sudoku(3), Settings(:verbose => true)))
+solve!(Solver(sudoku(3), Settings(:verbose => false)))
 
 # # println(describe(golomb(10)))
-# s = Solver(golomb(2), Settings(:verbose => true, :iteration => 20))
-# solve!(s)
-# println(s.state.values)
+s = Solver(golomb(4), Settings(:verbose => true, :iteration => 20))
+solve!(s)
+println(s.state.values)

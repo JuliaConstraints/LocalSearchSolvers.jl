@@ -200,16 +200,6 @@ function _check_restart(s::Solver)
 end
 
 function _step!(s::Solver)
-    # Restart if necessary
-    _check_restart(s) && _restart!(s)
-
-    # Compute costs and possibly evaluate objective functions
-    # return true if a solution for sat is found
-    # TODO: better than _optimizing!(s) ?
-    if _compute!(s)
-        !is_sat(s) ? _optimizing!(s) : return true
-    end
-
     # select worst variables
     x = _select_worse(s)
     _verbose(s, "Selected x = $x")
@@ -238,7 +228,15 @@ function _step!(s::Solver)
     end
     _verbose(s, "Tabu list: $(_tabu(s))")
 
-    _error!(s, sum(_cons_costs(s)))
+    # Compute costs and possibly evaluate objective functions
+    # return true if a solution for sat is found
+    # TODO: better than _optimizing!(s) ?
+    if _compute!(s)
+        !is_sat(s) ? _optimizing!(s) : return true
+    end
+
+    # Restart if necessary
+    _check_restart(s) && _restart!(s)
 
     return false # no satisfying configuration or optimizing
 end
