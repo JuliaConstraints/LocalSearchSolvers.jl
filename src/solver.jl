@@ -133,7 +133,7 @@ function _move!(s::Solver, x::Int, dim::Int=0)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
-        _verbose(s, "Compute costs: selected var(s) x_$x " * dim == 0 ? "= $v" : "⇆ x_$v")
+        _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
 
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)
