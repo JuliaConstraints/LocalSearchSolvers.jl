@@ -19,8 +19,9 @@ export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 # Exports Problem
 export Problem, sudoku, golomb
 
-# Exports error/predicate functions
+# Exports error/predicate/objective functions
 export all_different, dist_different
+export dist_extrema
 
 # Exports Solver
 export Solver, solve!, specialize, specialize!, Settings
