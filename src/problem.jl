@@ -129,13 +129,17 @@ function describe(p::Problem) # TODO: rewrite _describe
 end
 
 # Neighbours
-function _neighbours(p::Problem, x::Int)
-    neighbours = Set{Int}()
-    foreach(
-        c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(p, c)),
-        get_cons_from_var(p, x)
-    )
-    return delete!(neighbours, x)
+function _neighbours(p::Problem, x::Int, dim::Int = 0)
+    if dim == 0
+        return get_domain(p, x)
+    else
+        neighbours = Set{Int}()
+        foreach(
+            c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(p, c)),
+            get_cons_from_var(p, x)
+        )
+        return delete!(neighbours, x)
+    end
 end
 
 """

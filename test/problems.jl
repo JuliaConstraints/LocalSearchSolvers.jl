@@ -1,5 +1,5 @@
 problems = [
-    # sudoku(2),
+    sudoku(2),
 ]
 
 for p in problems
@@ -44,7 +44,7 @@ for p in problems
     LocalSearchSolvers._values!(s, Dictionary{Int, Number}())
 end
 
-# solve!(Solver(sudoku(3)))
+solve!(Solver(sudoku(3)))
 
 # println(describe(golomb(10)))
 s = Solver(golomb(2), Settings(:verbose => true, :iteration => 20))

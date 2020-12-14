@@ -20,3 +20,19 @@ end
 
 # # conserve or insert
 # consert!(d::Dict, k, v) = k ∉ keys(d) && insert!(d, k, v)
+
+# rand argmax
+function _find_rand_argmax(d::DictionaryView{Int,Float64})
+    max = -Inf
+    argmax = Vector{Int}()
+    for (k, v) in pairs(d)
+        if v > max
+            max = v
+            argmax = [k]
+        elseif v == max
+            push!(argmax, k)
+        end
+    end
+    # println("argmax : $argmax\n") # TODO: verbose/log
+    return rand(argmax)
+end

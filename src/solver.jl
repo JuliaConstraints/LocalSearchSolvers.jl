@@ -39,7 +39,8 @@ function Solver(
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where T <: Number
     vars, cons = zeros(Float64, get_variables(p)), zeros(Float64, get_constraints(p))
-    state = _State(values, vars, cons, Dictionary{Int,Int}(), false, copy(values), nothing)
+    val, tabu = zero(Float64), Dictionary{Int,Int}()
+    state = _State(values, vars, cons, val, tabu, false, copy(values), nothing)
     make_settings!(settings)
     Solver(p, state, settings)
 end
@@ -72,7 +73,9 @@ end
 @forward Solver.state _cons_cost!, _var_cost!, _value!
 @forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward Solver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
-@forward Solver.state _optimizing, _optimizing!, _satisfying!
+@forward Solver.state _optimizing, _optimizing!, _satisfying!, _switch!
+@forward Solver.state _best!, _best, _select_worse
+@forward Solver.state _best_cost, _best_cost!, _up_best_cost!
 
 # Forward from utils.jl (settings)
 @forward Solver.settings _verbose, Base.get!
@@ -95,6 +98,7 @@ function _compute_cost!(s::Solver, ind::Int, c::Constraint)
     old_cost = _cons_cost(s, ind)
     new_cost = c.f(map(x -> _value(s, x), c.vars)...)
     _cons_cost!(s, ind, new_cost)
+    _up_best_cost!(s, old_cost, new_cost)
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
 
@@ -109,102 +113,53 @@ function _compute_costs!(s::Solver; cons_lst::Indices{Int}=Indices{Int}())
     end
 end
 
-# rand argmax # TODO: move it somewhere else ?
-function _find_rand_argmax(d::DictionaryView{Int,Float64})
-    max = -Inf
-    argmax = Vector{Int}()
-    for (k, v) in pairs(d)
-        if v > max
-            max = v
-            argmax = [k]
-        elseif v == max
-            push!(argmax, k)
-        end
-    end
-    # println("argmax : $argmax\n") # TODO: verbose/log
-    return rand(argmax)
+_compute_objective!(s::Solver, o::Objective) = _best!(s, o.f(_values(s).values...))
+_compute_objective!(s::Solver, o::Int=1) = _compute_objective!(s, get_objective(s, o))
+
+function _compute!(s::Solver; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())
+    _compute_costs!(s, cons_lst=cons_lst)
+    _optimizing(s) && _compute_objective!(s, o)
+    return _best_cost(s) == 0.0
 end
 
-# Local move
-function _local_move!(s::Solver, x::Int)
-    old_v = _value(s, x)
-    old_cost = sum(_cons_costs(s))
+function _move!(s::Solver, x::Int, dim::Int=0)
+    best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
+    tabu = true # unless proved otherwise, this variable is now tabu
+    old_cost = _best_cost(s)
+    for v in _neighbours(s, x, dim)
+        dim == 0 && v == old_v && continue
+        dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
-    best_values = [old_v]
-    tabu = true
-    for v in get_domain(s, x)
-        if v == old_v
-            continue
-        end
-        # change the value of x
-        _value!(s, x, v)
+        _verbose(s, begin
+            str = "Compute constraints and variables cost: selected variables x_$x "
+            str *= dim == 0 ? "= $v" : "⇆ x_$v"
+        end)
 
-        # compute costs over constraints and variables involved by the changes of x
-        _verbose(s, "Compute constraints and variables cost: selected variable x_$x = $v")
         old_vars_costs = copy(_vars_costs(s))
         old_cons_costs = copy(_cons_costs(s))
-        _compute_costs!(s; cons_lst=get_cons_from_var(s, x))
-        # _verbose("values: " * string(values(s)), verbose)
-        # _verbose("variables costs = $(vars_cost(s))", verbose)
-        # _verbose("constraints costs = $(cons_cost(s))", verbose)
-        # _print_sudoku(s)
-        cost = sum(_cons_costs(s))
+
+        cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
+        _compute!(s, cons_lst=cons_x_v)
+
+        cost = _best_cost(s)
         if cost < old_cost
             _verbose(s, "cost = $cost, old = $old_cost")
             tabu = false
             old_cost = cost
-            best_values = [v]
+            dim == 0 ? best_values : best_swap = [v]
         elseif cost == old_cost
             _verbose(s, "cost = old_cost = $cost")
-            old_cost = cost
-            push!(best_values, v)
+            push!(dim == 0 ? best_values : best_swap, v)
         end
-        _verbose(s, "")
-        _vars_costs!(s, old_vars_costs)
-        _cons_costs!(s, old_cons_costs)
-    end
-    return best_values, tabu
-end
 
-function _permutation_move!(s::Solver, x::Int)
-    old_cost = sum(_cons_costs(s))
-
-    best_swap = [x]
-    tabu = true
-    for y in _neighbours(s, x)
-        # swap the value of x and y
-        _swap_value!(s, x, y)
-
-        # compute costs over constraints and variables involved by the changes of x
-        _verbose(s,
-            "Compute constraints and variables cost: selected variables x_$x ⇆ x_$y")
-        old_vars_costs = copy(_vars_costs(s))
-        old_cons_costs = copy(_cons_costs(s))
-        cons_x_y = union(get_cons_from_var(s, x), get_cons_from_var(s, y))
-        _compute_costs!(s; cons_lst=cons_x_y)
-        # _verbose("values: " * string(values(s)), verbose)
-        # _verbose("variables costs = $(vars_cost(s))", verbose)
-        # _verbose("constraints costs = $(cons_cost(s))", verbose)
-        # _print_sudoku(s)
-        cost = sum(_cons_costs(s))
-        if cost < old_cost
-            _verbose(s, "cost = $cost, old = $old_cost")
-            tabu = false
-            old_cost = cost
-            best_swap = [y]
-        elseif cost == old_cost
-            _verbose(s, "cost = old_cost = $cost")
-            old_cost = cost
-            push!(best_swap, y)
-        end
         _verbose(s, "")
         _vars_costs!(s, old_vars_costs)
         _cons_costs!(s, old_cons_costs)
 
         # swap back the value of x and y
-        _swap_value!(s, x, y)
+        dim == 0 || _swap_value!(s, x, v)
+        return dim == 0 ? best_values : best_swap, tabu
     end
-    return best_swap, tabu
 end
 
 function _init_solve!(s::Solver)
@@ -235,6 +190,7 @@ function _restart!(s::Solver, k=10)
     _empty_tabu!(s)
     δ = ((k - 1) * setting(s, :δ_tabu) + setting(s, :tabu_time)) / k
     push!(s.settings, :δ_tabu => δ)
+    _optimizing(s) && _satisfying!(s)
 end
 
 function _check_restart(s::Solver)
@@ -242,31 +198,28 @@ function _check_restart(s::Solver)
 end
 
 function _step!(s::Solver)
+    # Restart if necessary
     _check_restart(s) && _restart!(s)
 
-    if _optimizing(s)
-        _compute_objective(s)
-    else
-        _compute_costs!(s)
-        sum(_cons_costs(s)) == 0.0 && return true # a solution has been found
-    end
-    _verbose(s, "Tabu list: $(_tabu(s))")
+    # Compute costs and possibly evaluate objective functions
+    # return true if a solution for sat is found
+    # TODO: better than _optimizing!(s) ?
+    _compute!(s) && !is_sat(s) ? _optimizing!(s) : return true
 
     # select worst variables
-    nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
-    x = _find_rand_argmax(view(_vars_costs(s), nontabu))
+    x = _select_worse(s)
     _verbose(s, "Selected x = $x")
 
     # Local move (change the value of the selected variable)
-    best_values, tabu = _local_move!(s, x)
+    best_values, tabu = _move!(s, x)
 
     # If local move is bad (tabu), then try permutation
     best_swap = Vector{Int}()
     if tabu
-        best_swap, tabu = _permutation_move!(s, x)
-        _compute_costs!(s)
-    else
-        _compute_costs!(s; cons_lst=get_cons_from_var(s, x))
+        best_swap, tabu = _move!(s, x, 1)
+        _compute!(s)
+    else # compute the costs changes from best local move
+        _compute!(s; cons_lst=get_cons_from_var(s, x))
     end
 
     # decay tabu list
@@ -279,7 +232,8 @@ function _step!(s::Solver)
     else
         _swap_value!(s, x, rand(best_swap))
     end
-    return false # no satisfying configuration
+    _verbose(s, "Tabu list: $(_tabu(s))")
+    return false # no satisfying configuration or optimizing
 end
 
 """
@@ -303,17 +257,6 @@ function solve!(s::Solver)
     while iter < setting(s, :iteration)
         iter += 1
         _verbose(s, "\n\tLoop $iter ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-        sat && _step!(s) && break
+        _step!(s) && sat && break
     end
-
-    # if iteration < setting(s, :iteration)
-    #     if !is_sat(s) && satisfied
-    #         _optimizing(s) ? _satisfying!(s) : _optimizing!(s)
-    #     end
-    #     if !is_sat(s) || !satisfied
-    #         _verbose(s, "mark")
-    #         # _empty_tabu!(s)
-    #         # solve!(s, iteration)
-    #     end
-    # end
 end
