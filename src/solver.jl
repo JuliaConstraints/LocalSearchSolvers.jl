@@ -119,8 +119,8 @@ _compute_objective!(s::Solver, o::Int=1) = _compute_objective!(s, get_objective(
 
 function _compute!(s::Solver; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
-    _optimizing(s) && _compute_objective!(s, o)
-    return _error(s) == 0.0
+    (sat = _error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
+    return sat
 end
 
 function _move!(s::Solver, x::Int, dim::Int=0)
@@ -154,11 +154,10 @@ function _move!(s::Solver, x::Int, dim::Int=0)
         _cons_costs!(s, copy(old_cons_costs))
         _error!(s, old_cost)
 
-        # swap back the value of x and y
-        dim == 0 || _swap_value!(s, x, v)
+        # swap/change back the value of x (and y/)
+        dim == 0 ? _value!(s, x, old_v) : _swap_value!(s, x, v)
     end
-    # TODO: check return type consistency
-    return dim == 0 ? best_values : best_swap, tabu
+    return best_values, best_swap, tabu
 end
 
 function _init_solve!(s::Solver)
@@ -172,7 +171,7 @@ function _init_solve!(s::Solver)
     _verbose(s, "Initial values = $(_values(s))")
 
     # compute initial constraints and variables costs
-    _compute!(s)
+    sat = _compute!(s)
     _verbose(s, "Initial constraints costs = $(s.state.cons_costs)")
     _verbose(s, "Initial variables costs = $(s.state.vars_costs)")
 
@@ -180,7 +179,7 @@ function _init_solve!(s::Solver)
     get!(s, :tabu_time, length_vars(s) ÷ 2) # 10?
     get!(s, :local_tabu, setting(s, :tabu_time) ÷ 2)
     get!(s, :δ_tabu, setting(s, :tabu_time) - setting(s, :local_tabu))# 20-30
-    return nothing
+    return sat
 end
 
 function _restart!(s::Solver, k=10)
@@ -202,12 +201,12 @@ function _step!(s::Solver)
     _verbose(s, "Selected x = $x")
 
     # Local move (change the value of the selected variable)
-    best_values, tabu = _move!(s, x)
+    best_values, best_swap, tabu = _move!(s, x)    
+    # _compute!(s)
 
     # If local move is bad (tabu), then try permutation
-    best_swap = Vector{Int}()
     if tabu
-        best_swap, tabu = _move!(s, x, 1)
+        _, best_swap, tabu = _move!(s, x, 1)
         _compute!(s)
     else # compute the costs changes from best local move
         _compute!(s; cons_lst=get_cons_from_var(s, x))
@@ -218,12 +217,15 @@ function _step!(s::Solver)
 
     # update tabu list with either worst or selected variable
     _insert_tabu!(s, x, tabu ? setting(s, :tabu_time) : setting(s, :local_tabu))
-    if isempty(best_swap)
+    if x ∈ best_swap
+        _verbose(s, "using value change")
         _value!(s, x, rand(best_values))
     else
+        _verbose(s, "using variable swap")
         _swap_value!(s, x, rand(best_swap))
     end
     _verbose(s, "Tabu list: $(_tabu(s))")
+    _verbose(s, "best_values: $best_values\nbest_swap : $best_swap")
 
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
@@ -252,13 +254,13 @@ solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
 function solve!(s::Solver)
-    _init_solve!(s)
-    sat = is_sat(s)
-
     iter = 0
+    sat = is_sat(s)
+    _init_solve!(s) && (sat ? (iter = Inf) : _optimizing!(s))
     while iter < setting(s, :iteration)
         iter += 1
         _verbose(s, "\n\tLoop $iter ($(_optimizing(s) ? "optimization" : "satisfaction"))")
         _step!(s) && sat && break
+        _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
     end
 end

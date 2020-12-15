@@ -1,9 +1,11 @@
-function golomb(n::Int, L::Int=n^2)
+function golomb(n::Int, L::Int=n^2)    
+    d_0 = domain([0])
     d = domain(Vector{Int}(0:L))
     p = Problem()
 
     # Add variables
-    foreach(_ -> variable!(p, d), 1:n)
+    variable!(p, d_0)
+    foreach(_ -> variable!(p, d), 2:n)
 
     # # Add constraints
     constraint!(p, all_different, 1:n)

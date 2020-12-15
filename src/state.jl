@@ -40,8 +40,10 @@ _length_tabu(s::_State) = length(_tabu(s))
 
 function _best!(s::_State{T}, val::T) where {T <: Number}
     if isnothing(_best(s)) || val < _best(s)
+        println("Before: val = $(s.best_solution_value), vals = $(!isnothing(_best(s)) ? s.best_solution : nothing)")
         s.best_solution_value = val
-        s.best_solution = s.values
+        s.best_solution = copy(s.values)
+        println("After: val = $(s.best_solution_value), vals = $(s.best_solution)")
     end
 end
 
@@ -70,6 +72,7 @@ function _swap_value!(s::_State, x::Int, y::Int)
     _value!(s, y, aux)
 end
 
+# TODO: specialize for opt
 function _select_worse(s::_State)
     nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
