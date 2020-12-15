@@ -12,7 +12,7 @@ _get_constraints(x::Variable) = x.constraints
 _get_name(x::Variable) = x.name
 
 # Constraint related Methods
-_add_to_constraint!(x::Variable, id::Int) = insert!(_get_constraints(x), id)
+_add_to_constraint!(x::Variable, id::Int) = set!(_get_constraints(x), id)
 _delete_from_constraint!(x::Variable, id::Int) = delete!(x.constraints, id)
 _constriction(x::Variable) = length(x.constraints)
 ∈(x::Variable, constraint::Int) = constraint ∈ x.constraints

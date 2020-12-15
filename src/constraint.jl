@@ -2,6 +2,9 @@ struct Constraint{F <: Function}
     f::F
     vars::Vector{Int}
 
+    function Constraint(F, c::Constraint{F2}) where {F2 <: Function}
+        return new{F}(c.f, c.vars)
+    end
     function Constraint(f::F, inds::AbstractVector{Int}, values::AbstractVector{T}
         ) where {T <: Number,F <: Function}
         aux_values = [values[id] for id in inds]
@@ -38,6 +41,9 @@ function constraint(f::F, inds::AbstractVector{Int}, vars::Dictionary{Int,Variab
 ) where {F <: Function}
     Constraint(f, inds, vars)
 end
+
+# convert
+# convert(::Type{Constraint{F}}, c::Constraint) where {F <: Function} = Constraint(F,c)
 
 # Methods
 

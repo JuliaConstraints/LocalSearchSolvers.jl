@@ -4,7 +4,7 @@ problems = [
 
 for p in problems
     println(describe(p))
-    s = Solver(p)
+    s = Solver(p, Settings(:verbose => true, :iteration => Inf))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)
@@ -34,7 +34,7 @@ for p in problems
         delete_var_from_cons!(s, c, 17)
         @test length_cons(s, c) == 4
     end
-    solve!(s, verbose = true)
+    solve!(s)
 
     # TODO: temp patch for coverage, make it nice
     for x in keys(LocalSearchSolvers._tabu(s))
@@ -44,4 +44,15 @@ for p in problems
     LocalSearchSolvers._values!(s, Dictionary{Int, Number}())
 end
 
-solve!(Solver(sudoku(3)))
+solve!(Solver(sudoku(3), Settings(:verbose => false)))
+
+# # println(describe(golomb(10)))
+s = Solver(golomb(6), Settings(:verbose => false, :iteration => 1000))
+solve!(s)
+
+println("\nResults!")
+println("Values: $(s.state.values)")
+println("Sol (val): $(s.state.best_solution_value)")
+println("Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)")
+
+

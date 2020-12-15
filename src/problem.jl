@@ -129,13 +129,17 @@ function describe(p::Problem) # TODO: rewrite _describe
 end
 
 # Neighbours
-function _neighbours(p::Problem, x::Int)
-    neighbours = Set{Int}()
-    foreach(
-        c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(p, c)),
-        get_cons_from_var(p, x)
-    )
-    return delete!(neighbours, x)
+function _neighbours(p::Problem, x::Int, dim::Int = 0)
+    if dim == 0
+        return get_domain(p, x)
+    else
+        neighbours = Set{Int}()
+        foreach(
+            c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(p, c)),
+            get_cons_from_var(p, x)
+        )
+        return delete!(neighbours, x)
+    end
 end
 
 """
@@ -176,8 +180,8 @@ function specialize(p::Problem)
     objs = similar(get_objectives(p), Objective{objs_union})
 
     foreach(x -> vars[x] = get_variable(p, x), keys(vars))
-    foreach(c -> cons[c] = get_constraint(p, c), keys(cons))
-    foreach(o -> objs[o] = get_objective(p, o), keys(objs))
+    foreach(c -> cons[c] = Constraint(cons_union, get_constraint(p, c)), keys(cons))
+    foreach(o -> objs[o] = Objective(objs_union, get_objective(p, o)), keys(objs))
 
     max_vars = Ref(_max_vars(p))
     max_cons = Ref(_max_cons(p))
