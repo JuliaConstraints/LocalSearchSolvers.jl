@@ -201,7 +201,7 @@ function _step!(s::Solver)
     _verbose(s, "Selected x = $x")
 
     # Local move (change the value of the selected variable)
-    best_values, best_swap, tabu = _move!(s, x)    
+    best_values, best_swap, tabu = _move!(s, x)
     # _compute!(s)
 
     # If local move is bad (tabu), then try permutation
@@ -218,10 +218,8 @@ function _step!(s::Solver)
     # update tabu list with either worst or selected variable
     _insert_tabu!(s, x, tabu ? setting(s, :tabu_time) : setting(s, :local_tabu))
     if x ∈ best_swap
-        _verbose(s, "using value change")
         _value!(s, x, rand(best_values))
     else
-        _verbose(s, "using variable swap")
         _swap_value!(s, x, rand(best_swap))
     end
     _verbose(s, "Tabu list: $(_tabu(s))")

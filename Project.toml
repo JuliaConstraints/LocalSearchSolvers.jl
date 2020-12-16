@@ -4,8 +4,11 @@ authors = ["Jean-Francois Baffier"]
 version = "0.1.1"
 
 [deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 
 [compat]
 Dictionaries = "0.3.5, 0.3"

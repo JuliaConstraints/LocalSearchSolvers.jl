@@ -47,12 +47,10 @@ end
 solve!(Solver(sudoku(3), Settings(:verbose => false)))
 
 # # println(describe(golomb(10)))
-s = Solver(golomb(6), Settings(:verbose => false, :iteration => 1000))
+s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)
 
 println("\nResults!")
 println("Values: $(s.state.values)")
 println("Sol (val): $(s.state.best_solution_value)")
 println("Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)")
-
-
