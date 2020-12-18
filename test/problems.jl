@@ -3,7 +3,7 @@ problems = [
 ]
 
 for p in problems
-    println(describe(p))
+    @info describe(p)
     s = Solver(p, Settings(:verbose => true, :iteration => Inf))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
@@ -46,13 +46,12 @@ end
 
 solve!(Solver(sudoku(3), Settings(:verbose => false)))
 
-# # println(describe(golomb(10)))
-s = Solver(golomb(6), Settings(:verbose => false, :iteration => 1000))
+s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)
 
-println("\nResults!")
-println("Values: $(s.state.values)")
-println("Sol (val): $(s.state.best_solution_value)")
-println("Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)")
+@info "Results!"
+@info "Values: $(s.state.values)"
+@info "Sol (val): $(s.state.best_solution_value)"
+@info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
 
 

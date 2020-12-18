@@ -217,19 +217,19 @@ function _step!(s::Solver)
 
     # update tabu list with either worst or selected variable
     _insert_tabu!(s, x, tabu ? setting(s, :tabu_time) : setting(s, :local_tabu))
-    if x ∈ best_swap
-        _verbose(s, "using value change")
-        _value!(s, x, rand(best_values))
-    else
-        _verbose(s, "using variable swap")
-        _swap_value!(s, x, rand(best_swap))
-    end
     _verbose(s, "Tabu list: $(_tabu(s))")
-    _verbose(s, "best_values: $best_values\nbest_swap : $best_swap")
+
+    # Select the best move (value or swap)
+    if x ∈ best_swap
+        _value!(s, x, rand(best_values))
+        _verbose(s, "best_values: $best_values")
+    else
+        _swap_value!(s, x, rand(best_swap))
+        _verbose(s, "best_swap : $best_swap")
+    end
 
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
-    # TODO: better than _optimizing!(s) ?
     if _compute!(s)
         !is_sat(s) ? _optimizing!(s) : return true
     end

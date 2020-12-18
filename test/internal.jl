@@ -77,7 +77,7 @@ end
 # TODO: update tests
 # p = Problem(variables=vars, objectives=objs, constraints=cons)
 p = Problem()
-describe(p)
+@test_logs describe(p)
 
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
@@ -115,7 +115,7 @@ delete_value!(p, 1, 1)
 add_value!(p, 1, 1)
 delete_var_from_cons!(p, 1, 1)
 add_var_to_cons!(p, 1, 1)
-println(describe(p))
+@test_logs describe(p)
 
 ## Test Solver
 s1 = Solver()

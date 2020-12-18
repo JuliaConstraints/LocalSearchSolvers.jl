@@ -40,16 +40,13 @@ _length_tabu(s::_State) = length(_tabu(s))
 
 function _best!(s::_State{T}, val::T) where {T <: Number}
     if isnothing(_best(s)) || val < _best(s)
-        println("Before: val = $(s.best_solution_value), vals = $(!isnothing(_best(s)) ? s.best_solution : nothing)")
         s.best_solution_value = val
         s.best_solution = copy(s.values)
-        println("After: val = $(s.best_solution_value), vals = $(s.best_solution)")
     end
 end
 
 _error!(s::_State, val::T) where {T <: Number} = s.error = val
 _error(s::_State) = s.error
-# _up_error!(s::_State, old_v::T, v::T) where {T <: Number} = s.error += v - old_v
 
 function _insert_tabu!(s::_State, x::Int, tabu_time::Int)
     insert!(_tabu(s), x, max(1, tabu_time))
