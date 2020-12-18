@@ -1,6 +1,6 @@
 function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     N = n^2
-    d = domain(Vector{Int}(1:N))
+    d = domain(1:N)
 
     p = Problem()
     # p = problem(vars_types = Int)
@@ -9,7 +9,7 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     foreach(_ -> variable!(p, d), 1:(N^2))
 
     # Add constraints: line, columns; blocks
-    foreach(i -> constraint!(p, all_different, Vector{Int}((i * N + 1):((i + 1) * N))), 0:(N - 1))
+    foreach(i -> constraint!(p, all_different, (i * N + 1):((i + 1) * N)), 0:(N - 1))
     foreach(i -> constraint!(p, all_different, [j * N + i for j in 0:(N - 1)]), 1:N)
 
     for i in 0:(n - 1)

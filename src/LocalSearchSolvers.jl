@@ -20,7 +20,7 @@ export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 export Problem, sudoku, golomb
 
 # Exports error/predicate/objective functions
-export all_different, dist_different
+export all_different, dist_different, all_equal
 export dist_extrema
 
 # Exports Solver
@@ -48,6 +48,7 @@ include("problems/cut.jl")
 # Include usual constraints
 include("constraints/all_different.jl")
 include("constraints/dist_different.jl")
+include("constraints/equal.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
