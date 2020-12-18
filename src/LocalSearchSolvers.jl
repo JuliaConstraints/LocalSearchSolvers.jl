@@ -6,6 +6,8 @@ module LocalSearchSolvers
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
 import Base: ∈, convert
 import Lazy: @forward
+import Logging: @logmsg, LogLevel
+import Base.CoreLogging: show
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -26,7 +28,11 @@ export dist_extrema
 # Exports Solver
 export Solver, solve!, specialize, specialize!, Settings
 
-# Include utils
+# Exports logging utilities
+export @verbose, @state
+
+# Include utils, logging, etc.
+include("logging.jl")
 include("utils.jl")
 
 # Include internal structures
@@ -40,15 +46,15 @@ include("problem.jl")
 include("state.jl")
 include("solver.jl")
 
-# Include specific problems
-include("problems/sudoku.jl")
-include("problems/golomb.jl")
-
 # Include usual constraints
 include("constraints/all_different.jl")
 include("constraints/dist_different.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
+
+# Include specific problems
+include("problems/sudoku.jl")
+include("problems/golomb.jl")
 
 end

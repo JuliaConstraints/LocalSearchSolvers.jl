@@ -1,9 +1,5 @@
+# Alias to make solver settings user-friendly
 Settings = Dict{Symbol, Any}
-
-# TODO: use log instead
-function _verbose(settings::Settings, str::AbstractString)
-    settings[:verbose] && println(str)
-end
 
 # Union to encapsulate single value or a vector
 _ValOrVect{T} = Union{T,AbstractVector{T}}

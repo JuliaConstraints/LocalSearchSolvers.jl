@@ -78,7 +78,7 @@ end
 @forward Solver.state _error, _error!
 
 # Forward from utils.jl (settings)
-@forward Solver.settings _verbose, Base.get!
+@forward Solver.settings Base.get!
 
 # Replace the problem field by its specialized version
 function specialize!(s::Solver)
@@ -133,23 +133,21 @@ function _move!(s::Solver, x::Int, dim::Int=0)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
-        _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
+        @verbose "Compute costs: selected var(s) x_$x $(dim == 0 ? "= $v" : "⇆ x_$v")"
 
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)
 
         cost = _error(s)
         if cost < best_cost
-            _verbose(s, "cost = $cost < $best_cost")
+            @verbose "cost = $cost < $best_cost"
             tabu = false
             best_cost = cost
             dim == 0 ? best_values = [v] : best_swap = [v]
         elseif cost == best_cost
-            _verbose(s, "cost = best_cost = $cost")
+            @verbose "cost = best_cost = $cost"
             push!(dim == 0 ? best_values : best_swap, v)
         end
-
-        # _verbose(s, "")
         _vars_costs!(s, copy(old_vars_costs))
         _cons_costs!(s, copy(old_cons_costs))
         _error!(s, old_cost)
@@ -163,17 +161,17 @@ end
 function _init_solve!(s::Solver)
     # Speciliazed the problem if specialize = true (and not already done)
     !is_specialized(s) && setting(s, :specialize) && specialize!(s)
-    _verbose(s, describe(s.problem))
-    _verbose(s, "Starting solver")
+    @verbose describe(s)
+    @verbose "Starting solver"
 
     # draw initial values unless provided and set best_values
     isempty(_values(s)) && _draw!(s)
-    _verbose(s, "Initial values = $(_values(s))")
+    @verbose "Initial values = $(_values(s))"
 
     # compute initial constraints and variables costs
     sat = _compute!(s)
-    _verbose(s, "Initial constraints costs = $(s.state.cons_costs)")
-    _verbose(s, "Initial variables costs = $(s.state.vars_costs)")
+    @verbose "Initial constraints costs = $(s.state.cons_costs)"
+    @verbose "Initial variables costs = $(s.state.vars_costs)"
 
     # Tabu times
     get!(s, :tabu_time, length_vars(s) ÷ 2) # 10?
@@ -183,7 +181,7 @@ function _init_solve!(s::Solver)
 end
 
 function _restart!(s::Solver, k=10)
-    _verbose(s, "\n============== RESTART!!!!================\n")
+    @verbose "\n============== RESTART!!!!================\n"
     _draw!(s)
     _empty_tabu!(s)
     δ = ((k - 1) * setting(s, :δ_tabu) + setting(s, :tabu_time)) / k
@@ -198,7 +196,7 @@ end
 function _step!(s::Solver)
     # select worst variables
     x = _select_worse(s)
-    _verbose(s, "Selected x = $x")
+    @verbose "Selected x = $x"
 
     # Local move (change the value of the selected variable)
     best_values, best_swap, tabu = _move!(s, x)
@@ -222,8 +220,8 @@ function _step!(s::Solver)
     else
         _swap_value!(s, x, rand(best_swap))
     end
-    _verbose(s, "Tabu list: $(_tabu(s))")
-    _verbose(s, "best_values: $best_values\nbest_swap : $best_swap")
+    @verbose "Tabu list: $(_tabu(s))"
+    @verbose "best_values: $best_values\nbest_swap : $best_swap"
 
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
@@ -257,8 +255,8 @@ function solve!(s::Solver)
     _init_solve!(s) && (sat ? (iter = Inf) : _optimizing!(s))
     while iter < setting(s, :iteration)
         iter += 1
-        _verbose(s, "\n\tLoop $iter ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+        @verbose "\n\tLoop $iter ($(_optimizing(s) ? "optimization" : "satisfaction"))"
         _step!(s) && sat && break
-        _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+        @verbose "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)"
     end
 end
