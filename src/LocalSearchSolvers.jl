@@ -43,6 +43,7 @@ include("solver.jl")
 # Include specific problems
 include("problems/sudoku.jl")
 include("problems/golomb.jl")
+include("problems/cut.jl")
 
 # Include usual constraints
 include("constraints/all_different.jl")
