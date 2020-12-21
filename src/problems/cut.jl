@@ -10,11 +10,11 @@ function mincut(m::AbstractMatrix{T}; source::Int, sink::Int) where {T <: Number
     foreach(_ -> variable!(p, d), 0:n)
 
     # Add constraint
-    constraint!(p, ordered, [source, separator, sink])
-    constraint!(p, all_different, 1:(n + 1))
+    constraint!(p, c_ordered, [source, separator, sink])
+    constraint!(p, c_all_different, 1:(n + 1))
 
     # Add objective
-    objective!(p, (x...) -> mincut(m, x...))
+    objective!(p, (x...) -> o_mincut(m, x...))
 
     return p
 end
