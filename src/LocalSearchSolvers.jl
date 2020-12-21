@@ -17,7 +17,7 @@ export get_variable, get_variables, get_constraint, get_constraints, get_objecti
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 
 # Exports Problem
-export Problem, sudoku, golomb
+export Problem, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
 export all_different, dist_different, all_equal
@@ -49,8 +49,10 @@ include("problems/cut.jl")
 include("constraints/all_different.jl")
 include("constraints/dist_different.jl")
 include("constraints/equal.jl")
+include("constraints/ordered.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
+include("objectives/cut.jl")
 
 end

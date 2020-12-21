@@ -4,12 +4,17 @@ function mincut(m::AbstractMatrix{T}; source::Int, sink::Int) where {T <: Number
 
     d = domain(0:n)
 
+    separator = n + 1 # value that separate the two sides of the cut
+
     # Add variables:
     foreach(_ -> variable!(p, d), 0:n)
 
     # Add constraint
-    constraint!(p, x -> all_equal(x; param = 0), source:source)
-    constraint!(p, x -> all_equal(x; param = n), sink:sink)
+    constraint!(p, ordered, [source, separator, sink])
+    constraint!(p, all_different, 1:(n + 1))
+
+    # Add objective
+    objective!(p, (x...) -> mincut(m, x...))
 
     return p
 end
