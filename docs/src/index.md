@@ -2,11 +2,9 @@
 CurrentModule = LocalSearchSolvers
 ```
 
-# LocalSearchSolvers
+# Constraint-Based Local Search (CBLS)
 
-```@index
-```
+LocalSearchSolvers.jl proposes sets of technical components of Constraint-Based Local Search solvers and combine them in various ways.
 
-```@autodocs
-Modules = [LocalSearchSolvers]
-```
+<!-- TODO: what is a CBLS solver etc. -->
+

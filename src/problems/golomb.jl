@@ -1,8 +1,8 @@
 function golomb(n::Int, L::Int=n^2)
-    d = domain(0:L)
     p = Problem()
 
     # Add variables
+    d = domain(0:L)
     foreach(_ -> variable!(p, d), 1:n)
 
     # # Add constraints
