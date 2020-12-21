@@ -20,7 +20,7 @@ export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 export Problem, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
-export c_all_different, c_dist_different, c_all_equal, c_equal_param
+export c_all_different, c_dist_different, c_all_equal, c_equal_param, c_eq
 export o_dist_extrema, o_mincut
 
 # Exports Solver

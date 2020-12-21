@@ -9,7 +9,7 @@ function c_all_equal(x::T...) where {T <: Number}
     return Float64(length(x) - maximum(acc))
 end
 
-c_eq(x1::T, x2::T) where T = x1 == x2
+c_eq(x1, x2) = x1 == x2
 
 function c_all_equal_param(x::T1...; param::T2) where {T1 <: Number,T2 <: Number}
     acc = 0
