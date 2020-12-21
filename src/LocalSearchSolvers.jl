@@ -17,11 +17,11 @@ export get_variable, get_variables, get_constraint, get_constraints, get_objecti
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 
 # Exports Problem
-export Problem, sudoku, golomb
+export Problem, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
-export all_different, dist_different
-export dist_extrema
+export all_different, dist_different, all_equal, equal_param
+export dist_extrema#, mincut
 
 # Exports Solver
 export Solver, solve!, specialize, specialize!, Settings
@@ -43,12 +43,16 @@ include("solver.jl")
 # Include specific problems
 include("problems/sudoku.jl")
 include("problems/golomb.jl")
+include("problems/cut.jl")
 
 # Include usual constraints
 include("constraints/all_different.jl")
 include("constraints/dist_different.jl")
+include("constraints/equal.jl")
+include("constraints/ordered.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
+include("objectives/cut.jl")
 
 end

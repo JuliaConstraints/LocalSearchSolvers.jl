@@ -3,7 +3,7 @@ problems = [
 ]
 
 for p in problems
-    println(describe(p))
+    @info describe(p)
     s = Solver(p, Settings(:verbose => true, :iteration => Inf))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
@@ -40,19 +40,30 @@ for p in problems
     for x in keys(LocalSearchSolvers._tabu(s))
         LocalSearchSolvers._tabu(s, x)
     end
-    LocalSearchSolvers._tabu!(s, Dictionary{Int, Int}())
-    LocalSearchSolvers._values!(s, Dictionary{Int, Number}())
+    LocalSearchSolvers._tabu!(s, Dictionary{Int,Int}())
+    LocalSearchSolvers._values!(s, Dictionary{Int,Number}())
 end
 
 solve!(Solver(sudoku(3), Settings(:verbose => false)))
 
-# # println(describe(golomb(10)))
-s = Solver(golomb(6), Settings(:verbose => false, :iteration => 1000))
+s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)
 
-println("\nResults!")
-println("Values: $(s.state.values)")
-println("Sol (val): $(s.state.best_solution_value)")
-println("Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)")
+@info "Results golomb!"
+@info "Values: $(s.state.values)"
+@info "Sol (val): $(s.state.best_solution_value)"
+@info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
 
-
+graph = zeros(5, 5)
+graph[1,2] = 1.0
+graph[1,3] = 2.0
+graph[1,4] = 3.0
+graph[2,5] = 1.0
+graph[3,5] = 2.0
+graph[4,5] = 3.0
+s = Solver(mincut(graph, source=1, sink=5), Settings(:verbose => false))
+solve!(s)
+@info "Results mincut!"
+@info "Values: $(s.state.values)"
+@info "Sol (val): $(s.state.best_solution_value)"
+@info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
