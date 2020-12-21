@@ -76,16 +76,16 @@ end
 ## test Problem
 # TODO: update tests
 # p = Problem(variables=vars, objectives=objs, constraints=cons)
-p = Problem()
-@test_logs describe(p)
+m = Model()
+@test_logs describe(m)
 
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
 vars = Dictionary{Int, Variable}(1:2, [x1, x2])
 for x in vars
-    add!(p, x)
+    add!(m, x)
 end
-variable!(p, d1)
+variable!(m, d1)
 
 values = [1, 2, 3]
 inds = [1, 2]
@@ -93,29 +93,29 @@ c1 = constraint(c_all_different, inds, values)
 c2 = constraint(c_all_different, inds, vars)
 cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 for c in cons
-    add!(p, c)
+    add!(m, c)
 end
-constraint!(p, c_all_different, [1,2])
+constraint!(m, c_all_different, [1,2])
 
 o1 = objective(sum, "Objective 1: sum")
 o2 = objective(prod, "Objective 2: product")
 objs = Dictionary(1:2, [o1, o2])
 for o in objs
-    add!(p, o)
+    add!(m, o)
 end
 
 # TODO: make related test to coverage below
-objective!(p, max)
-length_var(p, 1)
-length_cons(p, 1)
-constriction(p, 1)
-draw(p, 1)
-get_objective(p, 1)
-delete_value!(p, 1, 1)
-add_value!(p, 1, 1)
-delete_var_from_cons!(p, 1, 1)
-add_var_to_cons!(p, 1, 1)
-@test_logs describe(p)
+objective!(m, max)
+length_var(m, 1)
+length_cons(m, 1)
+constriction(m, 1)
+draw(m, 1)
+get_objective(m, 1)
+delete_value!(m, 1, 1)
+add_value!(m, 1, 1)
+delete_var_from_cons!(m, 1, 1)
+add_var_to_cons!(m, 1, 1)
+@test_logs describe(m)
 
 ## Test Solver
 s1 = Solver()

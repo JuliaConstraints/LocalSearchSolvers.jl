@@ -1,11 +1,11 @@
 mutable struct Solver
-    problem::Problem
+    model::Model
     state::_State
     settings::Settings
 end
 
 """
-    Solver{T}(p::Problem; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
+    Solver{T}(m::Model; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
     Solver{T}(;
         variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
         constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
@@ -16,33 +16,33 @@ end
 Constructor for a solver. Optional starting values can be provided.
 
 ```julia
-# Model a sudoku problem of size 4×4
-p = sudoku(2)
+# Model a sudoku model of size 4×4
+m = sudoku(2)
 
 # Create a solver instance with variables taking integral values
-s = Solver{Int}(p)
+s = Solver{Int}(m)
 
-# Solver with an empty problem to be filled later and expected Float64 values
+# Solver with an empty model to be filled later and expected Float64 values
 s = Solver{Float64}()
 
 # Construct a solver from a sets of constraints, objectives, and variables.
 s = Solver{Int}(
-    variables = get_constraints(p),
-    constraints = get_constraints(p),
-    objectives = get_objectives(p)
+    variables = get_constraints(m),
+    constraints = get_constraints(m),
+    objectives = get_objectives(m)
 )
 ```
 """
 function Solver(
-    p::Problem,
+    m::Model,
     settings::Settings=Settings();
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where T <: Number
-    vars, cons = zeros(Float64, get_variables(p)), zeros(Float64, get_constraints(p))
+    vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
     val, tabu = zero(Float64), Dictionary{Int,Int}()
     state = _State(values, vars, cons, val, tabu, false, copy(values), nothing)
     make_settings!(settings)
-    Solver(p, state, settings)
+    Solver(m, state, settings)
 end
 
 function Solver(;
@@ -51,20 +51,20 @@ function Solver(;
     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where T <: Number
-    p = Problem(; vars=variables, cons=constraints, objs=objectives)
-    Solver(p; values=values)
+    m = Model(; vars=variables, cons=constraints, objs=objectives)
+    Solver(m; values=values)
 end
 
-# Forwards from problem field
-@forward Solver.problem get_constraints, get_objectives, get_variables
-@forward Solver.problem get_constraint, get_objective, get_variable, get_domain
-@forward Solver.problem get_cons_from_var, get_vars_from_cons
-@forward Solver.problem add!, add_value!, add_var_to_cons!
-@forward Solver.problem delete_value!, delete_var_from_cons!
-@forward Solver.problem draw, constriction, describe, is_sat, is_specialized
-@forward Solver.problem length_var, length_cons, length_vars, length_objs
-@forward Solver.problem constraint!, objective!, variable!
-@forward Solver.problem _neighbours, get_name
+# Forwards from model field
+@forward Solver.model get_constraints, get_objectives, get_variables
+@forward Solver.model get_constraint, get_objective, get_variable, get_domain
+@forward Solver.model get_cons_from_var, get_vars_from_cons
+@forward Solver.model add!, add_value!, add_var_to_cons!
+@forward Solver.model delete_value!, delete_var_from_cons!
+@forward Solver.model draw, constriction, describe, is_sat, is_specialized
+@forward Solver.model length_var, length_cons, length_vars, length_objs
+@forward Solver.model constraint!, objective!, variable!
+@forward Solver.model _neighbours, get_name
 
 # Forwards from state field
 @forward Solver.state _cons_costs, _vars_costs, _values, _tabu
@@ -80,9 +80,9 @@ end
 # Forward from utils.jl (settings)
 @forward Solver.settings _verbose, Base.get!
 
-# Replace the problem field by its specialized version
+# Replace the model field by its specialized version
 function specialize!(s::Solver)
-    s.problem = specialize(s.problem)
+    s.model = specialize(s.model)
 end
 
 setting(s::Solver, sym::Symbol) = s.settings[sym]
@@ -161,9 +161,9 @@ function _move!(s::Solver, x::Int, dim::Int=0)
 end
 
 function _init_solve!(s::Solver)
-    # Speciliazed the problem if specialize = true (and not already done)
+    # Speciliazed the model if specialize = true (and not already done)
     !is_specialized(s) && setting(s, :specialize) && specialize!(s)
-    _verbose(s, describe(s.problem))
+    _verbose(s, describe(s.model))
     _verbose(s, "Starting solver")
 
     # draw initial values unless provided and set best_values
@@ -201,7 +201,7 @@ function _step!(s::Solver)
     _verbose(s, "Selected x = $x")
 
     # Local move (change the value of the selected variable)
-    best_values, best_swap, tabu = _move!(s, x)    
+    best_values, best_swap, tabu = _move!(s, x)
     # _compute!(s)
 
     # If local move is bad (tabu), then try permutation

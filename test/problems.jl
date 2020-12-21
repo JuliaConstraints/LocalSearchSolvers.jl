@@ -3,8 +3,8 @@ problems = [
 ]
 
 for p in problems
-    @info describe(p)
-    s = Solver(p, Settings(:verbose => true, :iteration => Inf))
+    @info describe(m)
+    s = Solver(m, Settings(:verbose => true, :iteration => Inf))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)

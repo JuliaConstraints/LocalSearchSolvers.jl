@@ -16,8 +16,8 @@ export length_var, length_cons, constriction, draw, ∈, describe
 export get_variable, get_variables, get_constraint, get_constraints, get_objective, get_objectives
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 
-# Exports Problem
-export Problem, sudoku, golomb, mincut
+# Exports Model
+export Model, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
 export c_all_different, c_dist_different, c_all_equal, c_equal_param, c_eq
@@ -36,14 +36,14 @@ include("constraint.jl")
 include("objective.jl")
 
 # Include solvers
-include("problem.jl")
+include("model.jl")
 include("state.jl")
 include("solver.jl")
 
-# Include specific problems
-include("problems/sudoku.jl")
-include("problems/golomb.jl")
-include("problems/cut.jl")
+# Include specific models
+include("models/sudoku.jl")
+include("models/golomb.jl")
+include("models/cut.jl")
 
 # Include usual constraints
 include("constraints/all_different.jl")
