@@ -51,8 +51,8 @@ end
 ## test constraint
 values = [1, 2, 3]
 inds = [1, 2]
-c1 = constraint(all_different, inds, values)
-c2 = constraint(all_different, inds, vars)
+c1 = constraint(c_all_different, inds, values)
+c2 = constraint(c_all_different, inds, vars)
 cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 
 for c in cons
@@ -89,13 +89,13 @@ variable!(p, d1)
 
 values = [1, 2, 3]
 inds = [1, 2]
-c1 = constraint(all_different, inds, values)
-c2 = constraint(all_different, inds, vars)
+c1 = constraint(c_all_different, inds, values)
+c2 = constraint(c_all_different, inds, vars)
 cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 for c in cons
     add!(p, c)
 end
-constraint!(p, all_different, [1,2])
+constraint!(p, c_all_different, [1,2])
 
 o1 = objective(sum, "Objective 1: sum")
 o2 = objective(prod, "Objective 2: product")

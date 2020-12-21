@@ -1,4 +1,4 @@
-function mincut(m::AbstractMatrix{T}, values::Int...) where {T <: Number}
+function o_mincut(m::AbstractMatrix{T}, values::Int...) where {T <: Number}
     capacity = 0.0
     n = size(m, 1)
     for i in 1:n, j in 1:n
