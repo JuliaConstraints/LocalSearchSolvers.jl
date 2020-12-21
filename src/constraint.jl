@@ -56,6 +56,6 @@ _length(c::Constraint) = length(c.vars)
 
 ## temp definition of all_different
 # TODO: make it annon func
-function _insert_or_inc(d::Dictionary{Int,Int}, ind::Int)
+function _insert_or_inc(d::Dictionary{T,Int}, ind::T) where {T <: Number}
     set!(d, ind, isassigned(d, ind) ? d[ind] + 1 : 1)
 end
