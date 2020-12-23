@@ -19,7 +19,7 @@ makedocs(;
             "Variables" => "variables.md",
             "Constraints" => "constraints.md",
             "Objectives" => "objectives.md",
-            "Problems" => "problems.md",
+            "Models" => "models.md",
             "Solvers" => "solvers.md",
         ],
         "Domain Specific Languages" => [
