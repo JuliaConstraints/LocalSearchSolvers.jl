@@ -1,8 +1,8 @@
-problems = [
+models = [
     sudoku(2),
 ]
 
-for p in problems
+for m in models
     @info describe(m)
     s = Solver(m, Settings(:verbose => true, :iteration => Inf))
     for x in keys(get_variables(s))
