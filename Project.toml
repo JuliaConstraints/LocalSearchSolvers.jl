@@ -9,7 +9,8 @@ Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
 
 [compat]
-Dictionaries = "0.3.5, 0.3"
+Constraints = "=> 0.1.1"
+Dictionaries = "=> 0.3.5"
 Lazy = "0.15"
 julia = "1.5"
 
