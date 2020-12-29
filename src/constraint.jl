@@ -42,20 +42,9 @@ function constraint(f::F, inds::AbstractVector{Int}, vars::Dictionary{Int,Variab
     Constraint(f, inds, vars)
 end
 
-# convert
-# convert(::Type{Constraint{F}}, c::Constraint) where {F <: Function} = Constraint(F,c)
-
 # Methods
-
 _get_vars(c::Constraint) = c.vars
-
 _add!(c::Constraint, x::Int) = push!(c.vars, x)
 _delete!(c::Constraint, x::Int) = deleteat!(c.vars, findfirst(y -> y == x, c.vars))
 _length(c::Constraint) = length(c.vars)
 ∈(var::Int, c::Constraint) = var ∈ c.vars
-
-## temp definition of all_different
-# TODO: make it annon func
-function _insert_or_inc(d::Dictionary{Int,Int}, ind::Int)
-    set!(d, ind, isassigned(d, ind) ? d[ind] + 1 : 1)
-end
