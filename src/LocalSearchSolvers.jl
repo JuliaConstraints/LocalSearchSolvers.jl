@@ -6,6 +6,7 @@ module LocalSearchSolvers
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
 import Base: ∈, convert
 import Lazy: @forward
+import Constraints: usual_constraints, error_f
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -20,7 +21,6 @@ export get_cons_from_var, get_vars_from_cons, get_domain, get_name
 export Model, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
-export c_all_different, c_dist_different, c_all_equal, c_equal_param, c_eq
 export o_dist_extrema, o_mincut
 
 # Exports Solver

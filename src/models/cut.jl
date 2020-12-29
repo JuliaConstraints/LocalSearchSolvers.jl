@@ -9,9 +9,13 @@ function mincut(graph::AbstractMatrix{T}; source::Int, sink::Int) where {T <: Nu
     # Add variables:
     foreach(_ -> variable!(m, d), 0:n)
 
+    # Extract error function from usual_constraint
+    e1 = error_f(usual_constraints[:ordered])
+    e2 = error_f(usual_constraints[:all_different])
+
     # Add constraint
-    constraint!(m, c_ordered, [source, separator, sink])
-    constraint!(m, c_all_different, 1:(n + 1))
+    constraint!(m, e1, [source, separator, sink])
+    constraint!(m, e2, 1:(n + 1))
 
     # Add objective
     objective!(m, (x...) -> o_mincut(graph, x...))
