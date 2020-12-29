@@ -45,12 +45,6 @@ include("models/sudoku.jl")
 include("models/golomb.jl")
 include("models/cut.jl")
 
-# Include usual constraints
-include("constraints/all_different.jl")
-include("constraints/dist_different.jl")
-include("constraints/equal.jl")
-include("constraints/ordered.jl")
-
 # Include usual objectives
 include("objectives/extrema.jl")
 include("objectives/cut.jl")
