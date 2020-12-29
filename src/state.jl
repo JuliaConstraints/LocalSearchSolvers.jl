@@ -30,8 +30,8 @@ _var_cost(s::_State, x::Int) = _vars_costs(s)[x]
 _value(s::_State, x::Int) = _values(s)[x]
 _tabu(s::_State, x::Int) = _tabu(s)[x]
 
-_cons_cost!(s::_State, c::Int, cost::Float64) = _cons_costs(s)[c] = cost
-_var_cost!(s::_State, x::Int, cost::Float64) = _vars_costs(s)[x] = cost
+_cons_cost!(s::_State, c::Int, cost) = _cons_costs(s)[c] = cost
+_var_cost!(s::_State, x::Int, cost) = _vars_costs(s)[x] = cost
 _value!(s::_State{T}, x::Int, val::T) where T <: Number = _values(s)[x] = val
 _decrease_tabu!(s::_State, x::Int) = _tabu(s)[x] -= 1
 _delete_tabu!(s::_State, x::Int) = delete!(_tabu(s), x)
