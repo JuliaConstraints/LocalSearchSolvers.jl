@@ -51,8 +51,9 @@ end
 ## test constraint
 values = [1, 2, 3]
 inds = [1, 2]
-c1 = constraint(c_all_different, inds, values)
-c2 = constraint(c_all_different, inds, vars)
+err = error_f(usual_constraints[:all_different])
+c1 = constraint(err, inds, values)
+c2 = constraint(err, inds, vars)
 cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 
 for c in cons
@@ -89,13 +90,13 @@ variable!(m, d1)
 
 values = [1, 2, 3]
 inds = [1, 2]
-c1 = constraint(c_all_different, inds, values)
-c2 = constraint(c_all_different, inds, vars)
+c1 = constraint(err, inds, values)
+c2 = constraint(err, inds, vars)
 cons = Dictionary{Int, Constraint}(1:2, [c1, c2])
 for c in cons
     add!(m, c)
 end
-constraint!(m, c_all_different, [1,2])
+constraint!(m, err, [1,2])
 
 o1 = objective(sum, "Objective 1: sum")
 o2 = objective(prod, "Objective 2: product")

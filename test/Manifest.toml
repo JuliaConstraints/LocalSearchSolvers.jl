@@ -3,11 +3,17 @@
 [[Base64]]
 uuid = "2a0f44e3-6c83-55bd-87e4-b1978d98bd5f"
 
+[[Constraints]]
+deps = ["Dictionaries"]
+git-tree-sha1 = "d73c1bbfc51797a17b4584a2e36c24babeac7fcc"
+uuid = "30f324ab-b02d-43f0-b619-e131c61659f7"
+version = "0.1.1"
+
 [[Dictionaries]]
 deps = ["Indexing", "Random"]
-git-tree-sha1 = "0e3fd3b20e7ad88bf912cea6a2693bfc6253e221"
+git-tree-sha1 = "51665e54ed110d3a3187927c7a2923c98b33fe65"
 uuid = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
-version = "0.3.2"
+version = "0.3.5"
 
 [[Distributed]]
 deps = ["Random", "Serialization", "Sockets"]

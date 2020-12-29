@@ -8,9 +8,12 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     # Add variables
     foreach(_ -> variable!(m, d), 1:(N^2))
 
+    
+    err = error_f(usual_constraints[:all_different])
+
     # Add constraints: line, columns; blocks
-    foreach(i -> constraint!(m, c_all_different, (i * N + 1):((i + 1) * N)), 0:(N - 1))
-    foreach(i -> constraint!(m, c_all_different, [j * N + i for j in 0:(N - 1)]), 1:N)
+    foreach(i -> constraint!(m, err, (i * N + 1):((i + 1) * N)), 0:(N - 1))
+    foreach(i -> constraint!(m, err, [j * N + i for j in 0:(N - 1)]), 1:N)
 
     for i in 0:(n - 1)
         for j in 0:(n - 1)
@@ -20,7 +23,7 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
-            constraint!(m, c_all_different, vars)
+            constraint!(m, err, vars)
         end
     end
 
