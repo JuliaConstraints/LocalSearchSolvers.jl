@@ -67,3 +67,17 @@ solve!(s)
 @info "Values: $(s.state.values)"
 @info "Sol (val): $(s.state.best_solution_value)"
 @info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
+
+s = Solver(mincut(graph, source=1, sink=5, interdiction=1), Settings(:verbose => false))
+solve!(s)
+@info "Results 1-mincut!"
+@info "Values: $(s.state.values)"
+@info "Sol (val): $(s.state.best_solution_value)"
+@info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
+
+s = Solver(mincut(graph, source=1, sink=5, interdiction=2), Settings(:verbose => false))
+solve!(s)
+@info "Results 2-mincut!"
+@info "Values: $(s.state.values)"
+@info "Sol (val): $(s.state.best_solution_value)"
+@info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
