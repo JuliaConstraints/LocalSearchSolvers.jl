@@ -1,4 +1,4 @@
-function mincut(graph::AbstractMatrix{T}; source::Int, sink::Int) where {T <: Number}
+function mincut(graph::AbstractMatrix{T}; source::Int, sink::Int, interdiction::Int = 0) where {T <: Number}
     m = Model()
     n = size(graph, 1)
 
@@ -18,7 +18,7 @@ function mincut(graph::AbstractMatrix{T}; source::Int, sink::Int) where {T <: Nu
     constraint!(m, e2, 1:(n + 1))
 
     # Add objective
-    objective!(m, (x...) -> o_mincut(graph, x...))
+    objective!(m, (x...) -> o_mincut(graph, x...; interdiction = interdiction))
 
     return m
 end
