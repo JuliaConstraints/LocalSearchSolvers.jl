@@ -4,6 +4,7 @@ authors = ["Jean-Francois Baffier"]
 version = "0.1.4"
 
 [deps]
+CompositionalNetworks = "4b67e4b5-442d-4ef5-b760-3f5df3a57537"
 Constraints = "30f324ab-b02d-43f0-b619-e131c61659f7"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"

@@ -7,6 +7,7 @@ import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
 import Base: ∈, convert
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
+import CompositionalNetworks: _optimize!, csv2space, compose, ICN
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
