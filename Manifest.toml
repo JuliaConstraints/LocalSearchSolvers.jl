@@ -59,7 +59,7 @@ version = "0.0.2"
 
 [[Constraints]]
 deps = ["Dictionaries"]
-git-tree-sha1 = "1e66e6d9742ead76a1b74029c56cdcda537f1926"
+path = "/home/azzaare/.julia/dev/Constraints"
 uuid = "30f324ab-b02d-43f0-b619-e131c61659f7"
 version = "0.1.3"
 
