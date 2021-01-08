@@ -7,18 +7,20 @@ struct Constraint{F <: Function}
     end
     function Constraint(f::F, inds::AbstractVector{Int}, values::AbstractVector{T}
         ) where {T <: Number,F <: Function}
-        aux_values = [values[id] for id in inds]
+        aux_values = map(id -> values[id], inds)
         arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
-        applicable(f, aux_values...) || throw(arg_err)
+        applicable(f, aux_values) || throw(arg_err)
+        # @info typeof(aux_values)
         return new{F}(f, inds)
     end
 
     function Constraint(
             f::F, inds::AbstractVector{Int}, vars::Dictionary{Int,Variable}
         ) where {F <: Function}
-        values = [_draw(vars[id]) for id in inds]
+        values = map(id ->_draw(vars[id]), inds)
         arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
-        applicable(f, values...) || throw(arg_err)
+        applicable(f, values) || throw(arg_err)
+        # @info typeof(values)
         return new{F}(f, inds)
     end
 end
