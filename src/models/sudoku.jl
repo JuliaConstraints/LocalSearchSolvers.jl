@@ -7,12 +7,12 @@ function sudoku(n::Int; start::Dictionary{Int, Int} = Dictionary{Int, Int}())
     # Add variables
     foreach(_ -> variable!(m, d), 1:(N^2))
 
-    X_sol = csv2space("../../CompositionalNetworks/data/csv/complete_ad-4-4.csv"; filter=:solutions)
-    X = csv2space("../../CompositionalNetworks/data/csv/complete_ad-4-4.csv")
-    icn = ICN(nvars=4, dom_size=4)
-    optimize!(icn, X, X_sol, 10, 100)
-    err = compose(icn)
-    # err = error_f(usual_constraints[:all_different])
+    # X_sol = csv2space("../../CompositionalNetworks/data/csv/complete_ad-4-4.csv"; filter=:solutions)
+    # X = csv2space("../../CompositionalNetworks/data/csv/complete_ad-4-4.csv")
+    # icn = ICN(nvars=4, dom_size=4)
+    # optimize!(icn, X, X_sol, 10, 100)
+    # err = compose(icn)
+    err = error_f(usual_constraints[:all_different])
 
     # Add constraints: line, columns; blocks
     foreach(i -> constraint!(m, err, (i * N + 1):((i + 1) * N)), 0:(N - 1))
