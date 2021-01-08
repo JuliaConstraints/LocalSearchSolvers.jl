@@ -96,7 +96,7 @@ end
 # Compute costs functions
 function _compute_cost!(s::Solver, ind::Int, c::Constraint)
     old_cost = _cons_cost(s, ind)
-    new_cost = c.f(map(x -> _value(s, x), c.vars)...)
+    new_cost = c.f(map(x -> _value(s, x), c.vars))
     _cons_cost!(s, ind, new_cost)
     # _up_error!(s, old_cost, new_cost) TODO: make it right
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
@@ -114,7 +114,7 @@ function _compute_costs!(s::Solver; cons_lst::Indices{Int}=Indices{Int}())
     _error!(s, sum(_cons_costs(s)))
 end
 
-_compute_objective!(s::Solver, o::Objective) = _best!(s, o.f(_values(s).values...))
+_compute_objective!(s::Solver, o::Objective) = _best!(s, o.f(_values(s).values))
 _compute_objective!(s::Solver, o::Int=1) = _compute_objective!(s, get_objective(s, o))
 
 function _compute!(s::Solver; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())

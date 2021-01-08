@@ -62,7 +62,7 @@ for c in cons
     LocalSearchSolvers._delete!(c, 3)
     @test 3 ∉ c
     @test LocalSearchSolvers._length(c) == 2
-    c.f(values...)
+    c.f(values)
 end
 
 ## test objective
@@ -75,8 +75,6 @@ for o in objs
 end
 
 ## test Problem
-# TODO: update tests
-# p = Problem(variables=vars, objectives=objs, constraints=cons)
 m = Model()
 @test_logs describe(m)
 
