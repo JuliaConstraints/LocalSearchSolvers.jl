@@ -6,9 +6,15 @@ function golomb(n::Int, L::Int=n^2)
     foreach(_ -> variable!(m, d), 1:n)
 
     # Extract error function from usual_constraint
-    e1 = error_f(usual_constraints[:all_different])
-    e2 = error_f(usual_constraints[:all_equal_param])
-    e3 = error_f(usual_constraints[:dist_difference])
+    e1 = (x; param=nothing, dom_size=n) -> error_f(
+        usual_constraints[:all_different])(x; param=param, dom_size=dom_size
+    )
+    e2 = (x; param=nothing, dom_size=n) -> error_f(
+        usual_constraints[:all_equal_param])(x; param=param, dom_size=dom_size
+    )
+    e3 = (x; param=nothing, dom_size=n) -> error_f(
+        usual_constraints[:dist_different])(x; param=param, dom_size=dom_size
+    )
 
     # # Add constraints
     constraint!(m, e1, 1:n)
