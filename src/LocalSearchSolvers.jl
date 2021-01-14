@@ -8,6 +8,8 @@ import Base: ∈, convert
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
+import ConstraintDomains: AbstractDomain, domain, _add!, _delete!, _draw, _length, _get_domain
+import ConstraintDomains: _get
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -31,7 +33,6 @@ export Solver, solve!, specialize, specialize!, Settings
 include("utils.jl")
 
 # Include internal structures
-include("domain.jl")
 include("variable.jl")
 include("constraint.jl")
 include("objective.jl")

@@ -7,3 +7,5 @@ _git2_*
 
 /.benchmarkci
 /benchmark/*.json
+
+*Manifest.toml
