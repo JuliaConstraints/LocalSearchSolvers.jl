@@ -1,6 +1,6 @@
-authors = ["Jean-Francois Baffier"]
 name = "LocalSearchSolvers"
 uuid = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
+authors = ["Jean-Francois Baffier"]
 version = "0.1.5"
 
 [deps]
