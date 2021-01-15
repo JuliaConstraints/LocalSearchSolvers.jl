@@ -74,7 +74,7 @@ end
 @forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward Solver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
 @forward Solver.state _optimizing, _optimizing!, _satisfying!
-@forward Solver.state _best!, _best, _select_worse
+@forward Solver.state _best!, _best, _select_worse, _solution
 @forward Solver.state _error, _error!
 
 # Forward from utils.jl (settings)
@@ -264,3 +264,5 @@ function solve!(s::Solver)
         _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
     end
 end
+
+solution(s::Solver) = is_sat(s) ? _values(s) : _solution(s)
