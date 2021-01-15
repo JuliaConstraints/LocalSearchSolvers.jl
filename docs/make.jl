@@ -1,9 +1,12 @@
 using LocalSearchSolvers
+using ConstraintDomains
+using CompositionalNetworks
+using Constraints
 using Documenter
 
 @info "Makeing documentation..."
 makedocs(;
-    modules=[LocalSearchSolvers],
+    modules=[LocalSearchSolvers, ConstraintDomains, CompositionalNetworks, Constraints],
     authors="Jean-François Baffier",
     repo="https://github.com/JuliaConstraints/LocalSearchSolvers.jl/blob/{commit}{path}#L{line}",
     sitename="LocalSearchSolvers.jl",
@@ -25,6 +28,11 @@ makedocs(;
         "Domain Specific Languages" => [
             "JuMPish" => "jump.md",
             "MiniZinc" => "minizinc.md",
+        ],
+        "Dependencies" => [
+            "ConstraintDomains.jl" => "domain.md",
+            "Constraints.jl" => "d_constraint.md",
+            "CompositionalNetworks.jl" => "icn.md",
         ],
         "Library" => [
             "Public" => "public.md",
