@@ -43,3 +43,15 @@ This package makes use of several dependencies from the JuliaConstraints GitHub 
   - [ ] Neighbourhoud selection
   - [ ] Variable selection
   - [ ] Mixed-solvers/methods with learning 
+
+## Contributing
+
+Contributions to this package are more than welcome and can be arbitrarily, and not exhaustively, split as follows:
+- All features mentioned above
+- Adding new constraints and symmetries
+- Adding new ICNs to learn error of existing constraints
+- Creating other compositional networks which target other kind of constraints
+- Just making stuff better, faster, user-friendlier, etc.
+
+### Contact
+Do not hesitate to contact me (@azzaare) or other members of JuliaConstraints on GitHub (file an issue), the julialang discourse forum, the julialang slack channel, the julialang zulip server, or the Human of Julia (HoJ) discord server.
