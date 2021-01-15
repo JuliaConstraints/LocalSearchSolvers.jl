@@ -2,7 +2,7 @@ function sudoku(n::Int; start::Dictionary{Int,Int}=Dictionary{Int,Int}())
     N = n^2
     d = domain(1:N)
 
-    m = Model()
+    m = Model(;kind=:sudoku)
 
     # Add variables
     foreach(_ -> variable!(m, d), 1:(N^2))
@@ -32,30 +32,6 @@ function sudoku(n::Int; start::Dictionary{Int,Int}=Dictionary{Int,Int}())
 
     return m
 end
-
-# TODO: make a generic print problem function with :sudoku
-# function _print_sudoku(s::Solver)
-#     N = length_vars(s)
-#     n = Int(√N) # see `isqrt` ;-)
-#     str = ""
-#     for j in 0:(n - 1)
-#         aux = ""
-#         for i in 1:n
-#             v = _value(s, i + n * j)
-#             aux *= "$v | "
-#         end
-#         str *= aux[1:(end - 3)] * "\t"
-#         aux = ""
-#         for i in 1:n
-#             v = _var_cost(s, i + n * j)
-#             aux *= "$v | "
-#         end
-#         str *= aux[1:(end - 3)] * "\n"
-#         l = 4 * n + length(aux[1:(end - 3)])
-#         str *= j == n - 1 ? "" : repeat("-", l) * "\n"
-#     end
-#     println(str)
-# end
 
 @doc raw"""
 ```julia
@@ -89,7 +65,7 @@ mutable struct Sudoku{T <: Integer} <: AbstractMatrix{T}
     Sudoku(::Type{T}) where {T <: Integer} = new{T}(Sudoku(T, 9))
     Sudoku() = new{Int}(Sudoku(9))
     # Construct a sudoku given coordinates and values
-    function Sudoku(n::Int, P::Pair{Tuple{Int, Int}, T}...) where {T <: Integer}
+    function Sudoku(n::Int, P::Pair{Tuple{Int,Int},T}...) where {T <: Integer}
         A = zeros(T, n, n)
         for (i, v) in P
             A[i...] = v
@@ -97,15 +73,15 @@ mutable struct Sudoku{T <: Integer} <: AbstractMatrix{T}
         new{T}(A)
     end
     # again, default to 9×9
-    Sudoku(P::Pair{Tuple{Int, Int}, T}...) where {T <: Integer} = new{T}(Sudoku(9, P...))
+    Sudoku(P::Pair{Tuple{Int,Int},T}...) where {T <: Integer} = new{T}(Sudoku(9, P...))
 end
 
 # abstract array interface for Sudoku struct
 Base.size(S::Sudoku) = size(S.A)
 Base.getindex(S::Sudoku, i::Int) = getindex(S.A, i)
-Base.getindex(S::Sudoku, I::Vararg{Int, N}) where {N} = getindex(S.A, I...)
+Base.getindex(S::Sudoku, I::Vararg{Int,N}) where {N} = getindex(S.A, I...)
 Base.setindex!(S::Sudoku, v, i::Int) = setindex!(S.A, v, i)
-Base.setindex!(S::Sudoku, v, I::Vararg{Int, N}) where {N} = setindex!(S.A, v, I...)
+Base.setindex!(S::Sudoku, v, I::Vararg{Int,N}) where {N} = setindex!(S.A, v, I...)
 
 const up_right_corner = '┐'
 const up_left_corner = '┌'

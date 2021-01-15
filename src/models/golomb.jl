@@ -1,5 +1,5 @@
 function golomb(n::Int, L::Int=n^2)
-    m = Model()
+    m = Model(; kind=:golomb)
 
     # Add variables
     d = domain(0:L)

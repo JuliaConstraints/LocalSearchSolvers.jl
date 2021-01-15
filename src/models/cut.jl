@@ -1,5 +1,5 @@
 function mincut(graph::AbstractMatrix{T}; source::Int, sink::Int, interdiction::Int=0) where {T <: Number}
-    m = Model()
+    m = Model(; kind=:cut)
     n = size(graph, 1)
 
     d = domain(0:n)
