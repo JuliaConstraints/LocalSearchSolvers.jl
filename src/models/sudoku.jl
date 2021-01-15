@@ -35,37 +35,37 @@ end
 
 @doc raw"""
 ```julia
-mutable struct Sudoku{T <: Integer} <: AbstractMatrix{T}
+mutable struct SudokuInstance{T <: Integer} <: AbstractMatrix{T}
 ```
-A `struct` for Sudokus, which is a subtype of `AbstractMatrix`.
+A `struct` for SudokuInstances, which is a subtype of `AbstractMatrix`.
 ---
 ```julia
-Sudoku(A::AbstractMatrix{T})
-Sudoku(::Type{T}, n::Int) # fill in blank sudoku of type T
-Sudoku(n::Int) # fill in blank sudoku of type Int
-Sudoku(::Type{T}) # fill in "standard" 9×9 sudoku of type T
-Sudoku() # fill in "standard" 9×9 sudoku of type Int
-Sudoku(n::Int, P::Pair{Tuple{Int, Int}, T}...) where {T <: Integer} # construct a sudoku given pairs of coordinates and values
-Sudoku(P::Pair{Tuple{Int, Int}, T}...) # again, default to 9×9 sudoku, constructing given pairs
+SudokuInstance(A::AbstractMatrix{T})
+SudokuInstance(::Type{T}, n::Int) # fill in blank sudoku of type T
+SudokuInstance(n::Int) # fill in blank sudoku of type Int
+SudokuInstance(::Type{T}) # fill in "standard" 9×9 sudoku of type T
+SudokuInstance() # fill in "standard" 9×9 sudoku of type Int
+SudokuInstance(n::Int, P::Pair{Tuple{Int, Int}, T}...) where {T <: Integer} # construct a sudoku given pairs of coordinates and values
+SudokuInstance(P::Pair{Tuple{Int, Int}, T}...) # again, default to 9×9 sudoku, constructing given pairs
 ```
-Constructor functions for the `Sudoku` `struct`.
+Constructor functions for the `SudokuInstance` `struct`.
 """
-mutable struct Sudoku{T <: Integer} <: AbstractMatrix{T}
+mutable struct SudokuInstance{T <: Integer} <: AbstractMatrix{T}
     A::AbstractMatrix{T} where {T <: Integer}
 
-    function Sudoku(A::AbstractMatrix{T}) where {T <: Integer}
+    function SudokuInstance(A::AbstractMatrix{T}) where {T <: Integer}
         size(A, 1) == size(A, 2) || throw(error("Sodokus must be square; received matrix of size $(size(A, 1))×$(size(A, 2))."))
-        isequal(sqrt(size(A, 1)), isqrt(size(A, 1))) || throw(error("Sudokus must be able to split into equal boxes (e.g., a 9×9 Sudoku has three 3×3 squares).  Size given is $(size(A, 1))×$(size(A, 2))."))
+        isequal(sqrt(size(A, 1)), isqrt(size(A, 1))) || throw(error("SudokuInstances must be able to split into equal boxes (e.g., a 9×9 SudokuInstance has three 3×3 squares).  Size given is $(size(A, 1))×$(size(A, 2))."))
         new{T}(A)
     end
     # fill in blank sudoku if needed
-    Sudoku(::Type{T}, n::Int) where {T <: Integer} = new{T}(fill(zero(T), n, n))
-    Sudoku(n::Int) = new{Int}(Sudoku(Int, n))
+    SudokuInstance(::Type{T}, n::Int) where {T <: Integer} = new{T}(fill(zero(T), n, n))
+    SudokuInstance(n::Int) = new{Int}(SudokuInstance(Int, n))
     # Use "standard" 9×9 if no size provided
-    Sudoku(::Type{T}) where {T <: Integer} = new{T}(Sudoku(T, 9))
-    Sudoku() = new{Int}(Sudoku(9))
+    SudokuInstance(::Type{T}) where {T <: Integer} = new{T}(SudokuInstance(T, 9))
+    SudokuInstance() = new{Int}(SudokuInstance(9))
     # Construct a sudoku given coordinates and values
-    function Sudoku(n::Int, P::Pair{Tuple{Int,Int},T}...) where {T <: Integer}
+    function SudokuInstance(n::Int, P::Pair{Tuple{Int,Int},T}...) where {T <: Integer}
         A = zeros(T, n, n)
         for (i, v) in P
             A[i...] = v
@@ -73,15 +73,24 @@ mutable struct Sudoku{T <: Integer} <: AbstractMatrix{T}
         new{T}(A)
     end
     # again, default to 9×9
-    Sudoku(P::Pair{Tuple{Int,Int},T}...) where {T <: Integer} = new{T}(Sudoku(9, P...))
+    SudokuInstance(P::Pair{Tuple{Int,Int},T}...) where {T <: Integer} = new{T}(SudokuInstance(9, P...))
 end
 
-# abstract array interface for Sudoku struct
-Base.size(S::Sudoku) = size(S.A)
-Base.getindex(S::Sudoku, i::Int) = getindex(S.A, i)
-Base.getindex(S::Sudoku, I::Vararg{Int,N}) where {N} = getindex(S.A, I...)
-Base.setindex!(S::Sudoku, v, i::Int) = setindex!(S.A, v, i)
-Base.setindex!(S::Sudoku, v, I::Vararg{Int,N}) where {N} = setindex!(S.A, v, I...)
+function SudokuInstance(X::Dictionary)
+    n = isqrt(length(X))
+    A = zeros(Int, n, n)
+    for (k,v) in enumerate(Base.Iterators.partition(X, n))
+        A[k,:] = v
+    end
+    return SudokuInstance(A)
+end
+
+# abstract array interface for SudokuInstance struct
+Base.size(S::SudokuInstance) = size(S.A)
+Base.getindex(S::SudokuInstance, i::Int) = getindex(S.A, i)
+Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N} = getindex(S.A, I...)
+Base.setindex!(S::SudokuInstance, v, i::Int) = setindex!(S.A, v, i)
+Base.setindex!(S::SudokuInstance, v, I::Vararg{Int,N}) where {N} = setindex!(S.A, v, I...)
 
 const up_right_corner = '┐'
 const up_left_corner = '┌'
@@ -94,7 +103,7 @@ const middle_intersection = '┼'
 const bottom_intersection = '┴'
 const column = '│'
 const row = '─'
-const blank = '⋅'  # this is the character used for 0s in a Sudoku puzzle
+const blank = '⋅'  # this is the character used for 0s in a SudokuInstance puzzle
 
 function _format_val(a::Integer)
     return iszero(a) ? blank : string(a)
@@ -171,12 +180,12 @@ end
 
 @doc raw"""
 ```julia
-display(io::IO, S::Sudoku)
-display(S::Sudoku) # default to stdout
+display(io::IO, S::SudokuInstance)
+display(S::SudokuInstance) # default to stdout
 ```
-Displays an ``n\times n`` Sudoku.
+Displays an ``n\times n`` SudokuInstance.
 """
-function Base.display(io::IO, S::Sudoku)
+function Base.display(io::IO, S::SudokuInstance)
     sep_length = isqrt(size(S, 1))
     max_n_digits = maximum((ndigits(i) for i in S))
 
@@ -191,8 +200,10 @@ function Base.display(io::IO, S::Sudoku)
     return nothing
 end
 # fall back on stdout
-Base.display(S::Sudoku) = display(stdout, S)
+Base.display(S::SudokuInstance) = display(stdout, S)
 
+# Construct a SudokuInstance to display a Dictionary of values
+Base.display(X::Dictionary) = display(SudokuInstance(X))
 
 ### Examples
 
