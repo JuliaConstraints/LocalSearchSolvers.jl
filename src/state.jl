@@ -16,6 +16,7 @@ _values(s::_State) = s.values
 _tabu(s::_State) = s.tabu
 _optimizing(s::_State) = s.optimizing
 _best(s::_State) = s.best_solution_value
+_solution(s::_State) = s.best_solution
 
 _cons_costs!(s::_State, costs::Dictionary{Int,Float64}) = s.cons_costs = costs
 _vars_costs!(s::_State, costs::Dictionary{Int,Float64}) = s.vars_costs = costs

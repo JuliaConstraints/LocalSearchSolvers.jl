@@ -10,12 +10,16 @@ struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Ob
 
     # Bool to indicate if the Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
+    
+    # Symbol to indicate the kind of model for specialized methods such as pretty printing
+    kind::Symbol
 end
 
 function Model(;
     vars=Dictionary{Int,Variable}(),
     cons=Dictionary{Int,Constraint}(),
-    objs=Dictionary{Int,Objective}(),
+    objs=Dictionary{Int,Objective}(),    
+    kind = :generic,
 )
 
     max_vars = Ref(zero(Int))
@@ -24,7 +28,7 @@ function Model(;
 
     specialized = Ref(false)
 
-    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized)
+    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind)
 end
 
 ## methods
@@ -39,6 +43,7 @@ _inc_objs!(m::Model) = m.max_objs.x += 1
 get_variables(m::Model) = m.variables
 get_constraints(m::Model) = m.constraints
 get_objectives(m::Model) = m.objectives
+get_kind(m::Model) = m.kind
 
 get_variable(m::Model, ind::Int) = get_variables(m)[ind]
 get_constraint(m::Model, ind::Int) = get_constraints(m)[ind]
@@ -189,5 +194,5 @@ function specialize(m::Model)
 
     specialized = Ref(true)
 
-    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized)
+    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m))
 end
