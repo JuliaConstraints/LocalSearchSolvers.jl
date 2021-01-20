@@ -1,12 +1,25 @@
 # Abstract structure for Solver and _SubSolver
 abstract type AbstractSolver end
 
+"""
+    _SubSolver
+Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
+"""
+struct _SubSolver <: AbstractSolver
+    pid::Int
+    model::Model
+    state::_State
+    settings::Settings
+end
+
 mutable struct Solver <: AbstractSolver
     model::Model
     state::_State
     settings::Settings
-    # subs::Vector{_SubSolver}
+    subs::Vector{_SubSolver}
 end
+
+_SubSolver(ms::Solver, pid) = _SubSolver(pid, ms.model, deepcopy(ms.state), _settings)
 
 """
     Solver{T}(m::Model; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
@@ -46,7 +59,8 @@ function Solver(
     val, tabu = zero(Float64), Dictionary{Int,Int}()
     state = _State(values, vars, cons, val, tabu, false, copy(values), nothing)
     make_settings!(settings)
-    Solver(m, state, settings)
+    subs = Vector{_SubSolver}()
+    Solver(m, state, settings, subs)
 end
 
 function Solver(;
