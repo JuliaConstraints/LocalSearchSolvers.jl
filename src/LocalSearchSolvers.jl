@@ -5,6 +5,7 @@ module LocalSearchSolvers
 # Imports
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
 import Base: ∈, convert
+import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN

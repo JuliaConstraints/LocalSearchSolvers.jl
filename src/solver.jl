@@ -1,12 +1,8 @@
 # Abstract structure for Solver and _SubSolver
 abstract type AbstractSolver end
 
-"""
-    _SubSolver
-Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
-"""
 struct _SubSolver <: AbstractSolver
-    pid::Int
+    id::Int
     model::Model
     state::_State
     settings::Settings
@@ -19,7 +15,11 @@ mutable struct Solver <: AbstractSolver
     subs::Vector{_SubSolver}
 end
 
-_SubSolver(ms::Solver, pid) = _SubSolver(pid, ms.model, deepcopy(ms.state), _settings)
+"""
+    _SubSolver(ms::Solver, id)
+Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
+"""
+_SubSolver(ms::Solver, id) = _SubSolver(id, ms.model, deepcopy(ms.state), ms.settings)
 
 """
     Solver{T}(m::Model; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
@@ -178,8 +178,13 @@ function _move!(s, x::Int, dim::Int=0)
     return best_values, best_swap, tabu
 end
 
-function _init_solve!(s)
-    # Speciliazed the model if specialize = true (and not already done)
+function _init_solve!(ss::_SubSolver)
+    _draw!(ss)
+    return _compute!(ss)
+end
+
+function _init_solve!(s::Solver)
+    # Specialized the model if specialize = true (and not already done)
     !is_specialized(s) && setting(s, :specialize) && specialize!(s)
     _verbose(s, describe(s.model))
     _verbose(s, "Starting solver")
@@ -197,6 +202,10 @@ function _init_solve!(s)
     get!(s, :tabu_time, length_vars(s) ÷ 2) # 10?
     get!(s, :local_tabu, setting(s, :tabu_time) ÷ 2)
     get!(s, :δ_tabu, setting(s, :tabu_time) - setting(s, :local_tabu))# 20-30
+
+    # Create sub solvers
+    foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
+        
     return sat
 end
 
@@ -258,6 +267,30 @@ function _step!(s)
     return false # no satisfying configuration or optimizing
 end
 
+function _check_subs(s)
+    if is_sat(s)
+        for (id, ss) in enumerate(s.subs)
+            _error(ss) == 0.0 && return id
+        end
+    else
+        for (id, ss) in enumerate(s.subs)
+            bs, bss = _best(s), _best(ss)
+            isnothing(bs) && (isnothing(bss) ? continue : return id)
+            isnothing(bss) ? continue : (bss < bs && return id)
+        end         
+    end
+    return 0
+end
+
+
+function _solve!(s, stop)
+    sat = is_sat(s)
+    _init_solve!(s)
+    while !(stop[])
+        _step!(s) && sat && break
+    end
+end
+
 """
     solve!(s; max_iteration=1000, verbose::Bool=false)
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -274,13 +307,29 @@ solve!(s, max_iteration = Inf, verbose = true)
 function solve!(s)
     iter = 0
     sat = is_sat(s)
-    _init_solve!(s) && (sat ? (iter = Inf) : _optimizing!(s))
-    while iter < setting(s, :iteration)
-        iter += 1
-        _verbose(s, "\n\tLoop $iter ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-        _step!(s) && sat && break
-        _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
-    end
+    stop = Atomic{Bool}(false)
+    _init_solve!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+    @threads for id in 1:(nthreads())
+        if id == 1
+            while iter < setting(s, :iteration)
+                iter += 1
+                _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+                _step!(s) && sat && break
+                _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+                best_sub = _check_subs(s)
+                if best_sub > 0
+                    bs = s.subs[best_sub]
+                    sat && (_values!(s, _values(bs)); break)
+                    _best!(s, _best(bs), solution(bs))
+                end
+            end
+            atomic_or!(stop, true)
+        else
+            _solve!(s.subs[id - 1], stop)
+        end
+    end    
 end
+
+
 
 solution(s) = is_sat(s) ? _values(s) : _solution(s)
