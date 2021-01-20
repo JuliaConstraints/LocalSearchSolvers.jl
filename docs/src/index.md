@@ -32,7 +32,7 @@ This package makes use of several dependencies from the JuliaConstraints GitHub 
   - [ ] Multithreading
   - [ ] Distributed
 - [ ] Solvers
-  - [x] GHOST (the C++ lib)
+  - [x] Weak-tabu list (based on the method in GHOST, the C++ lib)
   - [ ] Adaptive Search
 - [ ] Domain Specific Languages (DSL)
   - [x] Straight Julia
