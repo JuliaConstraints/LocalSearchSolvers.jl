@@ -309,7 +309,7 @@ function solve!(s)
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
     _init_solve!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
-    @threads for id in 1:(nthreads())
+    @threads for id in 1:min(nthreads(), setting(s, :threads))
         if id == 1
             while iter < setting(s, :iteration)
                 iter += 1
