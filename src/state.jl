@@ -38,11 +38,12 @@ _decrease_tabu!(s::_State, x::Int) = _tabu(s)[x] -= 1
 _delete_tabu!(s::_State, x::Int) = delete!(_tabu(s), x)
 _empty_tabu!(s::_State) = empty!(_tabu(s))
 _length_tabu(s::_State) = length(_tabu(s))
+_solution!(s::_State, values) = s.best_solution = copy(values)
 
-function _best!(s::_State{T}, val::T) where {T <: Number}
+function _best!(s::_State{T}, val::T, values = Dictionary{Int,T}()) where {T <: Number}
     if isnothing(_best(s)) || val < _best(s)
         s.best_solution_value = val
-        s.best_solution = copy(s.values)
+        s.best_solution = copy(isempty(values) ? s.values : values)
     end
 end
 

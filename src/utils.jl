@@ -14,6 +14,7 @@ function make_settings!(settings::Dict{Symbol, Any})
     get!(settings, :iteration, 1000)
     get!(settings, :specialize, true)
     get!(settings, :verbose, false)
+    get!(settings, :threads, typemax(0))
     return nothing
 end
 

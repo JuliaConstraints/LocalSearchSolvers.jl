@@ -44,7 +44,9 @@ for m in models
     LocalSearchSolvers._values!(s, Dictionary{Int,Number}())
 end
 
-solve!(Solver(sudoku(3), Settings(:verbose => false)))
+s = Solver(sudoku(3), Settings(:verbose => false))
+solve!(s)
+solution(s)
 
 s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)
