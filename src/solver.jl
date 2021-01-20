@@ -1,7 +1,11 @@
-mutable struct Solver
+# Abstract structure for Solver and _SubSolver
+abstract type AbstractSolver end
+
+mutable struct Solver <: AbstractSolver
     model::Model
     state::_State
     settings::Settings
+    # subs::Vector{_SubSolver}
 end
 
 """
@@ -56,45 +60,45 @@ function Solver(;
 end
 
 # Forwards from model field
-@forward Solver.model get_constraints, get_objectives, get_variables
-@forward Solver.model get_constraint, get_objective, get_variable, get_domain
-@forward Solver.model get_cons_from_var, get_vars_from_cons
-@forward Solver.model add!, add_value!, add_var_to_cons!
-@forward Solver.model delete_value!, delete_var_from_cons!
-@forward Solver.model draw, constriction, describe, is_sat, is_specialized
-@forward Solver.model length_var, length_cons, length_vars, length_objs
-@forward Solver.model constraint!, objective!, variable!
-@forward Solver.model _neighbours, get_name
+@forward AbstractSolver.model get_constraints, get_objectives, get_variables
+@forward AbstractSolver.model get_constraint, get_objective, get_variable, get_domain
+@forward AbstractSolver.model get_cons_from_var, get_vars_from_cons
+@forward AbstractSolver.model add!, add_value!, add_var_to_cons!
+@forward AbstractSolver.model delete_value!, delete_var_from_cons!
+@forward AbstractSolver.model draw, constriction, describe, is_sat, is_specialized
+@forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
+@forward AbstractSolver.model constraint!, objective!, variable!
+@forward AbstractSolver.model _neighbours, get_name
 
 # Forwards from state field
-@forward Solver.state _cons_costs, _vars_costs, _values, _tabu
-@forward Solver.state _cons_costs!, _vars_costs!, _values!, _tabu!
-@forward Solver.state _cons_cost, _var_cost, _value
-@forward Solver.state _cons_cost!, _var_cost!, _value!
-@forward Solver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
-@forward Solver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
-@forward Solver.state _optimizing, _optimizing!, _satisfying!
-@forward Solver.state _best!, _best, _select_worse, _solution
-@forward Solver.state _error, _error!
+@forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
+@forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
+@forward AbstractSolver.state _cons_cost, _var_cost, _value
+@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!
+@forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
+@forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
+@forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
+@forward AbstractSolver.state _best!, _best, _select_worse, _solution
+@forward AbstractSolver.state _error, _error!
 
 # Forward from utils.jl (settings)
-@forward Solver.settings _verbose, Base.get!
+@forward AbstractSolver.settings _verbose, Base.get!
 
 # Replace the model field by its specialized version
-function specialize!(s::Solver)
+function specialize!(s)
     s.model = specialize(s.model)
 end
 
-setting(s::Solver, sym::Symbol) = s.settings[sym]
+setting(s, sym::Symbol) = s.settings[sym]
 # _settings(s::Solver) = s.settings
 
 ## Internal to solve! function
-function _draw!(s::Solver)
+function _draw!(s)
     foreach(x -> _set!(s, x, draw(s, x)), keys(get_variables(s)))
 end
 
 # Compute costs functions
-function _compute_cost!(s::Solver, ind::Int, c::Constraint)
+function _compute_cost!(s, ind::Int, c::Constraint)
     old_cost = _cons_cost(s, ind)
     new_cost = c.f(map(x -> _value(s, x), c.vars))
     _cons_cost!(s, ind, new_cost)
@@ -102,7 +106,7 @@ function _compute_cost!(s::Solver, ind::Int, c::Constraint)
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
 
-function _compute_costs!(s::Solver; cons_lst::Indices{Int}=Indices{Int}())
+function _compute_costs!(s; cons_lst::Indices{Int}=Indices{Int}())
     if isempty(cons_lst)
         foreach(((id, c),) -> _compute_cost!(s, id, c), pairs(get_constraints(s)))
     else
@@ -114,16 +118,16 @@ function _compute_costs!(s::Solver; cons_lst::Indices{Int}=Indices{Int}())
     _error!(s, sum(_cons_costs(s)))
 end
 
-_compute_objective!(s::Solver, o::Objective) = _best!(s, o.f(_values(s).values))
-_compute_objective!(s::Solver, o::Int=1) = _compute_objective!(s, get_objective(s, o))
+_compute_objective!(s, o::Objective) = _best!(s, o.f(_values(s).values))
+_compute_objective!(s, o::Int=1) = _compute_objective!(s, get_objective(s, o))
 
-function _compute!(s::Solver; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())
+function _compute!(s; o::Int=1, cons_lst::Indices{Int}=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
     (sat = _error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
     return sat
 end
 
-function _move!(s::Solver, x::Int, dim::Int=0)
+function _move!(s, x::Int, dim::Int=0)
     best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
     best_cost = old_cost = _error(s)
@@ -160,7 +164,7 @@ function _move!(s::Solver, x::Int, dim::Int=0)
     return best_values, best_swap, tabu
 end
 
-function _init_solve!(s::Solver)
+function _init_solve!(s)
     # Speciliazed the model if specialize = true (and not already done)
     !is_specialized(s) && setting(s, :specialize) && specialize!(s)
     _verbose(s, describe(s.model))
@@ -182,7 +186,7 @@ function _init_solve!(s::Solver)
     return sat
 end
 
-function _restart!(s::Solver, k=10)
+function _restart!(s, k=10)
     _verbose(s, "\n============== RESTART!!!!================\n")
     _draw!(s)
     _empty_tabu!(s)
@@ -191,11 +195,11 @@ function _restart!(s::Solver, k=10)
     _optimizing(s) && _satisfying!(s)
 end
 
-function _check_restart(s::Solver)
+function _check_restart(s)
     return rand() ≤ (_length_tabu(s) - setting(s, :δ_tabu)) / setting(s, :local_tabu)
 end
 
-function _step!(s::Solver)
+function _step!(s)
     # select worst variables
     x = _select_worse(s)
     _verbose(s, "Selected x = $x")
@@ -241,7 +245,7 @@ function _step!(s::Solver)
 end
 
 """
-    solve!(s::Solver{T}; max_iteration=1000, verbose::Bool=false) where {T <: Real}
+    solve!(s; max_iteration=1000, verbose::Bool=false)
 Run the solver until a solution is found or `max_iteration` is reached.
 `verbose=true` will print out details of the run.
 
@@ -253,7 +257,7 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s::Solver)
+function solve!(s)
     iter = 0
     sat = is_sat(s)
     _init_solve!(s) && (sat ? (iter = Inf) : _optimizing!(s))
@@ -265,4 +269,4 @@ function solve!(s::Solver)
     end
 end
 
-solution(s::Solver) = is_sat(s) ? _values(s) : _solution(s)
+solution(s) = is_sat(s) ? _values(s) : _solution(s)
