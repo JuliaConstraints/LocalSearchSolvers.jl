@@ -1,3 +1,8 @@
+"""
+    Constraint{F <: Function}
+
+Structure to store an error function and the variables it constrains.
+"""
 struct Constraint{F <: Function}
     f::F
     vars::Vector{Int}
@@ -25,28 +30,48 @@ struct Constraint{F <: Function}
     end
 end
 
-# Constructors
-
 """
-    constraint(f::F, inds::Vector{Int}, values::Vector{T}) where {F <: Function,T <: Number}
-    constraint(f::F, inds::Vector{Int}, vars::Dictionary{Int,Variable}) where F <: Function
+    constraint(f, inds, vars_or_values)
 
-Test the validity of `f` over a set of `values` or draw them from a set of variables `vars`.
+Test the validity of `f` over a set of values or draw them from a set of variables vars.
 Return a constraint if the test is succesful, otherwise raise an error.
+
+# Arguments:
+- `f`: an error function
+- `inds`: indices of the constrained variables
+- `vars_or_values`: either a Dictionary of variables or a collection of values
 """
-function constraint(f::F, inds::AbstractVector{Int}, values::AbstractVector{T}
-) where {T <: Number,F <: Function}
-    Constraint(f, inds, values)
-end
+constraint(f, inds, vars_or_values) = Constraint(f, inds, vars_or_values)
 
-function constraint(f::F, inds::AbstractVector{Int}, vars::Dictionary{Int,Variable}
-) where {F <: Function}
-    Constraint(f, inds, vars)
-end
+"""
+    _get_vars(c::Constraint)
 
-# Methods
+Returns the variables constrained by `c`.
+"""
 _get_vars(c::Constraint) = c.vars
-_add!(c::Constraint, x::Int) = push!(c.vars, x)
-_delete!(c::Constraint, x::Int) = deleteat!(c.vars, findfirst(y -> y == x, c.vars))
+
+"""
+    _add!(c::Constraint, x)
+
+Add the variable of indice `x` to `c`.
+"""
+_add!(c::Constraint, x) = push!(c.vars, x)
+
+"""
+    _delete!(c::Constraint, x::Int)
+
+Delete `x` from `c`.
+"""
+_delete!(c::Constraint, x) = deleteat!(c.vars, findfirst(y -> y == x, c.vars))
+
+"""
+    _length(c::Constraint)
+
+Return the number of constrained variables by `c`.
+"""
 _length(c::Constraint) = length(c.vars)
+
+"""
+    var::Int ∈ c::Constraint
+"""
 ∈(var::Int, c::Constraint) = var ∈ c.vars
