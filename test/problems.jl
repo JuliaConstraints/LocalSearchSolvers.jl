@@ -47,6 +47,7 @@ end
 
 s = Solver(sudoku(3), Settings(:verbose => false))
 solve!(s)
+solution(s)
 
 s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)
