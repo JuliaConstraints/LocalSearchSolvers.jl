@@ -26,7 +26,7 @@ end
 ## test variables
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
-vars = Dictionary{Int,Variable}(1:2, [x1, x2])
+vars = Dictionary(1:2, [x1, x2])
 
 @test LocalSearchSolvers._get(x2, 2) == 3
 for x in vars
@@ -54,7 +54,7 @@ inds = [1, 2]
 err = error_f(usual_constraints[:all_different])
 c1 = constraint(err, inds, values)
 c2 = constraint(err, inds, vars)
-cons = Dictionary{Int,Constraint}(1:2, [c1, c2])
+cons = Dictionary(1:2, [c1, c2])
 
 for c in cons
     LocalSearchSolvers._add!(c, 3)
@@ -80,7 +80,7 @@ m = Model()
 
 x1 = variable([4,3,2,1], "x1")
 x2 = variable(d2, "x2")
-vars = Dictionary{Int,Variable}(1:2, [x1, x2])
+vars = Dictionary(1:2, [x1, x2])
 for x in vars
     add!(m, x)
 end
@@ -90,7 +90,7 @@ values = [1, 2, 3]
 inds = [1, 2]
 c1 = constraint(err, inds, values)
 c2 = constraint(err, inds, vars)
-cons = Dictionary{Int,Constraint}(1:2, [c1, c2])
+cons = Dictionary(1:2, [c1, c2])
 for c in cons
     add!(m, c)
 end

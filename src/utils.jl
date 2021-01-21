@@ -1,24 +1,50 @@
+"""
+    Settings
+Dictionary to store the settngs of a solver.
+```
+default = Settings(
+    :iteration => 1000,
+    :specialize => true,
+    :verbose => false,
+    :threads => typemax(0),
+)
+```
+By default, the number of threads used is the maximum available. Otherwise, it is minimum between `default[:threads]` and the number of available threads.
+"""
 Settings = Dict{Symbol, Any}
 
-# TODO: use better log instead (LoggingExtra.jl)
-function _verbose(settings::Settings, str::AbstractString)
+
+"""
+    _verbose(settings, str)
+Temporary logging function. #TODO: use better log instead (LoggingExtra.jl)
+"""
+function _verbose(settings, str)
     settings[:verbose] && (@info str)
 end
 
-# Union to encapsulate single value or a vector
-_ValOrVect{T} = Union{T,AbstractVector{T}}
-_datatype_to_union(dt::_ValOrVect) = Union{(isa(dt, Type) ? [dt] : dt)...}
+"""
+    _to_union(datatype)
+Make a minimal `Union` type from a collection of data types.
+"""
+_to_union(datatype) = Union{(isa(datatype, Type) ? [datatype] : datatype)...}
 
-# Default settings
-function make_settings!(settings::Dict{Symbol, Any})
+"""
+    _make_settings!(settings)
+Make default settings unless, for each setting, already provided by the user.
+"""
+function _make_settings!(settings)
     get!(settings, :iteration, 1000)
     get!(settings, :specialize, true)
     get!(settings, :verbose, false)
+    get!(settings, :threads, typemax(0))
     return nothing
 end
 
-# rand argmax
-function _find_rand_argmax(d::DictionaryView{Int,Float64})
+"""
+    _find_rand_argmax(d::DictionaryView)
+Compute `argmax` of `d` and select one element randomly.
+"""
+function _find_rand_argmax(d::DictionaryView)
     max = -Inf
     argmax = Vector{Int}()
     for (k, v) in pairs(d)

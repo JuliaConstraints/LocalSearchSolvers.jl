@@ -29,7 +29,7 @@ This package makes use of several dependencies from the JuliaConstraints GitHub 
   - [ ] Continuous domains
   - [ ] Arbitrary Objects such as physical ones
 - [ ] Parallelization
-  - [ ] Multithreading
+  - [x] Multithreading
   - [ ] Distributed
 - [ ] Solvers
   - [x] Weak-tabu list (based on the method in GHOST, the C++ lib)
