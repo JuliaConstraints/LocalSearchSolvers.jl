@@ -35,6 +35,7 @@ for m in models
         @test length_cons(s, c) == 4
     end
     solve!(s)
+    solution(s)
 
     # TODO: temp patch for coverage, make it nice
     for x in keys(LocalSearchSolvers._tabu(s))
@@ -46,7 +47,6 @@ end
 
 s = Solver(sudoku(3), Settings(:verbose => false))
 solve!(s)
-solution(s)
 
 s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)

@@ -1,4 +1,9 @@
-function sudoku(n::Int; start::Dictionary{Int,Int}=Dictionary{Int,Int}())
+"""
+    sudoku(n; start= Dictionary{Int, Int}())
+
+Create a model for the sudoku problem of domain `1:n²` with optional starting values.
+"""
+function sudoku(n; start=Dictionary{Int,Int}())
     N = n^2
     d = domain(1:N)
 
@@ -76,6 +81,11 @@ mutable struct SudokuInstance{T <: Integer} <: AbstractMatrix{T}
     SudokuInstance(P::Pair{Tuple{Int,Int},T}...) where {T <: Integer} = new{T}(SudokuInstance(9, P...))
 end
 
+"""
+    SudokuInstance(X::Dictionary)
+
+Construct a `SudokuInstance` with the values `X` of a solver as input.
+"""
 function SudokuInstance(X::Dictionary)
     n = isqrt(length(X))
     A = zeros(Int, n, n)
@@ -85,31 +95,60 @@ function SudokuInstance(X::Dictionary)
     return SudokuInstance(A)
 end
 
-# abstract array interface for SudokuInstance struct
+# # abstract array interface for SudokuInstance struct
+"""
+    Base.size(S::SudokuInstance)
+
+Extends `Base.size` for `SudokuInstance`.
+"""
 Base.size(S::SudokuInstance) = size(S.A)
+
+"""
+    Base.getindex(S::SudokuInstance, i::Int)
+    Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N}        
+
+Extends `Base.getindex` for `SudokuInstance`.
+"""
 Base.getindex(S::SudokuInstance, i::Int) = getindex(S.A, i)
 Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N} = getindex(S.A, I...)
-Base.setindex!(S::SudokuInstance, v, i::Int) = setindex!(S.A, v, i)
-Base.setindex!(S::SudokuInstance, v, I::Vararg{Int,N}) where {N} = setindex!(S.A, v, I...)
 
-const up_right_corner = '┐'
-const up_left_corner = '┌'
-const bottom_left_corner = '└'
-const bottom_right_corner = '┘'
-const up_intersection = '┬'
-const left_intersection = '├'
-const right_intersection = '┤'
-const middle_intersection = '┼'
-const bottom_intersection = '┴'
-const column = '│'
-const row = '─'
-const blank = '⋅'  # this is the character used for 0s in a SudokuInstance puzzle
+"""
+    Base.setindex!(S::SudokuInstance, v, i::Int)
+    Base.setindex!(S::SudokuInstance, v, I::Vararg{Int,N})
 
-function _format_val(a::Integer)
-    return iszero(a) ? blank : string(a)
-end
+Extends `Base.setindex!` for `SudokuInstance`.
+"""
+Base.setindex!(S::SudokuInstance, v, i) = setindex!(S.A, v, i)
+Base.setindex!(S::SudokuInstance, v, I::Vararg) = setindex!(S.A, v, I...)
 
-function _format_line_segment(r::AbstractVector, col_pos::Int, M::AbstractMatrix)
+const _rules = Dict(
+    :up_right_corner => '┐',
+    :up_left_corner => '┌',
+    :bottom_left_corner => '└',
+    :bottom_right_corner => '┘',
+    :up_intersection => '┬',
+    :left_intersection => '├',
+    :right_intersection => '┤',
+    :middle_intersection => '┼',
+    :bottom_intersection => '┴',
+    :column => '│',
+    :row => '─',
+    :blank => '⋅',  # this is the character used for 0s in a SudokuInstance puzzle
+)
+
+"""
+    _format_val(a)
+
+Format an integer `a` into a string for SudokuInstance.
+"""
+_format_val(a) = iszero(a) ? _rules[:blank] : string(a)
+
+"""
+    _format_line_segment(r, col_pos, M)
+
+Format line segment of a sudoku grid.
+"""
+function _format_line_segment(r, col_pos, M)
     sep_length = length(r)
 
     line = string()
@@ -122,13 +161,18 @@ function _format_line_segment(r::AbstractVector, col_pos::Int, M::AbstractMatrix
         line *= repeat(' ', n_spaces) * _format_val(r[k])
     end
 
-    return line * ' ' * column
+    return line * ' ' * _rules[:column]
 end
 
-function _format_line(r::AbstractVector, M::AbstractMatrix)
+"""
+    _format_line(r, M)
+
+Format line of a sudoku grid.
+"""
+function _format_line(r, M)
     sep_length = isqrt(length(r))
 
-    line = column
+    line = _rules[:column]
     for i in 1:sep_length
         abs_sep_pos = sep_length * i
         line *= _format_line_segment(r[(abs_sep_pos - sep_length + 1):abs_sep_pos], i - 1, M)
@@ -137,40 +181,45 @@ function _format_line(r::AbstractVector, M::AbstractMatrix)
     return line
 end
 
-function _get_sep_line(s::Int, pos_row::Int, M::AbstractMatrix)
+"""
+    _get_sep_line(s, pos_row, M)
+
+Return a line separator.
+"""
+function _get_sep_line(s, pos_row, M)
     sep_length = isqrt(s)
 
     # deal with left-most edges
     sep_line = string()
     if pos_row == 1
-        sep_line *= up_left_corner
+        sep_line *= _rules[:up_left_corner]
     elseif mod(pos_row, sep_length) == 0
         if pos_row == s
-            sep_line *= bottom_left_corner
+            sep_line *= _rules[:bottom_left_corner]
         else
-            sep_line *= left_intersection
+            sep_line *= _rules[:left_intersection]
         end
     end
 
     # rest of row seperator; TODO: make less convoluted.  ATM it works, but I think it can be simplified.
     for pos_col in 1:s
-        sep_line *= repeat(row, maximum((ndigits(i) for i in M[:, pos_col])) + 1)
+        sep_line *= repeat(_rules[:row], maximum((ndigits(i) for i in M[:, pos_col])) + 1)
         if mod(pos_col, sep_length) == 0
-            sep_line *= row
+            sep_line *= _rules[:row]
             if pos_col == s
                 if pos_row == 1
-                    sep_line *= up_right_corner
+                    sep_line *= _rules[:up_right_corner]
                 elseif pos_row == s
-                    sep_line *= bottom_right_corner
+                    sep_line *= _rules[:bottom_right_corner]
                 else
-                    sep_line *= right_intersection
+                    sep_line *= _rules[:right_intersection]
                 end
             elseif pos_row == 1
-                sep_line *= up_intersection
+                sep_line *= _rules[:up_intersection]
             elseif pos_row == s
-                sep_line *= bottom_intersection
+                sep_line *= _rules[:bottom_intersection]
             else
-                sep_line *= middle_intersection
+                sep_line *= _rules[:middle_intersection]
             end
         end
     end
@@ -185,7 +234,7 @@ display(S::SudokuInstance) # default to stdout
 ```
 Displays an ``n\times n`` SudokuInstance.
 """
-function Base.display(io::IO, S::SudokuInstance)
+function Base.display(io, S::SudokuInstance)
     sep_length = isqrt(size(S, 1))
     max_n_digits = maximum((ndigits(i) for i in S))
 
@@ -199,72 +248,17 @@ function Base.display(io::IO, S::SudokuInstance)
 
     return nothing
 end
-# fall back on stdout
+
+"""
+    Base.display(S::SudokuInstance)
+
+Extends `Base.display` to `SudokuInstance`.
+"""
 Base.display(S::SudokuInstance) = display(stdout, S)
 
-# Construct a SudokuInstance to display a Dictionary of values
+"""
+    Base.display(X::Dictionary)
+
+Extends `Base.display` to a sudoku configuration.
+"""
 Base.display(X::Dictionary) = display(SudokuInstance(X))
-
-### Examples
-
-const sudoku1 = [
-    9  3  0  0  0  0  0  4  0
-    0  0  0  0  4  2  0  9  0
-    8  0  0  1  9  6  7  0  0
-    0  0  0  4  7  0  0  0  0
-    0  2  0  0  0  0  0  6  0
-    0  0  0  0  2  3  0  0  0
-    0  0  8  5  3  1  0  0  2
-    0  9  0  2  8  0  0  0  0
-    0  7  0  0  0  0  0  5  3
-];
-
-const sudoku2 = [
-    0  0  9  0  1  0  0  6  0
-    0  0  0  0  6  7  0  0  3
-    0  3  5  0  0  0  0  0  0
-    3  0  0  0  0  2  0  0  0
-    5  1  7  0  0  0  2  3  4
-    0  0  0  3  0  0  0  0  7
-    0  0  0  0  0  0  9  1  0
-    1  0  0  6  8  0  0  0  0
-    0  7  0  0  3  0  5  0  0
-];
-
-const sudoku3 = [
-    0  3  7  8  6  0  0  4  0
-    0  0  6  0  0  7  0  0  0
-    0  2  0  0  3  0  0  0  6
-    0  8  0  2  0  0  0  0  0
-    9  0  0  0  0  0  0  0  1
-    0  0  0  0  0  6  0  9  0
-    5  0  0  0  7  0  0  3  0
-    0  0  0  3  0  0  8  0  0
-    0  1  0  0  8  4  2  6  0
-];
-
-const sudoku_small = [
-    2  0  0  3
-    0  0  0  1
-    1  0  0  0
-    3  0  0  2
-];
-
-const sudoku_large = [
-    1   0   0   2   3   4   0   0  12   0   6   0   0   0   7   0
-    0   0   8   0   0   0   7   0   0   3   0   0   9  10   6  11
-    0  12   0   0  10   0   0   1   0  13   0  11   0   0  14   0
-    3   0   0  15   2   0   0  14   0   0   0   9   0   0  12   0
-   13   0   0   0   8   0   0  10   0  12   2   0   1  15   0   0
-    0  11   7   6   0   0   0  16   0   0   0  15   0   0   5  13
-    0   0   0  10   0   5  15   0   0   4   0   8   0   0  11   0
-   16   0   0   5   9  12   0   0   1   0   0   0   0   0   8   0
-    0   2   0   0   0   0   0  13   0   0  12   5   8   0   0   3
-    0  13   0   0  15   0   3   0   0  14   8   0  16   0   0   0
-    5   8   0   0   1   0   0   0   2   0   0   0  13   9  15   0
-    0   0  12   4   0   6  16   0  13   0   0   7   0   0   0   5
-    0   3   0   0  12   0   0   0   6   0   0   4  11   0   0  16
-    0   7   0   0  16   0   5   0  14   0   0   1   0   0   2   0
-   11   1  15   9   0   0  13   0   0   2   0   0   0  14   0   0
-    0  14   0   0   0  11   0   2   0   0  13   3   5   0   0  12
-];
