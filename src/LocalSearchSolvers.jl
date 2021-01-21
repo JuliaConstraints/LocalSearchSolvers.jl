@@ -16,7 +16,6 @@ import ConstraintDomains: _get
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
 export delete!, delete_value!, delete_var_from_cons!
 export domain, variable, constraint, objective
-export Constraint, Objective, Variable
 export length_var, length_cons, constriction, draw, ∈, describe
 export get_variable, get_variables, get_constraint, get_constraints, get_objective, get_objectives
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution

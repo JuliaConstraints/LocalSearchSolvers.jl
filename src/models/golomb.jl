@@ -1,4 +1,9 @@
-function golomb(n::Int, L::Int=n^2)
+"""
+    golomb(n, L=n²)
+
+Model the Golomb problem of `n` marks on the ruler `0:L`.
+"""
+function golomb(n, L=n^2)
     m = Model(; kind=:golomb)
 
     # Add variables
