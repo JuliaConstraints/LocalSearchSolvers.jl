@@ -3,5 +3,5 @@
 ```@docs
 LocalSearchSolvers.sudoku
 LocalSearchSolvers.golomb
-LocalSearchSolvers.cut
+LocalSearchSolvers.mincut
 ```

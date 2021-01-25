@@ -45,9 +45,23 @@ for m in models
     LocalSearchSolvers._values!(s, Dictionary{Int,Number}())
 end
 
-s = Solver(sudoku(3), Settings(:verbose => false))
+
+sudoku_instance = collect(Iterators.flatten([
+    9  3  0  0  0  0  0  4  0
+    0  0  0  0  4  2  0  9  0
+    8  0  0  1  9  6  7  0  0
+    0  0  0  4  7  0  0  0  0
+    0  2  0  0  0  0  0  6  0
+    0  0  0  0  2  3  0  0  0
+    0  0  8  5  3  1  0  0  2
+    0  9  0  2  8  0  0  0  0
+    0  7  0  0  0  0  0  5  3
+]))
+
+s = Solver(sudoku(3, start = sudoku_instance), Settings(:verbose => false, :iteration => 10000))
+display(Dictionary(1:length(sudoku_instance), sudoku_instance))
 solve!(s)
-solution(s)
+display(solution(s))
 
 s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
 solve!(s)
