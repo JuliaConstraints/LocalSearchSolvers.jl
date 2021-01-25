@@ -12,13 +12,16 @@ function sudoku(n; start=Dictionary{Int,Int}())
     # Add variables
     foreach(_ -> variable!(m, d), 1:(N^2))
 
-    err = (x; param=nothing, dom_size=N) -> error_f(
+    e1 = (x; param=nothing, dom_size=N) -> error_f(
         usual_constraints[:all_different])(x; param=param, dom_size=dom_size
+    )
+    e2 = (x; param=nothing, dom_size=N) -> error_f(
+        usual_constraints[:all_equal_param])(x; param=param, dom_size=dom_size
     )
 
     # Add constraints: line, columns; blocks
-    foreach(i -> constraint!(m, err, (i * N + 1):((i + 1) * N)), 0:(N - 1))
-    foreach(i -> constraint!(m, err, [j * N + i for j in 0:(N - 1)]), 1:N)
+    foreach(i -> constraint!(m, e1, (i * N + 1):((i + 1) * N)), 0:(N - 1))
+    foreach(i -> constraint!(m, e1, [j * N + i for j in 0:(N - 1)]), 1:N)
 
     for i in 0:(n - 1)
         for j in 0:(n - 1)
@@ -28,13 +31,13 @@ function sudoku(n; start=Dictionary{Int,Int}())
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
-            constraint!(m, err, vars)
+            constraint!(m, e1, vars)
         end
     end
 
-    # TODO: Insert starting values (assuming they are correct)
-    # foreach(((k,v),) -> , pairs(start))
-
+    for (k,v) ∈ pairs(start)
+        v ∈ 1:N && constraint!(m, x -> e2(x; param=v), k:k)
+    end
     return m
 end
 
