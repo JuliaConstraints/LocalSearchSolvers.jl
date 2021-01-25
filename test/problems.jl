@@ -59,7 +59,7 @@ sudoku_instance = collect(Iterators.flatten([
 ]))
 
 s = Solver(sudoku(3, start = sudoku_instance), Settings(:verbose => false, :iteration => 10000))
-display(sudoku_instance)
+display(Dictionary(1:length(sudoku_instance), sudoku_instance))
 solve!(s)
 display(solution(s))
 

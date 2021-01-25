@@ -10,7 +10,12 @@ function sudoku(n; start=Dictionary{Int,Int}())
     m = Model(;kind=:sudoku)
 
     # Add variables
-    foreach(_ -> variable!(m, d), 1:(N^2))
+    if isempty(start)
+        foreach(_ -> variable!(m, d), 1:(N^2))
+    else
+        foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v:v) : d), pairs(start))
+    end
+
 
     e1 = (x; param=nothing, dom_size=N) -> error_f(
         usual_constraints[:all_different])(x; param=param, dom_size=dom_size
@@ -35,9 +40,6 @@ function sudoku(n; start=Dictionary{Int,Int}())
         end
     end
 
-    for (k,v) ∈ pairs(start)
-        v ∈ 1:N && constraint!(m, x -> e2(x; param=v), k:k)
-    end
     return m
 end
 
@@ -108,7 +110,7 @@ Base.size(S::SudokuInstance) = size(S.A)
 
 """
     Base.getindex(S::SudokuInstance, i::Int)
-    Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N}        
+    Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N}
 
 Extends `Base.getindex` for `SudokuInstance`.
 """
