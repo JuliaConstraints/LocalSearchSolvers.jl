@@ -9,8 +9,14 @@ import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, domain, _add!, _delete!, _draw, _length, _get_domain
-import ConstraintDomains: _get
+import ConstraintDomains: AbstractDomain, domain, _add!, _delete!, _draw, _length
+import ConstraintDomains: _get, _get_domain
+
+# Usings
+using MathOptInterface
+
+# Const
+const MOI = MathOptInterface
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -41,6 +47,13 @@ include("objective.jl")
 include("model.jl")
 include("state.jl")
 include("solver.jl")
+
+# Include MOI
+include("MOI_wrapper/MOI_wrapper.jl")
+include("MOI_wrapper/variables.jl")
+include("MOI_wrapper/constraints.jl")
+include("MOI_wrapper/objectives.jl")
+include("MOI_wrapper/results.jl")
 
 # Include specific models
 include("models/sudoku.jl")
