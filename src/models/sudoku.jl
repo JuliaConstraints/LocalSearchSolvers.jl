@@ -17,16 +17,13 @@ function sudoku(n; start=Dictionary{Int,Int}())
     end
 
 
-    e1 = (x; param=nothing, dom_size=N) -> error_f(
+    e = (x; param=nothing, dom_size=N) -> error_f(
         usual_constraints[:all_different])(x; param=param, dom_size=dom_size
-    )
-    e2 = (x; param=nothing, dom_size=N) -> error_f(
-        usual_constraints[:all_equal_param])(x; param=param, dom_size=dom_size
     )
 
     # Add constraints: line, columns; blocks
-    foreach(i -> constraint!(m, e1, (i * N + 1):((i + 1) * N)), 0:(N - 1))
-    foreach(i -> constraint!(m, e1, [j * N + i for j in 0:(N - 1)]), 1:N)
+    foreach(i -> constraint!(m, e, (i * N + 1):((i + 1) * N)), 0:(N - 1))
+    foreach(i -> constraint!(m, e, [j * N + i for j in 0:(N - 1)]), 1:N)
 
     for i in 0:(n - 1)
         for j in 0:(n - 1)
@@ -36,7 +33,7 @@ function sudoku(n; start=Dictionary{Int,Int}())
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
-            constraint!(m, e1, vars)
+            constraint!(m, e, vars)
         end
     end
 
