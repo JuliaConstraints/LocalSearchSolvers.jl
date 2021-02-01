@@ -44,6 +44,7 @@ include("constraint.jl")
 include("objective.jl")
 
 # Include solvers
+include("option.jl")
 include("model.jl")
 include("state.jl")
 include("solver.jl")
