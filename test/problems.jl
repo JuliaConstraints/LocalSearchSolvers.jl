@@ -38,11 +38,11 @@ for m in models
     solution(s)
 
     # TODO: temp patch for coverage, make it nice
-    for x in keys(LocalSearchSolvers._tabu(s))
-        LocalSearchSolvers._tabu(s, x)
+    for x in keys(LS._tabu(s))
+        LS._tabu(s, x)
     end
-    LocalSearchSolvers._tabu!(s, Dictionary{Int,Int}())
-    LocalSearchSolvers._values!(s, Dictionary{Int,Number}())
+    LS._tabu!(s, Dictionary{Int,Int}())
+    LS._values!(s, Dictionary{Int,Number}())
 end
 
 
