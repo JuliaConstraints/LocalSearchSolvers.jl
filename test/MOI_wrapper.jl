@@ -24,15 +24,15 @@ const BRIDGED = MOI.instantiate(
 )
 const CONFIG = MOIT.TestConfig(atol=1e-6, rtol=1e-6)
 
-@testset "Unit" begin
-    # Test all the functions included in dictionary `MOI.Test.unittests`,
-    # except functions "number_threads" and "solve_qcp_edge_cases."
-    MOIT.unittest(
-        BRIDGED,
-        CONFIG,
-        ["number_threads", "solve_qcp_edge_cases"]
-    )
-end
+# @testset "Unit" begin
+#     # Test all the functions included in dictionary `MOI.Test.unittests`,
+#     # except functions "number_threads" and "solve_qcp_edge_cases."
+#     MOIT.unittest(
+#         BRIDGED,
+#         CONFIG,
+#         ["number_threads", "solve_qcp_edge_cases"]
+#     )
+# end
 
 # @testset "Modification" begin
 #     MOIT.modificationtest(BRIDGED, CONFIG)
