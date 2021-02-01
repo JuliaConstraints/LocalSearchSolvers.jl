@@ -107,7 +107,7 @@ end
 @forward AbstractSolver.model draw, constriction, describe, is_sat, is_specialized
 @forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
 @forward AbstractSolver.model constraint!, objective!, variable!
-@forward AbstractSolver.model _neighbours, get_name
+@forward AbstractSolver.model _neighbours, get_name, _is_empty
 
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
@@ -271,7 +271,7 @@ function _init_solve!(s::Solver)
 
     # Create sub solvers
     foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
-        
+
     return sat
 end
 
@@ -351,7 +351,7 @@ end
 """
     _check_subs(s)
 
-Check if any subsolver of a main solver `s`, for 
+Check if any subsolver of a main solver `s`, for
 - *Satisfaction*, has a solution, then return it, resume the run otherwise
 - *Optimization*, has a better solution, then assign it to its internal state
 """
@@ -365,7 +365,7 @@ function _check_subs(s)
             bs, bss = _best(s), _best(ss)
             isnothing(bs) && (isnothing(bss) ? continue : return id)
             isnothing(bss) ? continue : (bss < bs && return id)
-        end         
+        end
     end
     return 0
 end
@@ -419,7 +419,7 @@ function solve!(s)
         else
             _solve!(s.subs[id - 1], stop)
         end
-    end    
+    end
 end
 
 """

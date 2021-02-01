@@ -10,5 +10,5 @@ const LS = LocalSearchSolvers
     # include("internal.jl")
     # include("problems.jl")
     # include("functions.jl")
-    include("moi.jl")
+    include("MOI_wrapper.jl")
 end

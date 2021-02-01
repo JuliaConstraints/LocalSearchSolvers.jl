@@ -14,13 +14,14 @@ struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Ob
 
     # Bool to indicate if the Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
-    
+
     # Symbol to indicate the kind of model for specialized methods such as pretty printing
     kind::Symbol
 end
 ```
 """
-struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
+struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},
+    O <: Objective{<:Function}} <: MOI.ModelLike
     variables::Dictionary{Int,V}
     constraints::Dictionary{Int,C}
     objectives::Dictionary{Int,O}
@@ -32,7 +33,7 @@ struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Ob
 
     # Bool to indicate if the Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
-    
+
     # Symbol to indicate the kind of model for specialized methods such as pretty printing
     kind::Symbol
 end
@@ -48,7 +49,7 @@ Construct a Model, empty by default. It is recommended to add the constraints, v
 function Model(;
     vars=Dictionary{Int,Variable}(),
     cons=Dictionary{Int,Constraint}(),
-    objs=Dictionary{Int,Objective}(),    
+    objs=Dictionary{Int,Objective}(),
     kind=:generic,
 )
 
@@ -361,4 +362,8 @@ function specialize(m::Model)
     specialized = Ref(true)
 
     Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m))
+end
+
+function _is_empty(m::Model)
+    return length_objs(m) + length_vars(m) == 0
 end

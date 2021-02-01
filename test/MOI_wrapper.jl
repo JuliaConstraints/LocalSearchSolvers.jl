@@ -16,7 +16,7 @@ end
 @testset "supports_default_copy_to" begin
     @test MOIU.supports_default_copy_to(OPTIMIZER, false)
     # Use `@test !...` if names are not supported
-    @test MOIU.supports_default_copy_to(OPTIMIZER, true)
+    @test !MOIU.supports_default_copy_to(OPTIMIZER, true)
 end
 
 const BRIDGED = MOI.instantiate(
@@ -34,18 +34,18 @@ const CONFIG = MOIT.TestConfig(atol=1e-6, rtol=1e-6)
     )
 end
 
-@testset "Modification" begin
-    MOIT.modificationtest(BRIDGED, CONFIG)
-end
+# @testset "Modification" begin
+#     MOIT.modificationtest(BRIDGED, CONFIG)
+# end
 
-@testset "Continuous Linear" begin
-    MOIT.contlineartest(BRIDGED, CONFIG)
-end
+# @testset "Continuous Linear" begin
+#     MOIT.contlineartest(BRIDGED, CONFIG)
+# end
 
-@testset "Continuous Conic" begin
-    MOIT.contlineartest(BRIDGED, CONFIG)
-end
+# @testset "Continuous Conic" begin
+#     MOIT.contlineartest(BRIDGED, CONFIG)
+# end
 
-@testset "Integer Conic" begin
-    MOIT.intconictest(BRIDGED, CONFIG)
-end
+# @testset "Integer Conic" begin
+#     MOIT.intconictest(BRIDGED, CONFIG)
+# end
