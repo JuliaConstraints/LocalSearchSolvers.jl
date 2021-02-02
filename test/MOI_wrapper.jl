@@ -51,4 +51,9 @@ const CONFIG = MOIT.TestConfig(atol=1e-6, rtol=1e-6)
 # end
 
 m = LocalSearchSolvers.Optimizer()
-MOI.add_variables(m, 8)
+MOI.add_variables(m, 2)
+
+MOI.add_constraint(m, MOI.VariableIndex(1), LS.DiscreteSet([1,2,3]))
+MOI.add_constraint(m, MOI.VariableIndex(2), LS.DiscreteSet([1,2,3]))
+
+@info describe(m.solver)

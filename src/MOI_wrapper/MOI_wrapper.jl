@@ -1,3 +1,15 @@
+
+# MOI functions
+const SVF = MOI.SingleVariable
+const VOV = MOI.VectorOfVariables
+
+# MOI indices
+const VI = MOI.VariableIndex
+const CI = MOI.ConstraintIndex
+
+# MOI types
+const VAR_TYPES = Union{MOI.ZeroOne, MOI.Integer}
+
 mutable struct Optimizer <: MOI.AbstractOptimizer
     solver::Solver
     status::MOI.TerminationStatusCode
@@ -8,7 +20,7 @@ function Optimizer(model = Model())
 end
 
 # forward functions from Solver
-@forward Optimizer.solver variable!
+@forward Optimizer.solver variable!, _set_domain!, constraint!
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "LocalSearchSolvers"
 
@@ -28,4 +40,10 @@ end
     MOI.optimize!(model::Optimizer)
 """
 MOI.optimize!(model::Optimizer) = solve!(model.solver)
-    
+
+"""
+    DiscreteSet(values)
+"""
+struct DiscreteSet{V <: AbstractVector} <: MOI.AbstractScalarSet
+    values::V
+end

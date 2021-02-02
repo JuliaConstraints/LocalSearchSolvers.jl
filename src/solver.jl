@@ -108,6 +108,7 @@ end
 @forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
 @forward AbstractSolver.model constraint!, objective!, variable!
 @forward AbstractSolver.model _neighbours, get_name, _is_empty
+@forward AbstractSolver.model _set_domain!
 
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu

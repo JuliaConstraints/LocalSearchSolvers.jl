@@ -250,7 +250,7 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::Model, d = EmptyDomain)
+function variable!(m::Model, d = EmptyDomain())
     add!(m, variable(d))
     return _max_vars(m)
 end
@@ -261,6 +261,7 @@ Add a constraint with an error function `func` defined over variables `vars`.
 """
 function constraint!(m::Model, func, vars)
     add!(m, constraint(func, vars, m.variables))
+    return _max_cons(m)
 end
 
 """
@@ -367,4 +368,10 @@ end
 
 function _is_empty(m::Model)
     return length_objs(m) + length_vars(m) == 0
+end
+
+function _set_domain!(m::Model, x::Int, values)
+    d = domain(values)
+    var = get_variable(m, x)
+    m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end

@@ -62,3 +62,5 @@ x2 = variable([-89,56,28], "x2", domain = :indices)
 variable() = Variable(EmptyDomain(), Indices{Int}())
 variable(domain::D) where {D <: AbstractDomain} = Variable(domain, Indices{Int}())
 variable(vals; dom=:set) = isempty(vals) ? variable() : variable(domain(vals; type=dom))
+
+_get_domain(x::Variable) = x.domain
