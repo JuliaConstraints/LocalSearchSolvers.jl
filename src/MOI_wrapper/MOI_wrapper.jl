@@ -1,16 +1,14 @@
 mutable struct Optimizer <: MOI.AbstractOptimizer
     solver::Solver
-    # variable_info::Vector{Variable}
-#     # which variable index, (:leq,:geq,:eq,:Int,:Bin), and lower and upper bound
-    # var_constraints::Vector{Tuple{Int64,Symbol,Int64,Int64}}
     status::MOI.TerminationStatusCode
-#     options::SolverOptions
 end
 
-function Optimizer(model = Model(); options...)
-    @info options
+function Optimizer(model = Model())
     Optimizer(Solver(model), MOI.OPTIMIZE_NOT_CALLED)
 end
+
+# forward functions from Solver
+@forward Optimizer.solver variable!
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "LocalSearchSolvers"
 

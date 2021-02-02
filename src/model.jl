@@ -250,8 +250,9 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::Model, d)
+function variable!(m::Model, d = EmptyDomain)
     add!(m, variable(d))
+    return _max_vars(m)
 end
 
 """
@@ -284,7 +285,7 @@ function describe(m::Model) # TODO: rewrite _describe
             mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(m); init="")[1:end - 1]
     end
     variables = mapreduce(
-        x -> "\t\t" * x[2].name * "($(x[1])): " * string(x[2].domain.points) * "\n",
+        x -> "\t\tx$(x[1]): " * string(x[2].domain.points) * "\n",
         *, pairs(m.variables); init=""
     )[1:end - 1]
     constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n", *, pairs(m.constraints); init="")[1:end - 1]

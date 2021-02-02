@@ -49,3 +49,6 @@ const CONFIG = MOIT.TestConfig(atol=1e-6, rtol=1e-6)
 # @testset "Integer Conic" begin
 #     MOIT.intconictest(BRIDGED, CONFIG)
 # end
+
+m = LocalSearchSolvers.Optimizer()
+MOI.add_variables(m, 8)
