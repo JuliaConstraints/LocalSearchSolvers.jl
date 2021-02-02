@@ -20,7 +20,7 @@ function Optimizer(model = Model())
 end
 
 # forward functions from Solver
-@forward Optimizer.solver variable!, _set_domain!, constraint!
+@forward Optimizer.solver variable!, _set_domain!, constraint!, solution, domain_size, max_domains_size
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "LocalSearchSolvers"
 

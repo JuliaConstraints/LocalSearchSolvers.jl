@@ -79,8 +79,10 @@ function Solver(
     m::Model,
     settings::Settings=Settings();
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
-) where T <: Number
-    vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
+) where {T <: Number}
+    vars = length_vars(m) > 0 ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
+    cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
+    # vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
     val, tabu = zero(Float64), Dictionary{Int,Int}()
     state = _State(values, vars, cons, val, tabu, false, copy(values), nothing)
     _make_settings!(settings)
@@ -108,7 +110,7 @@ end
 @forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
 @forward AbstractSolver.model constraint!, objective!, variable!
 @forward AbstractSolver.model _neighbours, get_name, _is_empty
-@forward AbstractSolver.model _set_domain!
+@forward AbstractSolver.model _set_domain!, domain_size, max_domains_size
 
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu

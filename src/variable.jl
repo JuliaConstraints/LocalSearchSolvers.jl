@@ -14,7 +14,7 @@ mutable struct Variable{D <: AbstractDomain}
 end
 
 # Methods: lazy forwarding from ConstraintDomains.domain.jl
-@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain
+@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain, _domain_size
 
 """
     _get_constraints(x::Variable)

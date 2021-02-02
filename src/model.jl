@@ -150,7 +150,7 @@ get_domain(m::Model, x) = _get_domain(get_variable(m, x))
     get_name(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the name of variable `x`.
 """
-get_name(m::Model, x) = "x$x"
+get_name(::Model, x) = "x$x"
 
 """
     get_cons_from_var(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -187,6 +187,12 @@ length_objs(m::Model) = length(get_objectives(m))
 Return the number of variables in `m`.
 """
 length_vars(m::Model) = length(get_variables(m))
+
+"""
+    length_cons(m::M) where M <: Union{Model, AbstractSolver}
+Return the number of constraints in `m`.
+"""
+length_cons(m::Model) = length(get_constraints(m))
 
 """
     draw(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -307,7 +313,7 @@ end
 # Neighbours
 function _neighbours(m::Model, x, dim = 0)
     if dim == 0
-        return get_domain(m, x)
+        return _get_domain(get_domain(m, x)) # TODO: clean the get domain methods
     else
         neighbours = Set{Int}()
         foreach(
@@ -375,3 +381,6 @@ function _set_domain!(m::Model, x::Int, values)
     var = get_variable(m, x)
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
+
+domain_size(m::Model, x) = _domain_size(get_domain(m, x))
+max_domains_size(m::Model, vars) = maximum(map(x -> domain_size(m, x), vars))

@@ -4,6 +4,9 @@ const MOIT = MOI.Test
 const MOIU = MOI.Utilities
 const MOIB = MOI.Bridges
 
+const VOV = MOI.VectorOfVariables
+const VI = MOI.VariableIndex
+
 const OPTIMIZER_CONSTRUCTOR = MOI.OptimizerWithAttributes(
     LocalSearchSolvers.Optimizer, MOI.Silent() => true
 )
@@ -51,9 +54,15 @@ const CONFIG = MOIT.TestConfig(atol=1e-6, rtol=1e-6)
 # end
 
 m = LocalSearchSolvers.Optimizer()
-MOI.add_variables(m, 2)
+MOI.add_variables(m, 3)
 
-MOI.add_constraint(m, MOI.VariableIndex(1), LS.DiscreteSet([1,2,3]))
-MOI.add_constraint(m, MOI.VariableIndex(2), LS.DiscreteSet([1,2,3]))
+MOI.add_constraint(m, VI(1), LS.DiscreteSet([1,2,3]))
+MOI.add_constraint(m, VI(2), LS.DiscreteSet([1,2,3]))
+MOI.add_constraint(m, VI(3), LS.DiscreteSet([1,2,3]))
 
-@info describe(m.solver)
+MOI.add_constraint(m, VOV([VI(1),VI(2)]), LS.Predicate(allunique))
+MOI.add_constraint(m, VOV([VI(2),VI(3)]), LS.AllDifferent())
+
+MOI.optimize!(m)
+
+@info solution(m.solver)

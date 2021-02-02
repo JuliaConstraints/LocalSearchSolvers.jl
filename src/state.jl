@@ -107,13 +107,13 @@ _satisfying!(s::_State) = s.optimizing = false
     _cons_cost(s::S, c) where S <: Union{_State, AbstractSolver}
 Return the cost of constraint `c`.
 """
-_cons_cost(s::_State, c) = _cons_costs(s)[c]
+_cons_cost(s::_State, c) = get!(_cons_costs(s), c, 0.0)
 
 """
     _var_cost(s::S, x) where S <: Union{_State, AbstractSolver}
 Return the cost of variable `x`.
 """
-_var_cost(s::_State, x) = _vars_costs(s)[x]
+_var_cost(s::_State, x) = get!(_vars_costs(s), x, 0.0)
 
 """
     _value(s::S, x) where S <: Union{_State, AbstractSolver}

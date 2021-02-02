@@ -15,7 +15,6 @@ struct Constraint{F <: Function}
         aux_values = map(id -> values[id], inds)
         arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
         applicable(f, aux_values) || throw(arg_err)
-        # @info typeof(aux_values)
         return new{F}(f, inds)
     end
 
@@ -25,7 +24,6 @@ struct Constraint{F <: Function}
         values = map(id ->_draw(vars[id]), inds)
         arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
         applicable(f, values) || throw(arg_err)
-        # @info typeof(values)
         return new{F}(f, inds)
     end
 end

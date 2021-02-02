@@ -13,7 +13,7 @@ function sudoku(n; start=Dictionary{Int,Int}())
     if isempty(start)
         foreach(_ -> variable!(m, d), 1:(N^2))
     else
-        foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v:v) : d), pairs(start))
+        foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v) : d), pairs(start))
     end
 
 

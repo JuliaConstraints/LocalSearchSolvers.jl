@@ -10,7 +10,7 @@ import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
 import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
-import ConstraintDomains: _get, _get_domain
+import ConstraintDomains: _get, _get_domain, _domain_size
 import Dates: Time
 
 # Usings
