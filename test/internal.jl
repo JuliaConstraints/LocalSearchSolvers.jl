@@ -24,8 +24,9 @@ end
 
 
 ## test variables
-x1 = variable([4,3,2,1], "x1")
-x2 = variable(d2, "x2")
+x1 = variable([4,3,2,1])
+x2 = variable(d2)
+x3 = variable() # TODO: tailored test for free variable
 vars = Dictionary(1:2, [x1, x2])
 
 @test LS._get(x2, 2) == 3
@@ -78,8 +79,8 @@ end
 m = Model()
 @test_logs describe(m)
 
-x1 = variable([4,3,2,1], "x1")
-x2 = variable(d2, "x2")
+x1 = variable([4,3,2,1])
+x2 = variable(d2)
 vars = Dictionary(1:2, [x1, x2])
 for x in vars
     add!(m, x)

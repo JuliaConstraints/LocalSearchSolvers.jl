@@ -9,7 +9,7 @@ import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, domain, _add!, _delete!, _draw, _length
+import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
 import ConstraintDomains: _get, _get_domain
 import Dates: Time
 

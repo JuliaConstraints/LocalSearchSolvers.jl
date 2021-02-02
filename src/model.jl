@@ -150,7 +150,7 @@ get_domain(m::Model, x) = _get_domain(get_variable(m, x))
     get_name(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the name of variable `x`.
 """
-get_name(m::Model, x) = _get_name(get_variable(m, x))
+get_name(m::Model, x) = "x$x"
 
 """
     get_cons_from_var(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -251,7 +251,7 @@ end
 Add a variable with domain `d` to `m`.
 """
 function variable!(m::Model, d)
-    add!(m, variable(d, "x" * string(_max_vars(m) + 1)))
+    add!(m, variable(d))
 end
 
 """
