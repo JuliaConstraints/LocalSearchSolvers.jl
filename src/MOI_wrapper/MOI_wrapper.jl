@@ -47,3 +47,4 @@ MOI.optimize!(model::Optimizer) = solve!(model.solver)
 struct DiscreteSet{V <: AbstractVector} <: MOI.AbstractScalarSet
     values::V
 end
+DiscreteSet(values) = DiscreteSet(collect(values))

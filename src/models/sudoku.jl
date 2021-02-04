@@ -264,3 +264,32 @@ Base.display(S::SudokuInstance) = display(stdout, S)
 Extends `Base.display` to a sudoku configuration.
 """
 Base.display(X::Dictionary) = display(SudokuInstance(X))
+
+function sudoku_moi(n)
+    N = n^2
+    m = Optimizer()
+    MOI.add_variables(m, N^2)
+
+    # Add domain to variables
+    foreach(i -> MOI.add_constraint(m, VI(i), DiscreteSet(1:N)), 1:N^2)
+
+    # Add constraints: line, columns; blocks
+    foreach(i -> MOI.add_constraint(m, VOV(map(VI, (i * N + 1):((i + 1) * N))),
+        AllDifferent()), 0:(N - 1))
+    foreach(i -> MOI.add_constraint(m, VOV(map(VI, [j * N + i for j in 0:(N - 1)])),
+            AllDifferent()), 1:N)
+
+    for i in 0:(n - 1)
+        for j in 0:(n - 1)
+            vars = Vector{Int}()
+            for k in 1:n
+                for l in 0:(n - 1)
+                    push!(vars, (j * n + l) * N + i * n + k)
+                end
+            end
+            MOI.add_constraint(m, VOV(map(VI, vars)), AllDifferent())
+        end
+    end
+
+    return m
+end
