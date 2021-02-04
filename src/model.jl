@@ -376,7 +376,7 @@ function _is_empty(m::Model)
     return length_objs(m) + length_vars(m) == 0
 end
 
-function _set_domain!(m::Model, x::Int, values)
+function _set_domain!(m::Model, x, values)
     d = domain(values)
     var = get_variable(m, x)
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
