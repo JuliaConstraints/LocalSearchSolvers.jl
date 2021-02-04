@@ -4,7 +4,7 @@ module LocalSearchSolvers
 
 # Imports
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
-import Base: ∈, convert
+import Base: ∈, convert, copy
 import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
@@ -17,6 +17,7 @@ import Dates: Time
 using MathOptInterface
 
 # Const
+const CBLS = LocalSearchSolvers
 const MOI = MathOptInterface
 const MOIU = MOI.Utilities
 
@@ -36,6 +37,9 @@ export o_dist_extrema, o_mincut
 
 # Exports Solver
 export Solver, solve!, specialize, specialize!, Settings
+
+# Export MOI
+export Optimizer, CBLS, supports_constraint
 
 # Include utils
 include("utils.jl")

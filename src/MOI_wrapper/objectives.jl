@@ -1,5 +1,5 @@
 # TODO: MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
-MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{ScalarFunction}) = true
+MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{ScalarFunction{F}}) where {F <: Function} = true
 
 # TODO: sense
 # MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.inner.sense

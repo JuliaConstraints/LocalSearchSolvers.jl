@@ -50,6 +50,7 @@ struct DiscreteSet{V <: AbstractVector} <: MOI.AbstractScalarSet
 end
 DiscreteSet(values) = DiscreteSet(collect(values))
 
+Base.copy(set::DiscreteSet) = DiscreteSet(copy(set.values))
 
 """
     ScalarFunction(objective)
@@ -57,3 +58,5 @@ DiscreteSet(values) = DiscreteSet(collect(values))
 struct ScalarFunction{F <: Function} <: MOI.AbstractScalarFunction
     f::F
 end
+
+Base.copy(func::ScalarFunction) = ScalarFunction(func.f)

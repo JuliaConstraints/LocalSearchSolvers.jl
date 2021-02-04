@@ -26,7 +26,7 @@ Single variable bound constraints
 #     return true
 # end
 
-MOI.supports_constraint(::Optimizer, ::Type{SVF}, ::Type{DiscreteSet}) = true
+MOI.supports_constraint(::Optimizer, ::Type{SVF}, ::Type{DiscreteSet{V}}) where {V <: AbstractVector} = true
 
 function MOI.add_constraint(optimizer::Optimizer, v::SVF, set::DiscreteSet)
     _set_domain!(optimizer, v.variable.value, set.values)
