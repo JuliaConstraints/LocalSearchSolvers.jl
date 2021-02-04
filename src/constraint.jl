@@ -10,22 +10,21 @@ struct Constraint{F <: Function}
     function Constraint(F, c::Constraint{F2}) where {F2 <: Function}
         return new{F}(c.f, c.vars)
     end
-    function Constraint(f::F, inds, values
-        ) where {T <: Number,F <: Function}
+    function Constraint(f::F, inds, values) where {F <: Function}
         aux_values = map(id -> values[id], inds)
         arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
         applicable(f, aux_values) || throw(arg_err)
         return new{F}(f, inds)
     end
 
-    function Constraint(
-            f::F, inds, vars
-        ) where {F <: Function}
-        values = map(id ->_draw(vars[id]), inds)
-        arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
-        applicable(f, values) || throw(arg_err)
-        return new{F}(f, inds)
-    end
+    # function Constraint(
+    #         f::F, inds, vars
+    #     ) where {F <: Function}
+    #     values = map(id ->_draw(vars[id]), inds)
+    #     arg_err = ArgumentError("Function has no method with signature $(typeof.(values))")
+    #     applicable(f, values) || throw(arg_err)
+    #     return new{F}(f, inds)
+    # end
 end
 
 """
