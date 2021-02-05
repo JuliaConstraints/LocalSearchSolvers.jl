@@ -81,4 +81,4 @@ m2 = LocalSearchSolvers.Optimizer()
 MOI.add_constrained_variable(m2, LS.DiscreteSet([1,2,3]))
 
 m3 = CBLS.sudoku_jump(3)
-# JuMP.optimize!(m3)
+JuMP.optimize!(m3)

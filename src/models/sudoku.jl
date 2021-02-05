@@ -308,8 +308,5 @@ function sudoku_jump(n)
     for i in 1:n, j in 1:n
         @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent(N))
     end
-
-    # JuMP.optimize!(m)
-
     return m
 end

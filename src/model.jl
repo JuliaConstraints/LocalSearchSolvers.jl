@@ -265,8 +265,8 @@ end
     constraint!(m::M, func, vars) where M <: Union{Model, AbstractSolver}
 Add a constraint with an error function `func` defined over variables `vars`.
 """
-function constraint!(m::Model, func, vars)
-    add!(m, Constraint(func, vars))
+function constraint!(m::Model, func, vars::V) where {V <: AbstractVector{<:Number}}
+    add!(m, constraint(func, vars))
     return _max_cons(m)
 end
 

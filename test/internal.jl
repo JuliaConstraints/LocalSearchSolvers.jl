@@ -53,8 +53,8 @@ end
 values = [1, 2, 3]
 inds = [1, 2]
 err = error_f(usual_constraints[:all_different])
-c1 = constraint(err, inds, values)
-c2 = constraint(err, inds, vars)
+c1 = constraint(err, inds)
+c2 = constraint(err, inds)
 cons = Dictionary(1:2, [c1, c2])
 
 for c in cons
@@ -89,8 +89,8 @@ variable!(m, d1)
 
 values = [1, 2, 3]
 inds = [1, 2]
-c1 = constraint(err, inds, values)
-c2 = constraint(err, inds, vars)
+c1 = constraint(err, inds)
+c2 = constraint(err, inds)
 cons = Dictionary(1:2, [c1, c2])
 for c in cons
     add!(m, c)
