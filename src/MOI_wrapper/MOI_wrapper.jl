@@ -21,7 +21,7 @@ end
 
 # forward functions from Solver
 @forward Optimizer.solver variable!, _set_domain!, constraint!, solution, domain_size
-@forward Optimizer.solver max_domains_size, objective!
+@forward Optimizer.solver max_domains_size, objective!, empty!, _inc_cons!, _max_cons
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "LocalSearchSolvers"
 
@@ -45,10 +45,11 @@ MOI.optimize!(model::Optimizer) = solve!(model.solver)
 """
     DiscreteSet(values)
 """
-struct DiscreteSet{V <: AbstractVector} <: MOI.AbstractScalarSet
-    values::V
+struct DiscreteSet{T <: Number} <: MOI.AbstractScalarSet
+    values::Vector{T}
 end
 DiscreteSet(values) = DiscreteSet(collect(values))
+DiscreteSet(values::T...) where {T<:Number} = DiscreteSet(collect(values))
 
 Base.copy(set::DiscreteSet) = DiscreteSet(copy(set.values))
 
@@ -60,3 +61,5 @@ struct ScalarFunction{F <: Function} <: MOI.AbstractScalarFunction
 end
 
 Base.copy(func::ScalarFunction) = ScalarFunction(func.f)
+
+MOI.empty!(opt) = empty!(opt)

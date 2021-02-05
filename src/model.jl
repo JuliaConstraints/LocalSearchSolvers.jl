@@ -266,7 +266,7 @@ end
 Add a constraint with an error function `func` defined over variables `vars`.
 """
 function constraint!(m::Model, func, vars)
-    add!(m, constraint(func, vars, m.variables))
+    add!(m, Constraint(func, vars))
     return _max_cons(m)
 end
 
@@ -384,3 +384,13 @@ end
 
 domain_size(m::Model, x) = _domain_size(get_domain(m, x))
 max_domains_size(m::Model, vars) = maximum(map(x -> domain_size(m, x), vars))
+
+function empty!(m::Model)
+    empty!(m.variables)
+    empty!(m.constraints)
+    empty!(m.objectives)
+    m.max_vars[] = 0
+    m.max_cons[] = 0
+    m.max_objs[] = 0
+    m.specialized[] = false
+end

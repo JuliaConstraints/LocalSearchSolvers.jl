@@ -3,7 +3,8 @@ struct Error{F <: Function} <: MOI.AbstractVectorSet
 end
 MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{Error}) = true
 function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::Error)
-    return constraint!(optimizer, set.f, map(x -> x.value, vars.variables))
+    cidx = constraint!(optimizer, set.f, map(x -> x.value, vars.variables))
+    return CI{SVF, Error}(cidx)
 end
 
 struct Predicate{F <: Function} <: MOI.AbstractVectorSet
@@ -14,15 +15,19 @@ function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, s
     return MOI.add_constraint(optimizer, vars, Error(x -> convert(Float64, !set.f(x))))
 end
 
-struct AllDifferent <: MOI.AbstractVectorSet end
+struct AllDifferent <: MOI.AbstractVectorSet
+    dimension::Int64
+end
 MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{AllDifferent}) = true
 function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, ::AllDifferent)
     max_dom_size = max_domains_size(optimizer, map(x -> x.value, vars.variables))
     e = (x; param=nothing, dom_size=max_dom_size) -> error_f(
         usual_constraints[:all_different])(x; param=param, dom_size=dom_size
     )
-    return MOI.add_constraint(optimizer, vars, Error(e))
+    cidx = constraint!(optimizer, e, map(x -> x.value, vars.variables))
+    return CI{VOV, AllDifferent}(cidx)
 end
+Base.copy(set::AllDifferent) = AllDifferent(copy(set.dimension))
 
 struct AllEqual <: MOI.AbstractVectorSet end
 MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{AllEqual}) = true

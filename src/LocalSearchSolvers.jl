@@ -3,7 +3,7 @@ module LocalSearchSolvers
 # TODO: return types: nothing, ind for internals etc
 
 # Imports
-import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
+import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
 import Base: ∈, convert, copy
 import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
@@ -12,6 +12,8 @@ import CompositionalNetworks: optimize!, csv2space, compose, ICN
 import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
 import ConstraintDomains: _get, _get_domain, _domain_size
 import Dates: Time
+import JuMP
+import JuMP: @constraint, @variable, @objective
 
 # Usings
 using MathOptInterface

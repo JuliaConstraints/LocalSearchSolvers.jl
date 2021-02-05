@@ -1,8 +1,8 @@
-MOI.add_variable(model::Optimizer) = variable!(model)
+MOI.add_variable(model::Optimizer) = VI(variable!(model))
 MOI.add_variables(model::Optimizer, n::Int) = [MOI.add_variable(model) for i in 1:n]
 
 # MOI.supports_constraint(::Optimizer, ::Type{SVF}) = true
-  
+
 """
 Single variable bound constraints
 """
@@ -26,16 +26,18 @@ Single variable bound constraints
 #     return true
 # end
 
-MOI.supports_constraint(::Optimizer, ::Type{SVF}, ::Type{DiscreteSet{V}}) where {V <: AbstractVector} = true
+MOI.supports_constraint(::Optimizer, ::Type{SVF}, ::Type{DiscreteSet{T}}) where {T <: Number} = true
 
 function MOI.add_constraint(optimizer::Optimizer, v::SVF, set::DiscreteSet)
-    _set_domain!(optimizer, v.variable.value, set.values)
+    vidx = MOI.index_value(v.variable)
+    _set_domain!(optimizer, vidx, set.values)
+    return CI{SVF, DiscreteSet}(vidx)
 end
+
+# convert(Int, x::CI{SVF, DiscreteSet}) = x.value
 
 
 """
 Binary/Integer variable support
 """
 # MOI.supports_constraint(::Optimizer, ::Type{SVF}, ::Type{<:VAR_TYPES}) = true
-
-

@@ -275,9 +275,9 @@ function sudoku_moi(n)
 
     # Add constraints: line, columns; blocks
     foreach(i -> MOI.add_constraint(m, VOV(map(VI, (i * N + 1):((i + 1) * N))),
-        AllDifferent()), 0:(N - 1))
+        AllDifferent(N)), 0:(N - 1))
     foreach(i -> MOI.add_constraint(m, VOV(map(VI, [j * N + i for j in 0:(N - 1)])),
-            AllDifferent()), 1:N)
+            AllDifferent(N)), 1:N)
 
     for i in 0:(n - 1)
         for j in 0:(n - 1)
@@ -287,9 +287,29 @@ function sudoku_moi(n)
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
-            MOI.add_constraint(m, VOV(map(VI, vars)), AllDifferent())
+            MOI.add_constraint(m, VOV(map(VI, vars)), AllDifferent(N))
         end
     end
+
+    return m
+end
+
+function sudoku_jump(n)
+    N = n^2
+    m = JuMP.Model(CBLS.Optimizer)
+    @variable(m, X[1:N, 1:N])
+    for i in 1:N, j in 1:N
+        @constraint(m, X[i,j] in DiscreteSet(1:N))
+    end
+    for i in 1:N
+        @constraint(m, X[i,:] in AllDifferent(N))
+        @constraint(m, X[:,i] in AllDifferent(N))
+    end
+    for i in 1:n, j in 1:n
+        @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent(N))
+    end
+
+    # JuMP.optimize!(m)
 
     return m
 end

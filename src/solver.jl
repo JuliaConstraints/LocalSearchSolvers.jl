@@ -111,6 +111,7 @@ end
 @forward AbstractSolver.model constraint!, objective!, variable!
 @forward AbstractSolver.model _neighbours, get_name, _is_empty
 @forward AbstractSolver.model _set_domain!, domain_size, max_domains_size
+@forward AbstractSolver.model _inc_cons!, _max_cons
 
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
@@ -431,3 +432,9 @@ end
 Return the only/best known solution of a satisfaction/optimization model.
 """
 solution(s) = is_sat(s) ? _values(s) : _solution(s)
+
+function empty!(s::Solver)
+    empty!(s.model)
+    empty!(s.state)
+    empty!(s.subs)
+end
