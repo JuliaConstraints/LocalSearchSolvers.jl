@@ -28,10 +28,10 @@ Single variable bound constraints
 
 MOI.supports_constraint(::Optimizer, ::Type{SVF}, ::Type{DiscreteSet{T}}) where {T <: Number} = true
 
-function MOI.add_constraint(optimizer::Optimizer, v::SVF, set::DiscreteSet)
+function MOI.add_constraint(optimizer::Optimizer, v::SVF, set::DiscreteSet{T}) where {T <: Number}
     vidx = MOI.index_value(v.variable)
     _set_domain!(optimizer, vidx, set.values)
-    return CI{SVF, DiscreteSet}(vidx)
+    return CI{SVF, DiscreteSet{T}}(vidx)
 end
 
 # convert(Int, x::CI{SVF, DiscreteSet}) = x.value
