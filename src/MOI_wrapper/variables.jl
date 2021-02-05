@@ -34,8 +34,6 @@ function MOI.add_constraint(optimizer::Optimizer, v::SVF, set::DiscreteSet{T}) w
     return CI{SVF, DiscreteSet{T}}(vidx)
 end
 
-# convert(Int, x::CI{SVF, DiscreteSet}) = x.value
-
 
 """
 Binary/Integer variable support

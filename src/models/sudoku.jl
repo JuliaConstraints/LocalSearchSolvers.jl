@@ -297,10 +297,13 @@ end
 function sudoku_jump(n)
     N = n^2
     m = JuMP.Model(CBLS.Optimizer)
-    @variable(m, X[1:N, 1:N])
-    for i in 1:N, j in 1:N
-        @constraint(m, X[i,j] in DiscreteSet(1:N))
-    end
+    # @variable(m, X[1:N, 1:N])
+    # for i in 1:N, j in 1:N
+    #     @constraint(m, X[i,j] in DiscreteSet(1:N))
+    # end
+    @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
+    # @variable(m, X[1:N, 1:N] in DiscreteSet(1:N))
+
     for i in 1:N
         @constraint(m, X[i,:] in AllDifferent(N))
         @constraint(m, X[:,i] in AllDifferent(N))
