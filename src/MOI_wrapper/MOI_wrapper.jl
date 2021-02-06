@@ -10,6 +10,15 @@ const CI = MOI.ConstraintIndex
 # MOI types
 const VAR_TYPES = Union{MOI.ZeroOne, MOI.Integer}
 
+# support for @variable(m, x, Set)
+function JuMP.build_variable(
+    ::Function,
+    info::JuMP.VariableInfo,
+    set::T,
+) where {T<:MOI.AbstractScalarSet}
+    return JuMP.VariableConstrainedOnCreation(JuMP.ScalarVariable(info), set)
+end
+
 mutable struct Optimizer <: MOI.AbstractOptimizer
     solver::Solver
     status::MOI.TerminationStatusCode
