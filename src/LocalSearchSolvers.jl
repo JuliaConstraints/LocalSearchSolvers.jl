@@ -11,7 +11,7 @@ import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
 import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
 import ConstraintDomains: _get, _get_domain, _domain_size
-import Dates: Time
+import Dates: Time, Nanosecond
 import JuMP
 import JuMP: @constraint, @variable, @objective
 
@@ -38,7 +38,7 @@ export Model, sudoku, golomb, mincut
 export o_dist_extrema, o_mincut
 
 # Exports Solver
-export Solver, solve!, specialize, specialize!, Settings
+export Solver, solve!, specialize, specialize!, Options
 
 # Export MOI
 export Optimizer, CBLS, supports_constraint
@@ -52,7 +52,7 @@ include("constraint.jl")
 include("objective.jl")
 
 # Include solvers
-include("option.jl")
+include("options.jl")
 include("model.jl")
 include("state.jl")
 include("solver.jl")
