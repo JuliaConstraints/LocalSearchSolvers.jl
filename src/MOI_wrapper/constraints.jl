@@ -17,19 +17,22 @@ function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, s
     return CI{SVF, Predicate}(cidx)
 end
 
-struct AllDifferent <: MOI.AbstractVectorSet
+struct MOIAllDifferent <: MOI.AbstractVectorSet
     dimension::Int
 end
-MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{AllDifferent}) = true
-function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, ::AllDifferent)
+MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIAllDifferent}) = true
+function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, ::MOIAllDifferent)
     max_dom_size = max_domains_size(optimizer, map(x -> x.value, vars.variables))
     e = (x; param=nothing, dom_size=max_dom_size) -> error_f(
         usual_constraints[:all_different])(x; param=param, dom_size=dom_size
     )
     cidx = constraint!(optimizer, e, map(x -> x.value, vars.variables))
-    return CI{VOV, AllDifferent}(cidx)
+    return CI{VOV, MOIAllDifferent}(cidx)
 end
-Base.copy(set::AllDifferent) = AllDifferent(copy(set.dimension))
+Base.copy(set::MOIAllDifferent) = MOIAllDifferent(copy(set.dimension))
+
+struct AllDifferent <: JuMP.AbstractVectorSet end
+JuMP.moi_set(::AllDifferent, dim::Int) = MOIAllDifferent(dim)
 
 struct AllEqual <: MOI.AbstractVectorSet
     dimension::Int

@@ -275,9 +275,9 @@ function sudoku_moi(n)
 
     # Add constraints: line, columns; blocks
     foreach(i -> MOI.add_constraint(m, VOV(map(VI, (i * N + 1):((i + 1) * N))),
-        AllDifferent(N)), 0:(N - 1))
+        MOIAllDifferent(N)), 0:(N - 1))
     foreach(i -> MOI.add_constraint(m, VOV(map(VI, [j * N + i for j in 0:(N - 1)])),
-            AllDifferent(N)), 1:N)
+            MOIAllDifferent(N)), 1:N)
 
     for i in 0:(n - 1)
         for j in 0:(n - 1)
@@ -287,7 +287,7 @@ function sudoku_moi(n)
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
-            MOI.add_constraint(m, VOV(map(VI, vars)), AllDifferent(N))
+            MOI.add_constraint(m, VOV(map(VI, vars)), MOIAllDifferent(N))
         end
     end
 
@@ -301,11 +301,11 @@ function sudoku_jump(n)
     @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
 
     for i in 1:N
-        @constraint(m, X[i,:] in AllDifferent(N)) # rows
-        @constraint(m, X[:,i] in AllDifferent(N)) # columns
+        @constraint(m, X[i,:] in AllDifferent()) # rows
+        @constraint(m, X[:,i] in AllDifferent()) # columns
     end
     for i in 1:n, j in 1:n
-        @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent(N)) # blocks
+        @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent()) # blocks
     end
     return m
 end
