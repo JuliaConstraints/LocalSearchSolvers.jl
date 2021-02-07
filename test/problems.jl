@@ -1,5 +1,5 @@
 models = [
-    sudoku(2),
+    sudoku(2; modeler = :raw),
 ]
 
 for m in models
@@ -58,7 +58,7 @@ sudoku_instance = collect(Iterators.flatten([
     0  7  0  0  0  0  0  5  3
 ]))
 
-s = Solver(sudoku(3, start = sudoku_instance), Settings(:verbose => false, :iteration => 10000))
+s = Solver(sudoku(3, start = sudoku_instance, modeler = :raw), Settings(:verbose => false, :iteration => 10000))
 display(Dictionary(1:length(sudoku_instance), sudoku_instance))
 solve!(s)
 display(solution(s))

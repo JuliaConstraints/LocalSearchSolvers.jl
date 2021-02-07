@@ -69,7 +69,7 @@ MOI.optimize!(m)
 
 @info solution(m.solver)
 
-opt = CBLS.sudoku_moi(3)
+opt = CBLS.sudoku(3, modeler = :MOI)
 MOI.optimize!(opt)
 @info solution(opt)
 
@@ -80,5 +80,5 @@ MOI.add_constraint(m1, VI(1), LS.DiscreteSet([1,2,3]))
 m2 = LocalSearchSolvers.Optimizer()
 MOI.add_constrained_variable(m2, LS.DiscreteSet([1,2,3]))
 
-m3 = CBLS.sudoku_jump(3)
+m3 = CBLS.sudoku(3)
 JuMP.optimize!(m3)

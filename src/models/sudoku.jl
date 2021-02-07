@@ -1,9 +1,4 @@
-"""
-    sudoku(n; start= Dictionary{Int, Int}())
-
-Create a model for the sudoku problem of domain `1:n²` with optional starting values.
-"""
-function sudoku(n; start=Dictionary{Int,Int}())
+function sudoku(n, start, ::Val{:raw})
     N = n^2
     d = domain(1:N)
 
@@ -39,6 +34,58 @@ function sudoku(n; start=Dictionary{Int,Int}())
 
     return m
 end
+
+function sudoku(n, start, ::Val{:MOI})
+    N = n^2
+    m = Optimizer()
+    MOI.add_variables(m, N^2)
+
+    # Add domain to variables
+    foreach(i -> MOI.add_constraint(m, VI(i), DiscreteSet(1:N)), 1:N^2)
+
+    # Add constraints: line, columns; blocks
+    foreach(i -> MOI.add_constraint(m, VOV(map(VI, (i * N + 1):((i + 1) * N))),
+        MOIAllDifferent(N)), 0:(N - 1))
+    foreach(i -> MOI.add_constraint(m, VOV(map(VI, [j * N + i for j in 0:(N - 1)])),
+            MOIAllDifferent(N)), 1:N)
+
+    for i in 0:(n - 1)
+        for j in 0:(n - 1)
+            vars = Vector{Int}()
+            for k in 1:n
+                for l in 0:(n - 1)
+                    push!(vars, (j * n + l) * N + i * n + k)
+                end
+            end
+            MOI.add_constraint(m, VOV(map(VI, vars)), MOIAllDifferent(N))
+        end
+    end
+
+    return m
+end
+
+function sudoku(n, start, ::Val{:JuMP})
+    N = n^2
+    m = JuMP.Model(CBLS.Optimizer)
+
+    @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
+
+    for i in 1:N
+        @constraint(m, X[i,:] in AllDifferent()) # rows
+        @constraint(m, X[:,i] in AllDifferent()) # columns
+    end
+    for i in 1:n, j in 1:n
+        @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent()) # blocks
+    end
+    return m
+end
+
+"""
+    sudoku(n; start= Dictionary{Int, Int}(), modeler = :JuMP)
+
+Create a model for the sudoku problem of domain `1:n²` with optional starting values. The `modeler` argument accepts :raw, :MOI, and :JuMP (default), which refer respectively to the solver internal model, the MathOptInterface model, and the JuMP model.
+"""
+sudoku(n; start=Dictionary{Int,Int}(), modeler = :JuMP) = sudoku(n, start, Val(modeler))
 
 @doc raw"""
 ```julia
@@ -264,48 +311,3 @@ Base.display(S::SudokuInstance) = display(stdout, S)
 Extends `Base.display` to a sudoku configuration.
 """
 Base.display(X::Dictionary) = display(SudokuInstance(X))
-
-function sudoku_moi(n)
-    N = n^2
-    m = Optimizer()
-    MOI.add_variables(m, N^2)
-
-    # Add domain to variables
-    foreach(i -> MOI.add_constraint(m, VI(i), DiscreteSet(1:N)), 1:N^2)
-
-    # Add constraints: line, columns; blocks
-    foreach(i -> MOI.add_constraint(m, VOV(map(VI, (i * N + 1):((i + 1) * N))),
-        MOIAllDifferent(N)), 0:(N - 1))
-    foreach(i -> MOI.add_constraint(m, VOV(map(VI, [j * N + i for j in 0:(N - 1)])),
-            MOIAllDifferent(N)), 1:N)
-
-    for i in 0:(n - 1)
-        for j in 0:(n - 1)
-            vars = Vector{Int}()
-            for k in 1:n
-                for l in 0:(n - 1)
-                    push!(vars, (j * n + l) * N + i * n + k)
-                end
-            end
-            MOI.add_constraint(m, VOV(map(VI, vars)), MOIAllDifferent(N))
-        end
-    end
-
-    return m
-end
-
-function sudoku_jump(n)
-    N = n^2
-    m = JuMP.Model(CBLS.Optimizer)
-
-    @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
-
-    for i in 1:N
-        @constraint(m, X[i,:] in AllDifferent()) # rows
-        @constraint(m, X[:,i] in AllDifferent()) # columns
-    end
-    for i in 1:n, j in 1:n
-        @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent()) # blocks
-    end
-    return m
-end
