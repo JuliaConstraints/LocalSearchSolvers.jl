@@ -63,7 +63,7 @@ display(Dictionary(1:length(sudoku_instance), sudoku_instance))
 solve!(s)
 display(solution(s))
 
-s = Solver(golomb(5), Options(print_level = :minimal, iteration = 1000))
+s = Solver(golomb(5, modeler = :raw), Options(print_level = :minimal, iteration = 1000))
 solve!(s)
 
 @info "Results golomb!"
