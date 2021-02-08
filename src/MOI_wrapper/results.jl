@@ -15,17 +15,17 @@ function MOI.get(optimizer::Optimizer, ::MOI.VariablePrimal, vi::MOI.VariableInd
     end
 end
 
-function set_status!(optimizer::Optimizer, status::Symbol)
-    if status == :Solved
-        optimizer.status = MOI.OPTIMAL
-    elseif status == :Infeasible
-        optimizer.status = MOI.INFEASIBLE
-    elseif status == :Time
-        optimizer.status = MOI.TIME_LIMIT
-    else
-        optimizer.status = MOI.OTHER_LIMIT
-    end
-end
+# function set_status!(optimizer::Optimizer, status::Symbol)
+#     if status == :Solved
+#         optimizer.status = MOI.OPTIMAL
+#     elseif status == :Infeasible
+#         optimizer.status = MOI.INFEASIBLE
+#     elseif status == :Time
+#         optimizer.status = MOI.TIME_LIMIT
+#     else
+#         optimizer.status = MOI.OTHER_LIMIT
+#     end
+# end
 
 function MOI.get(optimizer::Optimizer, ::MOI.SolveTime)
     return 0.0

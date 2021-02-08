@@ -80,5 +80,7 @@ MOI.add_constraint(m1, VI(1), LS.DiscreteSet([1,2,3]))
 m2 = LocalSearchSolvers.Optimizer()
 MOI.add_constrained_variable(m2, LS.DiscreteSet([1,2,3]))
 
-m3 = CBLS.sudoku(3)
+m3, X = CBLS.sudoku(3)
 JuMP.optimize!(m3)
+opt_solution = value.(X)
+@info "solution" opt_solution

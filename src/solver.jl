@@ -383,6 +383,15 @@ function _solve!(s, stop)
     end
 end
 
+function status(s)
+    e = _error(s)
+    if e == 0.0 # make tolerance
+        return is_sat(s) ? :Solved : :LocalOptimum
+    else
+        return :Infeasible
+    end
+end
+
 """
     solve!(s; max_iteration=1000, verbose::Bool=false)
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -420,6 +429,7 @@ function solve!(s)
             _solve!(s.subs[id - 1], stop)
         end
     end
+    return status(s)
 end
 
 """
@@ -434,18 +444,3 @@ function empty!(s::Solver)
     empty!(s.state)
     empty!(s.subs)
 end
-
-# function status(s)
-#     sat = is_sat(s)
-#     e = error(s)
-#     if e == 0.0 # make tolerance
-#         if sat
-#             return :Solved
-#         else
-
-#         end
-#     else
-#         return :NotFeasible
-#     end
-
-# end

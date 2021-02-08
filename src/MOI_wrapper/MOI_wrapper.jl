@@ -32,7 +32,7 @@ end
 # forward functions from Solver
 @forward Optimizer.solver variable!, _set_domain!, constraint!, solution, domain_size
 @forward Optimizer.solver max_domains_size, objective!, empty!, _inc_cons!, _max_cons
-@forward Optimizer.solver _best_bound, _best, is_sat
+@forward Optimizer.solver _best_bound, _best, is_sat, _value
 
 MOI.get(::Optimizer, ::MOI.SolverName) = "LocalSearchSolvers"
 
@@ -48,10 +48,24 @@ function MOI.copy_to(model::Optimizer, src::MOI.ModelLike; kws...)
     return MOIU.automatic_copy_to(model, src; kws...)
 end
 
+function set_status!(optimizer::Optimizer, status::Symbol)
+    if status == :Solved
+        optimizer.status = MOI.OPTIMAL
+    elseif status == :Infeasible
+        optimizer.status = MOI.INFEASIBLE
+    elseif status == :LocalOptimum
+        optimizer.status = MOI.TIME_LIMIT
+    else
+        optimizer.status = MOI.OTHER_LIMIT
+    end
+end
+
 """
     MOI.optimize!(model::Optimizer)
 """
-MOI.optimize!(model::Optimizer) = solve!(model.solver)
+function MOI.optimize!(optimizer::Optimizer)
+    set_status!(optimizer, solve!(optimizer.solver))
+end
 
 """
     DiscreteSet(values)
