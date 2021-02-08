@@ -267,7 +267,9 @@ function _init_solve!(s::Solver)
     # Tabu times
     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
     _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
-    _tabu_delta(s) == 0 && _tabu_delta!(s, _tabu_time(s) - _tabu_local(s))# 20-30
+    _tabu_delta(s) == 0.0 && _tabu_delta!(s, _tabu_time(s) - _tabu_local(s))# 20-30
+
+    # @info "tabu stuff:" _tabu_time(s) _tabu_local(s) _tabu_delta(s)
 
     # Create sub solvers
     foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
@@ -284,7 +286,8 @@ function _restart!(s, k=10)
     _verbose(s, "\n============== RESTART!!!!================\n")
     _draw!(s)
     _empty_tabu!(s)
-    _tabu_delta!(s, ((k - 1) * _tabu_delta(s)) + _tabu_time(s) / k)
+    δ = ((k - 1) * _tabu_delta(s)) + _tabu_time(s) / k
+    _tabu_delta!(s, δ)
     _optimizing(s) && _satisfying!(s)
 end
 
@@ -293,7 +296,7 @@ end
 
 Check if a restart of `s` is necessary. If `s` has subsolvers, this check is independent for all of them.
 """
-_check_restart(s) = rand() ≤ (_length_tabu(s) - _tabu_delta(s) / _tabu_local(s))
+_check_restart(s) = rand() ≤ (_length_tabu(s) - _tabu_delta(s)) / _tabu_local(s)
 
 """
     _step!(s)
@@ -421,7 +424,7 @@ end
 
 """
     solution(s)
-
+tabu
 Return the only/best known solution of a satisfaction/optimization model.
 """
 solution(s) = is_sat(s) ? _values(s) : _solution(s)

@@ -18,7 +18,7 @@ mutable struct Options
     specialize::Bool
     tabu_time::Int
     tabu_local::Int
-    tabu_delta::Int
+    tabu_delta::Float64
     threads::Int
     time_limit::Union{Time} # nanoseconds
 
@@ -30,7 +30,7 @@ mutable struct Options
         specialize=!dynamic,
         tabu_time=0,
         tabu_local=0,
-        tabu_delta=0,
+        tabu_delta=0.0,
         threads=typemax(0),
         time_limit= Time(0),
     )
