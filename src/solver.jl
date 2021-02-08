@@ -110,7 +110,7 @@ end
 @forward AbstractSolver.model constraint!, objective!, variable!
 @forward AbstractSolver.model _neighbours, get_name, _is_empty
 @forward AbstractSolver.model _set_domain!, domain_size, max_domains_size
-@forward AbstractSolver.model _inc_cons!, _max_cons
+@forward AbstractSolver.model _inc_cons!, _max_cons, _best_bound
 
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu

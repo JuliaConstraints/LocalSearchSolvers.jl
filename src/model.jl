@@ -36,6 +36,9 @@ struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},
 
     # Symbol to indicate the kind of model for specialized methods such as pretty printing
     kind::Symbol
+
+    # Best known bound
+    best_bound::Union{Nothing, Float64}
 end
 
 """
@@ -51,6 +54,7 @@ function Model(;
     cons=Dictionary{Int,Constraint}(),
     objs=Dictionary{Int,Objective}(),
     kind=:generic,
+    best_bound=nothing,
 )
 
     max_vars = Ref(zero(Int))
@@ -59,7 +63,7 @@ function Model(;
 
     specialized = Ref(false)
 
-    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind)
+    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind, best_bound)
 end
 
 """
@@ -79,6 +83,8 @@ _max_cons(m::Model) = m.max_cons.x
 Access the maximum objective id that has been attributed to `m`.
 """
 _max_objs(m::Model) = m.max_objs.x
+
+_best_bound(m::Model) = m.best_bound
 
 """
     _inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
@@ -369,7 +375,7 @@ function specialize(m::Model)
 
     specialized = Ref(true)
 
-    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m))
+    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m), _best_bound(m))
 end
 
 function _is_empty(m::Model)

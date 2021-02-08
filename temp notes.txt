@@ -7,6 +7,5 @@ OBJECTIVE_LIMIT given objective bound
 
 Result status
 
-NO_SOLUTION no known configuration ...
 FEASIBLE_POINT a solution
 INFEASIBLE_POINT an invalid configuration
