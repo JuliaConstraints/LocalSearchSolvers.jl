@@ -3,14 +3,25 @@ module LocalSearchSolvers
 # TODO: return types: nothing, ind for internals etc
 
 # Imports
-import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
-import Base: ∈, convert
+import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
+import Base: ∈, convert, copy
 import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, domain, _add!, _delete!, _draw, _length, _get_domain
-import ConstraintDomains: _get
+import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
+import ConstraintDomains: _get, _get_domain, _domain_size
+import Dates: Time, Nanosecond
+import JuMP
+import JuMP: @constraint, @variable, @objective
+
+# Usings
+using MathOptInterface
+
+# Const
+const CBLS = LocalSearchSolvers
+const MOI = MathOptInterface
+const MOIU = MOI.Utilities
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -27,7 +38,10 @@ export Model, sudoku, golomb, mincut
 export o_dist_extrema, o_mincut
 
 # Exports Solver
-export Solver, solve!, specialize, specialize!, Settings
+export Solver, solve!, specialize, specialize!, Options
+
+# Export MOI
+export Optimizer, CBLS, supports_constraint
 
 # Include utils
 include("utils.jl")
@@ -38,9 +52,17 @@ include("constraint.jl")
 include("objective.jl")
 
 # Include solvers
+include("options.jl")
 include("model.jl")
 include("state.jl")
 include("solver.jl")
+
+# Include MOI
+include("MOI_wrapper/MOI_wrapper.jl")
+include("MOI_wrapper/variables.jl")
+include("MOI_wrapper/constraints.jl")
+include("MOI_wrapper/objectives.jl")
+include("MOI_wrapper/results.jl")
 
 # Include specific models
 include("models/sudoku.jl")

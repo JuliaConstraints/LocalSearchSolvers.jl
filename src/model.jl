@@ -14,13 +14,14 @@ struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Ob
 
     # Bool to indicate if the Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
-    
+
     # Symbol to indicate the kind of model for specialized methods such as pretty printing
     kind::Symbol
 end
 ```
 """
-struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
+struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},
+    O <: Objective{<:Function}} <: MOI.ModelLike
     variables::Dictionary{Int,V}
     constraints::Dictionary{Int,C}
     objectives::Dictionary{Int,O}
@@ -32,9 +33,12 @@ struct Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Ob
 
     # Bool to indicate if the Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
-    
+
     # Symbol to indicate the kind of model for specialized methods such as pretty printing
     kind::Symbol
+
+    # Best known bound
+    best_bound::Union{Nothing, Float64}
 end
 
 """
@@ -48,8 +52,9 @@ Construct a Model, empty by default. It is recommended to add the constraints, v
 function Model(;
     vars=Dictionary{Int,Variable}(),
     cons=Dictionary{Int,Constraint}(),
-    objs=Dictionary{Int,Objective}(),    
+    objs=Dictionary{Int,Objective}(),
     kind=:generic,
+    best_bound=nothing,
 )
 
     max_vars = Ref(zero(Int))
@@ -58,7 +63,7 @@ function Model(;
 
     specialized = Ref(false)
 
-    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind)
+    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind, best_bound)
 end
 
 """
@@ -78,6 +83,8 @@ _max_cons(m::Model) = m.max_cons.x
 Access the maximum objective id that has been attributed to `m`.
 """
 _max_objs(m::Model) = m.max_objs.x
+
+_best_bound(m::Model) = m.best_bound
 
 """
     _inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
@@ -149,7 +156,7 @@ get_domain(m::Model, x) = _get_domain(get_variable(m, x))
     get_name(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the name of variable `x`.
 """
-get_name(m::Model, x) = _get_name(get_variable(m, x))
+get_name(::Model, x) = "x$x"
 
 """
     get_cons_from_var(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -186,6 +193,12 @@ length_objs(m::Model) = length(get_objectives(m))
 Return the number of variables in `m`.
 """
 length_vars(m::Model) = length(get_variables(m))
+
+"""
+    length_cons(m::M) where M <: Union{Model, AbstractSolver}
+Return the number of constraints in `m`.
+"""
+length_cons(m::Model) = length(get_constraints(m))
 
 """
     draw(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -249,16 +262,18 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::Model, d)
-    add!(m, variable(d, "x" * string(_max_vars(m) + 1)))
+function variable!(m::Model, d = EmptyDomain())
+    add!(m, variable(d))
+    return _max_vars(m)
 end
 
 """
     constraint!(m::M, func, vars) where M <: Union{Model, AbstractSolver}
 Add a constraint with an error function `func` defined over variables `vars`.
 """
-function constraint!(m::Model, func, vars)
-    add!(m, constraint(func, vars, m.variables))
+function constraint!(m::Model, func, vars::V) where {V <: AbstractVector{<:Number}}
+    add!(m, constraint(func, vars))
+    return _max_cons(m)
 end
 
 """
@@ -283,7 +298,7 @@ function describe(m::Model) # TODO: rewrite _describe
             mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(m); init="")[1:end - 1]
     end
     variables = mapreduce(
-        x -> "\t\t" * x[2].name * "($(x[1])): " * string(x[2].domain.points) * "\n",
+        x -> "\t\tx$(x[1]): " * string(x[2].domain.points) * "\n",
         *, pairs(m.variables); init=""
     )[1:end - 1]
     constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n", *, pairs(m.constraints); init="")[1:end - 1]
@@ -304,7 +319,7 @@ end
 # Neighbours
 function _neighbours(m::Model, x, dim = 0)
     if dim == 0
-        return get_domain(m, x)
+        return _get_domain(get_domain(m, x)) # TODO: clean the get domain methods
     else
         neighbours = Set{Int}()
         foreach(
@@ -360,5 +375,28 @@ function specialize(m::Model)
 
     specialized = Ref(true)
 
-    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m))
+    Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m), _best_bound(m))
+end
+
+function _is_empty(m::Model)
+    return length_objs(m) + length_vars(m) == 0
+end
+
+function _set_domain!(m::Model, x, values)
+    d = domain(values)
+    var = get_variable(m, x)
+    m.variables[x] = Variable(d, get_cons_from_var(m, x))
+end
+
+domain_size(m::Model, x) = _domain_size(get_domain(m, x))
+max_domains_size(m::Model, vars) = maximum(map(x -> domain_size(m, x), vars))
+
+function empty!(m::Model)
+    empty!(m.variables)
+    empty!(m.constraints)
+    empty!(m.objectives)
+    m.max_vars[] = 0
+    m.max_cons[] = 0
+    m.max_objs[] = 0
+    m.specialized[] = false
 end
