@@ -3,32 +3,24 @@
 A structure containing the necessary information for a solver's variables: `name`, `domain`, and `constraints` it belongs.
 ```
 struct Variable{D <: AbstractDomain}
-    name::String
     domain::D
     constraints::Indices{Int}
 end
 ```
 """
-struct Variable{D <: AbstractDomain}
-    name::String
+mutable struct Variable{D <: AbstractDomain}
     domain::D
     constraints::Indices{Int}
 end
 
 # Methods: lazy forwarding from ConstraintDomains.domain.jl
-@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain
+@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain, _domain_size
 
 """
     _get_constraints(x::Variable)
 Access the list of `constraints` of `x`.
 """
 _get_constraints(x::Variable) = x.constraints
-
-"""
-    _get_name(x::Variable)
-Access the `name` of `x`.
-"""
-_get_name(x::Variable) = x.name
 
 """
     _add_to_constraint!(x::Variable, id)
@@ -67,10 +59,8 @@ x1 = variable(d, "x1")
 x2 = variable([-89,56,28], "x2", domain = :indices)
 ```
 """
-function variable(domain::AbstractDomain, name::AbstractString)
-    Variable(name, domain, Indices{Int}())
-end
+variable() = Variable(EmptyDomain(), Indices{Int}())
+variable(domain::D) where {D <: AbstractDomain} = Variable(domain, Indices{Int}())
+variable(vals; dom=:set) = isempty(vals) ? variable() : variable(domain(vals; type=dom))
 
-function variable(values::AbstractVector{T}, name::AbstractString; dom=:set) where {T <: Number}
-    variable(domain(values; type=dom), name)
-end
+_get_domain(x::Variable) = x.domain

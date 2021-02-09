@@ -1,9 +1,4 @@
-"""
-    sudoku(n; start= Dictionary{Int, Int}())
-
-Create a model for the sudoku problem of domain `1:n²` with optional starting values.
-"""
-function sudoku(n; start=Dictionary{Int,Int}())
+function sudoku(n, start, ::Val{:raw})
     N = n^2
     d = domain(1:N)
 
@@ -13,20 +8,17 @@ function sudoku(n; start=Dictionary{Int,Int}())
     if isempty(start)
         foreach(_ -> variable!(m, d), 1:(N^2))
     else
-        foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v:v) : d), pairs(start))
+        foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v) : d), pairs(start))
     end
 
 
-    e1 = (x; param=nothing, dom_size=N) -> error_f(
+    e = (x; param=nothing, dom_size=N) -> error_f(
         usual_constraints[:all_different])(x; param=param, dom_size=dom_size
-    )
-    e2 = (x; param=nothing, dom_size=N) -> error_f(
-        usual_constraints[:all_equal_param])(x; param=param, dom_size=dom_size
     )
 
     # Add constraints: line, columns; blocks
-    foreach(i -> constraint!(m, e1, (i * N + 1):((i + 1) * N)), 0:(N - 1))
-    foreach(i -> constraint!(m, e1, [j * N + i for j in 0:(N - 1)]), 1:N)
+    foreach(i -> constraint!(m, e, (i * N + 1):((i + 1) * N)), 0:(N - 1))
+    foreach(i -> constraint!(m, e, [j * N + i for j in 0:(N - 1)]), 1:N)
 
     for i in 0:(n - 1)
         for j in 0:(n - 1)
@@ -36,12 +28,64 @@ function sudoku(n; start=Dictionary{Int,Int}())
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
-            constraint!(m, e1, vars)
+            constraint!(m, e, vars)
         end
     end
 
     return m
 end
+
+function sudoku(n, start, ::Val{:MOI})
+    N = n^2
+    m = Optimizer()
+    MOI.add_variables(m, N^2)
+
+    # Add domain to variables
+    foreach(i -> MOI.add_constraint(m, VI(i), DiscreteSet(1:N)), 1:N^2)
+
+    # Add constraints: line, columns; blocks
+    foreach(i -> MOI.add_constraint(m, VOV(map(VI, (i * N + 1):((i + 1) * N))),
+        MOIAllDifferent(N)), 0:(N - 1))
+    foreach(i -> MOI.add_constraint(m, VOV(map(VI, [j * N + i for j in 0:(N - 1)])),
+            MOIAllDifferent(N)), 1:N)
+
+    for i in 0:(n - 1)
+        for j in 0:(n - 1)
+            vars = Vector{Int}()
+            for k in 1:n
+                for l in 0:(n - 1)
+                    push!(vars, (j * n + l) * N + i * n + k)
+                end
+            end
+            MOI.add_constraint(m, VOV(map(VI, vars)), MOIAllDifferent(N))
+        end
+    end
+
+    return m
+end
+
+function sudoku(n, start, ::Val{:JuMP})
+    N = n^2
+    m = JuMP.Model(CBLS.Optimizer)
+
+    @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
+
+    for i in 1:N
+        @constraint(m, X[i,:] in AllDifferent()) # rows
+        @constraint(m, X[:,i] in AllDifferent()) # columns
+    end
+    for i in 0:(n-1), j in 0:(n-1)
+        @constraint(m, vec(X[(i*n+1):(n*(i+1)), (j*n+1):(n*(j+1))]) in AllDifferent()) # blocks
+    end
+    return m, X
+end
+
+"""
+    sudoku(n; start= Dictionary{Int, Int}(), modeler = :JuMP)
+
+Create a model for the sudoku problem of domain `1:n²` with optional starting values. The `modeler` argument accepts :raw, :MOI, and :JuMP (default), which refer respectively to the solver internal model, the MathOptInterface model, and the JuMP model.
+"""
+sudoku(n; start=Dictionary{Int,Int}(), modeler = :JuMP) = sudoku(n, start, Val(modeler))
 
 @doc raw"""
 ```julia
@@ -100,6 +144,7 @@ function SudokuInstance(X::Dictionary)
     return SudokuInstance(A)
 end
 
+SudokuInstance(X::Matrix{Float64}) = SudokuInstance(map(Int, X))
 # # abstract array interface for SudokuInstance struct
 """
     Base.size(S::SudokuInstance)
@@ -267,3 +312,10 @@ Base.display(S::SudokuInstance) = display(stdout, S)
 Extends `Base.display` to a sudoku configuration.
 """
 Base.display(X::Dictionary) = display(SudokuInstance(X))
+
+"""
+    Base.display(X, Val(:sudoku))
+
+Extends `Base.display` to a sudoku configuration.
+"""
+Base.display(X, ::Val{:sudoku}) = display(SudokuInstance(X))

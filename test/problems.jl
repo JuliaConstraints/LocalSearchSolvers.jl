@@ -1,10 +1,10 @@
 models = [
-    sudoku(2),
+    sudoku(2; modeler = :raw),
 ]
 
 for m in models
     @info describe(m)
-    s = Solver(m, Settings(:verbose => true, :iteration => Inf))
+    s = Solver(m, Options(print_level =:verbose, iteration = Inf))
     for x in keys(get_variables(s))
         @test get_name(s, x) == "x$x"
         for c in get_cons_from_var(s, x)
@@ -38,11 +38,11 @@ for m in models
     solution(s)
 
     # TODO: temp patch for coverage, make it nice
-    for x in keys(LocalSearchSolvers._tabu(s))
-        LocalSearchSolvers._tabu(s, x)
+    for x in keys(LS._tabu(s))
+        LS._tabu(s, x)
     end
-    LocalSearchSolvers._tabu!(s, Dictionary{Int,Int}())
-    LocalSearchSolvers._values!(s, Dictionary{Int,Number}())
+    LS._tabu!(s, Dictionary{Int,Int}())
+    LS._values!(s, Dictionary{Int,Number}())
 end
 
 
@@ -58,12 +58,12 @@ sudoku_instance = collect(Iterators.flatten([
     0  7  0  0  0  0  0  5  3
 ]))
 
-s = Solver(sudoku(3, start = sudoku_instance), Settings(:verbose => false, :iteration => 10000))
+s = Solver(sudoku(3, start = sudoku_instance, modeler = :raw), Options(print_level = :minimal, iteration = 10000))
 display(Dictionary(1:length(sudoku_instance), sudoku_instance))
 solve!(s)
 display(solution(s))
 
-s = Solver(golomb(5), Settings(:verbose => false, :iteration => 1000))
+s = Solver(golomb(5, modeler = :raw), Options(print_level = :minimal, iteration = 1000))
 solve!(s)
 
 @info "Results golomb!"
@@ -78,21 +78,21 @@ graph[1,4] = 3.0
 graph[2,5] = 1.0
 graph[3,5] = 2.0
 graph[4,5] = 3.0
-s = Solver(mincut(graph, source=1, sink=5), Settings(:verbose => false))
+s = Solver(mincut(graph, source=1, sink=5), Options(print_level = :minimal))
 solve!(s)
 @info "Results mincut!"
 @info "Values: $(s.state.values)"
 @info "Sol (val): $(s.state.best_solution_value)"
 @info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
 
-s = Solver(mincut(graph, source=1, sink=5, interdiction=1), Settings(:verbose => false))
+s = Solver(mincut(graph, source=1, sink=5, interdiction=1), Options(print_level = :minimal))
 solve!(s)
 @info "Results 1-mincut!"
 @info "Values: $(s.state.values)"
 @info "Sol (val): $(s.state.best_solution_value)"
 @info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
 
-s = Solver(mincut(graph, source=1, sink=5, interdiction=2), Settings(:verbose => false))
+s = Solver(mincut(graph, source=1, sink=5, interdiction=2), Options(print_level = :minimal))
 solve!(s)
 @info "Results 2-mincut!"
 @info "Values: $(s.state.values)"
