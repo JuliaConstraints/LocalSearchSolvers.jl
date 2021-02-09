@@ -47,6 +47,7 @@ function golomb(n, L, ::Val{:JuMP})
 
     # Add objective
     # @objective(m, Min, X in DistExtrema())
+    @objective(m, Min, CBLS.ScalarFunction(o_dist_extrema, X))
 
     return m, X
 end

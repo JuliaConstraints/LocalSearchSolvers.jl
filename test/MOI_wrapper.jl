@@ -61,9 +61,10 @@ MOI.add_constraint(m, VI(2), LS.DiscreteSet([1,2,3]))
 MOI.add_constraint(m, VI(3), LS.DiscreteSet([1,2,3]))
 
 MOI.add_constraint(m, VOV([VI(1),VI(2)]), LS.MOIPredicate(allunique))
-MOI.add_constraint(m, VOV([VI(2),VI(3)]), LS.MOIAllDifferent(3))
+MOI.add_constraint(m, VOV([VI(2),VI(3)]), LS.MOIAllDifferent(2))
 
-MOI.set(m, MOI.ObjectiveFunction{LS.ScalarFunction}(), LS.ScalarFunction(sum))
+# MOI.set(m, MOI.ObjectiveFunction{LS.ScalarFunction}(), LS.ScalarFunction(sum, VOV([VI(1), VI(3)])))
+MOI.set(m, MOI.ObjectiveFunction{LS.ScalarFunction}(), LS.ScalarFunction(sum, VI(1)))
 
 MOI.optimize!(m)
 
@@ -86,4 +87,5 @@ solution_ = value.(X)
 display(solution_, Val(:sudoku))
 
 m4, X = CBLS.golomb(5)
-JuMP.optimize!(m4)
+# JuMP.optimize!(m4)
+# @info solution_ = value.(X)

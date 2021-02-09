@@ -13,7 +13,7 @@ import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, 
 import ConstraintDomains: _get, _get_domain, _domain_size
 import Dates: Time, Nanosecond
 import JuMP
-import JuMP: @constraint, @variable, @objective
+import JuMP: @constraint, @variable, @objective, VariableRef, index
 
 # Usings
 using MathOptInterface

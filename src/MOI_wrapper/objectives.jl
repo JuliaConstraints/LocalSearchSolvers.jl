@@ -1,14 +1,17 @@
-# TODO: MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
-MOI.supports(::Optimizer, ::MOI.ObjectiveFunction{ScalarFunction{F}}) where {F <: Function} = true
+MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
+MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = Min
+function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
+    @warn "TODO: set sense" sense
+end
 
-# TODO: sense
-# MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = model.inner.sense
+MOI.supports(::Optimizer, ::OF{ScalarFunction{F, V}}) where {F <: Function, V <: Union{Nothing, SVF,VOV}} = true
 
-# function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
-#     model.inner.sense = sense
-#     return
-# end
-
-function MOI.set(optimizer::Optimizer, ::MOI.ObjectiveFunction, func::ScalarFunction)
-    objective!(optimizer, func.f)
+function MOI.set(optimizer::Optimizer, ::OF, func::ScalarFunction{F, V}
+) where {F <: Function, V <: Union{Nothing, VOV}}
+    objective_function = if isnothing(func.X)
+        func.f
+    else # VOV
+        _ -> func.f(map(y -> _value(optimizer,y.value), func.X.variables))
+    end
+    objective!(optimizer, objective_function)
 end

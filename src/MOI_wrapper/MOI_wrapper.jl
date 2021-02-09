@@ -2,6 +2,7 @@
 # MOI functions
 const SVF = MOI.SingleVariable
 const VOV = MOI.VectorOfVariables
+const OF = MOI.ObjectiveFunction
 
 # MOI indices
 const VI = MOI.VariableIndex
@@ -81,10 +82,19 @@ Base.copy(set::DiscreteSet) = DiscreteSet(copy(set.values))
 """
     ScalarFunction(objective)
 """
-struct ScalarFunction{F <: Function} <: MOI.AbstractScalarFunction
+struct ScalarFunction{F <: Function, V <: Union{Nothing, VOV}} <: MOI.AbstractScalarFunction
     f::F
+    X::V
+
+    ScalarFunction(f, X::Union{Nothing, VOV} = nothing) = (@warn X; new{typeof(f), typeof(X)}(f, X))
 end
 
-Base.copy(func::ScalarFunction) = ScalarFunction(func.f)
+function ScalarFunction(f, X::A) where {A <: AbstractArray{VariableRef}}
+    return ScalarFunction(f, VOV(vec(map(index, X))))
+end
+ScalarFunction(f, x::VariableRef) = ScalarFunction(f, [x])
+ScalarFunction(f, x::VI) = ScalarFunction(f, VOV([x]))
+
+Base.copy(func::ScalarFunction) = ScalarFunction(func.f, func.X)
 
 MOI.empty!(opt) = empty!(opt)
