@@ -316,20 +316,6 @@ function describe(m::Model) # TODO: rewrite _describe
     return str
 end
 
-# Neighbours
-function _neighbours(m::Model, x, dim = 0)
-    if dim == 0
-        return _get_domain(get_domain(m, x)) # TODO: clean the get domain methods
-    else
-        neighbours = Set{Int}()
-        foreach(
-            c -> foreach(y -> push!(neighbours, y), get_vars_from_cons(m, c)),
-            get_cons_from_var(m, x)
-        )
-        return delete!(neighbours, x)
-    end
-end
-
 """
     is_sat(m::M) where M <: Union{Model, AbstractSolver}
 Return `true` if `m` is a satisfaction model.
