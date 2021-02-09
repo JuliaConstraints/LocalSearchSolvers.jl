@@ -144,6 +144,7 @@ function SudokuInstance(X::Dictionary)
     return SudokuInstance(A)
 end
 
+SudokuInstance(X::Matrix{Float64}) = SudokuInstance(map(Int, X))
 # # abstract array interface for SudokuInstance struct
 """
     Base.size(S::SudokuInstance)
@@ -311,3 +312,10 @@ Base.display(S::SudokuInstance) = display(stdout, S)
 Extends `Base.display` to a sudoku configuration.
 """
 Base.display(X::Dictionary) = display(SudokuInstance(X))
+
+"""
+    Base.display(X, Val(:sudoku))
+
+Extends `Base.display` to a sudoku configuration.
+"""
+Base.display(X, ::Val{:sudoku}) = display(SudokuInstance(X))
