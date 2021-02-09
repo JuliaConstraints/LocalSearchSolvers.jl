@@ -108,9 +108,8 @@ end
 @forward AbstractSolver.model draw, constriction, describe, is_sat, is_specialized
 @forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
 @forward AbstractSolver.model constraint!, objective!, variable!
-@forward AbstractSolver.model _neighbours, get_name, _is_empty
+@forward AbstractSolver.model get_name, _is_empty, _inc_cons!, _max_cons, _best_bound
 @forward AbstractSolver.model _set_domain!, domain_size, max_domains_size
-@forward AbstractSolver.model _inc_cons!, _max_cons, _best_bound
 
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
@@ -194,6 +193,24 @@ function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
     (sat = _error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
     return sat
+end
+
+# Neighbours
+function _neighbours(s::Solver, x, dim = 0)
+    if dim == 0
+        return _get_domain(get_domain(s, x)) # TODO: clean the get domain methods
+    else
+        neighbours = Set{Int}()
+        foreach(
+            c -> foreach(y ->
+                begin
+                    b = _value(s, x) ∈ get_variable(s, y) && _value(s, y) ∈ get_variable(s, x)
+                    b && push!(neighbours, y)
+                end, get_vars_from_cons(s, c)),
+            get_cons_from_var(s, x)
+        )
+        return delete!(neighbours, x)
+    end
 end
 
 """
