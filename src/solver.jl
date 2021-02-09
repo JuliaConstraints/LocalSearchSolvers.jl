@@ -196,7 +196,7 @@ function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
 end
 
 # Neighbours
-function _neighbours(s::Solver, x, dim = 0)
+function _neighbours(s, x, dim = 0)
     if dim == 0
         return _get_domain(get_domain(s, x)) # TODO: clean the get domain methods
     else
