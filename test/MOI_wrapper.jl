@@ -86,3 +86,4 @@ solution_ = value.(X)
 display(solution_, Val(:sudoku))
 
 m4, X = CBLS.golomb(5)
+JuMP.optimize!(m4)
