@@ -107,13 +107,13 @@ _satisfying!(s::_State) = s.optimizing = false
     _cons_cost(s::S, c) where S <: Union{_State, AbstractSolver}
 Return the cost of constraint `c`.
 """
-_cons_cost(s::_State, c) = _cons_costs(s)[c]
+_cons_cost(s::_State, c) = get!(_cons_costs(s), c, 0.0)
 
 """
     _var_cost(s::S, x) where S <: Union{_State, AbstractSolver}
 Return the cost of variable `x`.
 """
-_var_cost(s::_State, x) = _vars_costs(s)[x]
+_var_cost(s::_State, x) = get!(_vars_costs(s), x, 0.0)
 
 """
     _value(s::S, x) where S <: Union{_State, AbstractSolver}
@@ -179,7 +179,8 @@ _solution!(s::_State, values) = s.best_solution = copy(values)
     _best!(s::S, val, values = Dictionary()) where S <: Union{_State, AbstractSolver}
 Set the best known value to `val` and, if `values` not empty, the best known solution.
 """
-function _best!(s::_State, val::T, values = Dictionary{Int,T}()) where {T <: Number}
+function _best!(s::_State, val::Union{Nothing,T}, values=Dictionary{Int,T}()
+) where {T <: Number}
     if isnothing(_best(s)) || val < _best(s)
         s.best_solution_value = val
         s.best_solution = copy(isempty(values) ? s.values : values)
@@ -238,4 +239,15 @@ Within the non-tabu variables, select the one with the worse error .
 function _select_worse(s::_State)
     nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
+end
+
+function empty!(s::_State)
+    empty!(s.values)
+    empty!(s.vars_costs)
+    empty!(s.cons_costs)
+    _error!(s, 0.0)
+    empty!(s.tabu)
+    _satisfying!(s)
+    empty!(s.best_solution)
+    s.best_solution_value = nothing
 end
