@@ -74,8 +74,8 @@ function sudoku(n, start, ::Val{:JuMP})
         @constraint(m, X[i,:] in AllDifferent()) # rows
         @constraint(m, X[:,i] in AllDifferent()) # columns
     end
-    for i in 1:n, j in 1:n
-        @constraint(m, vec(X[(i+1):(i+n), (j+1):(j+n)]) in AllDifferent()) # blocks
+    for i in 0:(n-1), j in 0:(n-1)
+        @constraint(m, vec(X[(i*n+1):(n*(i+1)), (j*n+1):(n*(j+1))]) in AllDifferent()) # blocks
     end
     return m, X
 end

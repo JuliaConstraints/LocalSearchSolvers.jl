@@ -1,5 +1,5 @@
 function golomb(n, L, ::Val{:raw})
-    m = CBSL.Model(; kind=:golomb)
+    m = CBLS.Model(; kind=:golomb)
 
     # Add variables
     d = domain(0:L)
@@ -46,7 +46,7 @@ function golomb(n, L, ::Val{:JuMP})
     end
 
     # Add objective
-    @objective(m, Min, o_dist_extrema(X))
+    # @objective(m, Min, o_dist_extrema(X))
 
     return m, X
 end

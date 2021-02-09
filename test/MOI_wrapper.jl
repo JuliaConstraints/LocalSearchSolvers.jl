@@ -82,7 +82,7 @@ MOI.add_constrained_variable(m2, LS.DiscreteSet([1,2,3]))
 
 m3, X = CBLS.sudoku(3)
 JuMP.optimize!(m3)
-opt_solution = value.(X)
-@info "solution" opt_solution
+opt_solution = CBLS.SudokuInstance(map(Int, value.(X)))
+display(opt_solution)
 
 m4, X = CBLS.golomb(5)
