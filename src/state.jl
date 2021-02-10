@@ -23,6 +23,7 @@ mutable struct _State{T <: Number}
     optimizing::Bool
     best_solution::Dictionary{Int,T}
     best_solution_value::Union{Nothing,T}
+    last_improvement::Int
 end
 
 """
@@ -241,6 +242,12 @@ function _select_worse(s::_State)
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
+
+"""
+    empty!(s::_State)
+
+DOCSTRING
+"""
 function empty!(s::_State)
     empty!(s.values)
     empty!(s.vars_costs)
@@ -251,3 +258,7 @@ function empty!(s::_State)
     empty!(s.best_solution)
     s.best_solution_value = nothing
 end
+
+_last_improvement(s::_State) = s.last_improvement
+_inc_last_improvement!(s::_State) = s.last_improvement += 1
+_reset_last_improvement!(s::_State) = s.last_improvement = 0
