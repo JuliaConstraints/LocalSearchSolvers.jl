@@ -23,6 +23,7 @@ mutable struct _State{T <: Number}
     optimizing::Bool
     best_solution::Dictionary{Int,T}
     best_solution_value::Union{Nothing,T}
+    last_improvement::Int
 end
 
 """
@@ -257,3 +258,7 @@ function empty!(s::_State)
     empty!(s.best_solution)
     s.best_solution_value = nothing
 end
+
+_last_improvement(s::_State) = s.last_improvement
+_inc_last_improvement!(s::_State) = s.last_improvement += 1
+_reset_last_improvement!(s::_State) = s.last_improvement = 0
