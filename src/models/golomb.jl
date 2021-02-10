@@ -38,6 +38,7 @@ function golomb(n, L, ::Val{:JuMP})
     # @constraint(m, X[1] in AllEqualParam(0)) # first mark at 0
 
     @constraint(m, X in AllDifferent()) # different marks
+    @constraint(m, X in Ordered())
 
     # No two pairs have the same length
     for i in 1:(n - 1), j in (i + 1):n, k in i:(n - 1), l in (k + 1):n
@@ -47,7 +48,7 @@ function golomb(n, L, ::Val{:JuMP})
 
     # Add objective
     # @objective(m, Min, X in DistExtrema())
-    @objective(m, Min, ScalarFunction(o_dist_extrema, X))
+    @objective(m, Min, ScalarFunction(maximum))
 
     return m, X
 end

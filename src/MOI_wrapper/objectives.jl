@@ -40,7 +40,11 @@ function MOI.set(optimizer::Optimizer, ::OF, func::ScalarFunction{F, VOV}
         return objective!(optimizer, objective_func)
  end
 
- function MOIU.map_indices(index_map::Function, sf::ScalarFunction{F,V}
-) where {F <: Function, V <: Union{Nothing, VOV}}
+function MOIU.map_indices(index_map::Function, sf::ScalarFunction{F,VOV}
+) where {F <: Function}
     return ScalarFunction(sf.f, MOIU.map_indices(index_map, sf.X))
  end
+
+function MOIU.map_indices(::Function, sf::ScalarFunction{F,Nothing}) where {F <: Function}
+        return ScalarFunction(sf.f, nothing)
+end
