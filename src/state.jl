@@ -241,6 +241,12 @@ function _select_worse(s::_State)
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
+
+"""
+    empty!(s::_State)
+
+DOCSTRING
+"""
 function empty!(s::_State)
     empty!(s.values)
     empty!(s.vars_costs)

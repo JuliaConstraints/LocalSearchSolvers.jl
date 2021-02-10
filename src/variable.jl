@@ -63,4 +63,9 @@ variable() = Variable(EmptyDomain(), Indices{Int}())
 variable(domain::D) where {D <: AbstractDomain} = Variable(domain, Indices{Int}())
 variable(vals; dom=:set) = isempty(vals) ? variable() : variable(domain(vals; type=dom))
 
+"""
+    _get_domain(x::Variable) = begin
+
+DOCSTRING
+"""
 _get_domain(x::Variable) = x.domain

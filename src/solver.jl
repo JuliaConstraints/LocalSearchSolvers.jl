@@ -129,6 +129,12 @@ end
 @forward AbstractSolver.options _tabu_local, _tabu_local!, _tabu_delta, _tabu_delta!
 @forward AbstractSolver.options _threads, _threads!, _time_limit, _time_limit!
 
+
+"""
+    specialize!(s) = begin
+
+DOCSTRING
+"""
 specialize!(s) = s.model = specialize(s.model)
 
 """
@@ -195,7 +201,16 @@ function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     return sat
 end
 
-# Neighbours
+"""
+    _neighbours(s, x, dim = 0)
+
+DOCSTRING
+
+# Arguments:
+- `s`: DESCRIPTION
+- `x`: DESCRIPTION
+- `dim`: DESCRIPTION
+"""
 function _neighbours(s, x, dim = 0)
     if dim == 0
         return _get_domain(get_domain(s, x)) # TODO: clean the get domain methods
@@ -456,6 +471,11 @@ Return the only/best known solution of a satisfaction/optimization model.
 """
 solution(s) = is_sat(s) ? _values(s) : _solution(s)
 
+"""
+    empty!(s::Solver)
+
+DOCSTRING
+"""
 function empty!(s::Solver)
     empty!(s.model)
     empty!(s.state)

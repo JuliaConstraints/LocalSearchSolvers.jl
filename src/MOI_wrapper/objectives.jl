@@ -5,7 +5,17 @@ function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.Optimization
 end
 
 """
-    ScalarFunction(func, X)
+    ScalarFunction{F <: Function, V <: Union{Nothing, VOV}} <: MOI.AbstractScalarFunction
+
+DOCSTRING
+
+# Arguments:
+- `f::F`: DESCRIPTION
+- `X::V`: DESCRIPTION
+- `ScalarFunction(f, X::Union{Nothing, VOV} = nothing) = begin
+        #= none:5 =#
+        new{typeof(f), typeof(X)}(f, X)
+    end`: DESCRIPTION
 """
 struct ScalarFunction{F <: Function, V <: Union{Nothing, VOV}} <: MOI.AbstractScalarFunction
     f::F
@@ -40,11 +50,13 @@ function MOI.set(optimizer::Optimizer, ::OF, func::ScalarFunction{F, VOV}
         return objective!(optimizer, objective_func)
  end
 
-function MOIU.map_indices(index_map::Function, sf::ScalarFunction{F,VOV}
+#  @autodoc
+ function MOIU.map_indices(index_map::Function, sf::ScalarFunction{F,VOV}
 ) where {F <: Function}
     return ScalarFunction(sf.f, MOIU.map_indices(index_map, sf.X))
  end
 
-function MOIU.map_indices(::Function, sf::ScalarFunction{F,Nothing}) where {F <: Function}
+#  @autodoc
+ function MOIU.map_indices(::Function, sf::ScalarFunction{F,Nothing}) where {F <: Function}
         return ScalarFunction(sf.f, nothing)
 end

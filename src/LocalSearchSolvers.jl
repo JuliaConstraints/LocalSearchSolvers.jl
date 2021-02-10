@@ -42,7 +42,7 @@ export o_dist_extrema, o_mincut
 # Exports Solver
 export Solver, solve!, specialize, specialize!, Options
 
-# Export MOI
+# Export MOI/JuMP
 export Optimizer, CBLS, supports_constraint
 
 # Include utils

@@ -364,19 +364,50 @@ function specialize(m::Model)
     Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m), _best_bound(m))
 end
 
+"""
+    _is_empty(m::Model)
+
+DOCSTRING
+"""
 function _is_empty(m::Model)
     return length_objs(m) + length_vars(m) == 0
 end
 
+"""
+    _set_domain!(m::Model, x, values)
+
+DOCSTRING
+
+# Arguments:
+- `m`: DESCRIPTION
+- `x`: DESCRIPTION
+- `values`: DESCRIPTION
+"""
 function _set_domain!(m::Model, x, values)
     d = domain(values)
     var = get_variable(m, x)
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
+"""
+    domain_size(m::Model, x) = begin
+
+DOCSTRING
+"""
 domain_size(m::Model, x) = _domain_size(get_domain(m, x))
+
+"""
+    max_domains_size(m::Model, vars) = begin
+
+DOCSTRING
+"""
 max_domains_size(m::Model, vars) = maximum(map(x -> domain_size(m, x), vars))
 
+"""
+    empty!(m::Model)
+
+DOCSTRING
+"""
 function empty!(m::Model)
     empty!(m.variables)
     empty!(m.constraints)

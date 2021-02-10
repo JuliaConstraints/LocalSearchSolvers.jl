@@ -45,6 +45,11 @@ _length(c::Constraint) = length(c.vars)
 """
 ∈(var::Int, c::Constraint) = var ∈ c.vars
 
+"""
+    constraint(f, vars)
+
+DOCSTRING
+"""
 function constraint(f, vars)
     # TODO: fix in clean way the x86 compatibility
     return Constraint(f, collect(Int == Int32 ? map(Int,vars) : vars))
