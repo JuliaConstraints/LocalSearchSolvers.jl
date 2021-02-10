@@ -84,7 +84,7 @@ function Solver(
     cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     # vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
     val, tabu = zero(Float64), Dictionary{Int,Int}()
-    state = _State(values, vars, cons, val, tabu, false, copy(values), nothing)
+    state = _State(values, vars, cons, val, tabu, false, copy(values), nothing, 0)
     subs = Vector{_SubSolver}()
     Solver(m, state, options, subs)
 end
@@ -119,8 +119,9 @@ end
 @forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
-@forward AbstractSolver.state _best!, _best, _select_worse, _solution
-@forward AbstractSolver.state _error, _error!
+@forward AbstractSolver.state _best!, _best, _select_worse, _solution, _error, _error!
+@forward AbstractSolver.state _last_improvement, _inc_last_improvement!
+@forward AbstractSolver.state _reset_last_improvement!
 
 # Forward from utils.jl (options)
 @forward AbstractSolver.options _verbose, _dynamic, dynamic!, _iteration, _iteration!
@@ -129,6 +130,12 @@ end
 @forward AbstractSolver.options _tabu_local, _tabu_local!, _tabu_delta, _tabu_delta!
 @forward AbstractSolver.options _threads, _threads!, _time_limit, _time_limit!
 
+
+"""
+    specialize!(s) = begin
+
+DOCSTRING
+"""
 specialize!(s) = s.model = specialize(s.model)
 
 """
@@ -195,7 +202,16 @@ function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     return sat
 end
 
-# Neighbours
+"""
+    _neighbours(s, x, dim = 0)
+
+DOCSTRING
+
+# Arguments:
+- `s`: DESCRIPTION
+- `x`: DESCRIPTION
+- `dim`: DESCRIPTION
+"""
 function _neighbours(s, x, dim = 0)
     if dim == 0
         return _get_domain(get_domain(s, x)) # TODO: clean the get domain methods
@@ -313,7 +329,10 @@ end
 
 Check if a restart of `s` is necessary. If `s` has subsolvers, this check is independent for all of them.
 """
-_check_restart(s) = rand() ≤ (_length_tabu(s) - _tabu_delta(s)) / _tabu_local(s)
+function _check_restart(s)
+    no_improvement = _last_improvement(s) > length_vars(s)
+    return no_improvement || rand() ≤ (_length_tabu(s) - _tabu_delta(s)) / _tabu_local(s)
+end
 
 """
     _step!(s)
@@ -343,6 +362,9 @@ function _step!(s)
     # update tabu list with either worst or selected variable
     _insert_tabu!(s, x, tabu ? _tabu_time(s) : _tabu_local(s))
     _verbose(s, "Tabu list: $(_tabu(s))")
+
+    # Inc last improvement if tabu
+    tabu ? _inc_last_improvement!(s) : _reset_last_improvement!(s)
 
     # Select the best move (value or swap)
     if x ∈ best_swap
@@ -456,6 +478,11 @@ Return the only/best known solution of a satisfaction/optimization model.
 """
 solution(s) = is_sat(s) ? _values(s) : _solution(s)
 
+"""
+    empty!(s::Solver)
+
+DOCSTRING
+"""
 function empty!(s::Solver)
     empty!(s.model)
     empty!(s.state)
