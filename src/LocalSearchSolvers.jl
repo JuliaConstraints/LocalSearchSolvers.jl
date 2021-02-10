@@ -2,6 +2,9 @@ module LocalSearchSolvers
 
 # TODO: return types: nothing, ind for internals etc
 
+# Usings
+using MathOptInterface
+
 # Imports
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
 import Base: ∈, convert, copy
@@ -15,8 +18,7 @@ import Dates: Time, Nanosecond
 import JuMP
 import JuMP: @constraint, @variable, @objective, VariableRef, index
 
-# Usings
-using MathOptInterface
+
 
 # Const
 const CBLS = LocalSearchSolvers
