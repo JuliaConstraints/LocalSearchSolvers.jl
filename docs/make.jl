@@ -22,12 +22,12 @@ makedocs(;
             "Variables" => "variables.md",
             "Constraints" => "constraints.md",
             "Objectives" => "objectives.md",
-            "Models" => "models.md",
-            "Solvers" => "solvers.md",
+            "Solving" => "solving.md",
         ],
-        "Domain Specific Languages" => [
-            "JuMPish" => "jump.md",
-            "MiniZinc" => "minizinc.md",
+        "Examples" => [
+            "Sudoku" => "sudoku.md",
+            "Golomb ruler" => "golomb.md",
+            "Mincut" => "mincut.md",
         ],
         "Dependencies" => [
             "ConstraintDomains.jl" => "domain.md",

@@ -2,15 +2,28 @@ module LocalSearchSolvers
 
 # TODO: return types: nothing, ind for internals etc
 
+# Usings
+using MathOptInterface
+
 # Imports
-import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!
-import Base: ∈, convert
+import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
+import Base: ∈, convert, copy
 import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, domain, _add!, _delete!, _draw, _length, _get_domain
-import ConstraintDomains: _get
+import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
+import ConstraintDomains: _get, _get_domain, _domain_size
+import Dates: Time, Nanosecond
+import JuMP
+import JuMP: @constraint, @variable, @objective, VariableRef, index
+
+
+
+# Const
+const CBLS = LocalSearchSolvers
+const MOI = MathOptInterface
+const MOIU = MOI.Utilities
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -21,13 +34,18 @@ export get_variable, get_variables, get_constraint, get_constraints, get_objecti
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
 # Exports Model
-export Model, sudoku, golomb, mincut
+export model, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
 export o_dist_extrema, o_mincut
 
 # Exports Solver
-export Solver, solve!, specialize, specialize!, Settings
+export Solver, solve!, specialize, specialize!, Options
+
+# Export MOI/JuMP
+export CBLS
+export DiscreteSet, Predicate, Error, ScalarFunction
+export AllDifferent, AllEqual, AllEqualParam, Eq, DistDifferent, AlwaysTrue, Ordered
 
 # Include utils
 include("utils.jl")
@@ -38,9 +56,17 @@ include("constraint.jl")
 include("objective.jl")
 
 # Include solvers
+include("options.jl")
 include("model.jl")
 include("state.jl")
 include("solver.jl")
+
+# Include MOI
+include("MOI_wrapper/MOI_wrapper.jl")
+include("MOI_wrapper/variables.jl")
+include("MOI_wrapper/constraints.jl")
+include("MOI_wrapper/objectives.jl")
+include("MOI_wrapper/results.jl")
 
 # Include specific models
 include("models/sudoku.jl")
