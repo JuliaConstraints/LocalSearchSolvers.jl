@@ -10,7 +10,7 @@ Compute the minimum cut of a graph.
 - `interdiction`: indicates the number of forbidden links
 """
 function mincut(graph; source, sink, interdiction=0)
-    m = Model(; kind=:cut)
+    m = model(; kind=:cut)
     n = size(graph, 1)
 
     d = domain(0:n)

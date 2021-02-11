@@ -34,7 +34,7 @@ export get_variable, get_variables, get_constraint, get_constraints, get_objecti
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
 # Exports Model
-export Model, sudoku, golomb, mincut
+export model, sudoku, golomb, mincut
 
 # Exports error/predicate/objective functions
 export o_dist_extrema, o_mincut
@@ -43,7 +43,9 @@ export o_dist_extrema, o_mincut
 export Solver, solve!, specialize, specialize!, Options
 
 # Export MOI/JuMP
-export Optimizer, CBLS, supports_constraint
+export CBLS
+export DiscreteSet, Predicate, Error, ScalarFunction
+export AllDifferent, AllEqual, AllEqualParam, Eq, DistDifferent, AlwaysTrue, Ordered
 
 # Include utils
 include("utils.jl")

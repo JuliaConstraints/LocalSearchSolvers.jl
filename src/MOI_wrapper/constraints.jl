@@ -55,7 +55,11 @@ Base.copy(set::MOIError) = MOIError(copy(set.f), copy(set.dimension))
 """
     Error{F <: Function} <: JuMP.AbstractVectorSet
 
-DOCSTRING
+The solver will compute a straightforward error function based on the `concept`. To run the solver efficiently, it is possible to provide an *error function* `err` instead of `concept`. `err` must return a nonnegative real number.
+
+```julia
+@constraint(model, X in Error(err))
+```
 """
 struct Error{F <: Function} <: JuMP.AbstractVectorSet
     f::F
@@ -95,7 +99,11 @@ Base.copy(set::MOIPredicate) = MOIEMOIPredicaterror(copy(set.f), copy(set.dimens
 """
     Predicate{F <: Function} <: JuMP.AbstractVectorSet
 
-DOCSTRING
+Assuming `X` is a (collection of) variables, `concept` a boolean function over `X`, and that a `model` is defined. In `JuMP` syntax we can create a constraint based on `concept` as follows.
+
+```julia
+@constraint(model, X in Predicate(concept))
+```
 """
 struct Predicate{F <: Function} <: JuMP.AbstractVectorSet
     f::F
@@ -124,9 +132,11 @@ end
 Base.copy(set::MOIAllDifferent) = MOIAllDifferent(copy(set.dimension))
 
 """
-    AllDifferent <: JuMP.AbstractVectorSet
+Global constraint ensuring that all the values of a given configuration are unique.
 
-DOCSTRING
+```julia
+@constraint(model, X in AllDifferent())
+```
 """
 struct AllDifferent <: JuMP.AbstractVectorSet end
 JuMP.moi_set(::AllDifferent, dim::Int) = MOIAllDifferent(dim)
@@ -154,9 +164,11 @@ end
 Base.copy(set::MOIAllEqual) = MOIAllEqual(copy(set.dimension))
 
 """
-    AllEqual <: JuMP.AbstractVectorSet
+Global constraint ensuring that all the values of `X` are all equal.
 
-DOCSTRING
+```julia
+@constraint(model, X in AllEqual())
+```
 """
 struct AllEqual <: JuMP.AbstractVectorSet end
 JuMP.moi_set(::AllEqual, dim::Int) = MOIAllEqual(dim)
@@ -184,9 +196,11 @@ end
 Base.copy(set::MOIEq) = MOIEq(copy(set.dimension))
 
 """
-    Eq <: JuMP.AbstractVectorSet
+Equality between two variables.
 
-DOCSTRING
+```julia
+@constraint(model, X in Eq())
+```
 """
 struct Eq <: JuMP.AbstractVectorSet end
 JuMP.moi_set(::Eq, dim::Int) = MOIEq(dim)
@@ -214,9 +228,11 @@ end
 Base.copy(set::MOIAlwaysTrue) = MOIAlwaysTrue(copy(set.dimension))
 
 """
-    AlwaysTrue <: JuMP.AbstractVectorSet
+Always return `true`. Mainly used for testing purpose.
 
-DOCSTRING
+```julia
+@constraint(model, X in AlwaysTrue())
+```
 """
 struct AlwaysTrue <: JuMP.AbstractVectorSet end
 JuMP.moi_set(::AlwaysTrue, dim::Int) = MOIAlwaysTrue(dim)
@@ -244,9 +260,11 @@ end
 Base.copy(set::MOIOrdered) = MOIOrdered(copy(set.dimension))
 
 """
-    Ordered <: JuMP.AbstractVectorSet
+Global constraint ensuring that all the values of `x` are ordered.
 
-DOCSTRING
+```julia
+@constraint(model, X in Ordered())
+```
 """
 struct Ordered <: JuMP.AbstractVectorSet end
 JuMP.moi_set(::Ordered, dim::Int) = MOIOrdered(dim)
@@ -274,9 +292,11 @@ end
 Base.copy(set::MOIDistDifferent) = MOIDistDifferent(copy(set.dimension))
 
 """
-    DistDifferent <: JuMP.AbstractVectorSet
+Local constraint ensuring that, given a vector `X` of size 4, `|X[1] - X[2]| ≠ |X[3] - X[4]|)`.
 
-DOCSTRING
+```julia
+@constraint(model, X in DistDifferent())
+```
 """
 struct DistDifferent <: JuMP.AbstractVectorSet end
 JuMP.moi_set(::DistDifferent, dim::Int) = MOIDistDifferent(dim)
@@ -314,9 +334,11 @@ Base.copy(set::MOIAllEqualParam) = MOIAllEqualParam(copy(set.param),
 copy(set.dimension))
 
 """
-    AllEqualParam{T <: Number} <: JuMP.AbstractVectorSet
+Global constraint ensuring that all the values of `X` are all equal to a given parameter `param`.
 
-DOCSTRING
+```julia
+@constraint(model, X in AllEqualParam(param))
+```
 """
 struct AllEqualParam{T <: Number} <: JuMP.AbstractVectorSet
     param::T

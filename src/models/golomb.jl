@@ -1,5 +1,5 @@
 function golomb(n, L, ::Val{:raw})
-    m = CBLS.Model(; kind=:golomb)
+    m = model(; kind=:golomb)
 
     # Add variables
     d = domain(0:L)
@@ -38,7 +38,7 @@ function golomb(n, L, ::Val{:JuMP})
     # @constraint(m, X[1] in AllEqualParam(0)) # first mark at 0
 
     @constraint(m, X in AllDifferent()) # different marks
-    @constraint(m, X in Ordered())
+    @constraint(m, X in Ordered()) # for output convenience, keep them ordered
 
     # No two pairs have the same length
     for i in 1:(n - 1), j in (i + 1):n, k in i:(n - 1), l in (k + 1):n
@@ -47,7 +47,6 @@ function golomb(n, L, ::Val{:JuMP})
     end
 
     # Add objective
-    # @objective(m, Min, X in DistExtrema())
     @objective(m, Min, ScalarFunction(maximum))
 
     return m, X
