@@ -52,7 +52,7 @@ end
 
 DOCSTRING
 """
-function Optimizer(model = Model(); options = Options())
+function Optimizer(model = model(); options = Options())
     Optimizer(Solver(model), MOI.OPTIMIZE_NOT_CALLED, options)
 end
 
@@ -78,7 +78,7 @@ DOCSTRING
 - ``: DESCRIPTION
 - `bool`: DESCRIPTION
 """
-MOI.set(::Optimizer, ::MOI.Silent, bool = true) = @warn "TODO: Silent"
+MOI.set(::Optimizer, ::MOI.Silent, bool = true) = @debug "TODO: Silent"
 
 """
     MOI.is_empty(model::Optimizer) = begin

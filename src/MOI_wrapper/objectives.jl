@@ -1,21 +1,28 @@
 MOI.supports(::Optimizer, ::MOI.ObjectiveSense) = true
 MOI.get(model::Optimizer, ::MOI.ObjectiveSense) = MOI.MIN_SENSE
 function MOI.set(model::Optimizer, ::MOI.ObjectiveSense, sense::MOI.OptimizationSense)
-    @warn "TODO: set sense" sense
+    @debug "TODO: set sense" sense
 end
 
 """
     ScalarFunction{F <: Function, V <: Union{Nothing, VOV}} <: MOI.AbstractScalarFunction
 
-DOCSTRING
+A container to express any function with real value in JuMP syntax. Used with the `@objective` macro.
 
 # Arguments:
-- `f::F`: DESCRIPTION
-- `X::V`: DESCRIPTION
-- `ScalarFunction(f, X::Union{Nothing, VOV} = nothing) = begin
-        #= none:5 =#
-        new{typeof(f), typeof(X)}(f, X)
-    end`: DESCRIPTION
+- `f::F`: function to be applied to `X`
+- `X::V`: a subset of the variables of the model.
+
+Given a `model`, and some (collection of) variables `X` to optimize. an objective function `f` can be added as follows. Note that only `Min` for minimization us currently defined. `Max` will come soon.
+
+```julia
+# Applies to all variables in order of insertion.
+# Recommended only when the function argument order does not matter.
+@objective(model, ScalarFunction(f))
+
+# Generic use
+@objective(model, ScalarFunction(f, X))
+```
 """
 struct ScalarFunction{F <: Function, V <: Union{Nothing, VOV}} <: MOI.AbstractScalarFunction
     f::F

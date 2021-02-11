@@ -10,20 +10,22 @@ LocalSearchSolvers.jl proposes sets of technical components of Constraint-Based 
 
 ![](img/sudoku3x3.png)
 
-## Dependencies
+### Dependencies
 
 This package makes use of several dependencies from the JuliaConstraints GitHub org:
-- `ConstraintDomains.jl`: a domains back-end package for all JuliaConstraints front packages
-- `Constraints.jl`: a constraints back-end package for all JuliaConstraints front packages
-- `CompositionalNetworks.jl`: a module to learn error functions automatically given a *concept*
-- `Garamon.jl` (incoming): geometrical constraints
+- [ConstraintDomains.jl](https://github.com/JuliaConstraints/ConstraintDomains.jl): a domains back-end package for all JuliaConstraints front packages
+- [Constraints.jl](https://github.com/JuliaConstraints/Constraints.jl): a constraints back-end package for all JuliaConstraints front packages
+- [CompositionalNetworks.jl](https://github.com/JuliaConstraints/CompositionalNetworks.jl): a module to learn error functions automatically given a *concept*
+- [Garamon.jl](https://github.com/JuliaConstraints/Garamon.jl) (incoming): geometrical constraints
 
-## Features
+### Features
 
+Wanted features list:
 - [ ] Resolution of problems
   - [x] SATisfaction
   - [x] OPTimisation (single-objective)
   - [ ] OPTimisation (multiple-objective)
+  - [ ] Dynamic problems
 - [ ] Domains
   - [x] Discrete domains (any type of numbers)
   - [ ] Continuous domains
@@ -31,20 +33,26 @@ This package makes use of several dependencies from the JuliaConstraints GitHub 
 - [ ] Parallelization
   - [x] Multithreading
   - [ ] Distributed
+  - [ ] Asynchronicity (for dynamic problems)
 - [ ] Solvers
   - [x] Weak-tabu list (based on the method in GHOST, the C++ lib)
   - [ ] Adaptive Search
-- [ ] Domain Specific Languages (DSL)
-  - [x] Straight Julia
-  - [ ] JuMP*ish*
-  - [ ] MiniZinc
-- [ ] Others
-  - [ ] Dynamic problems
+  - [ ] Extremal optimization
   - [ ] Neighbourhoud selection
   - [ ] Variable selection
-  - [ ] Mixed-solvers/methods with learning 
+  - [ ] Neighbourhood discovery and weighting
+- [ ] Domain Specific Languages (DSL)
+  - [x| ] Straight Julia | MathOptInterface.jl 
+  - [x] JuMP*ish*
+  - [ ] MiniZinc
+- [ ] Learning settings
+  - [x] Compositional Networks (error functions, cost functions)
+  - [ ] Restart: partial, probability
+  - [ ] Mixed-solvers
+  - [ ] Reinforcement learning for above mentioned learning features
+  - [ ] Automatic benchmarking and learning from all the possible parameter combination (instance, model, solver, size, restart, hardware, etc.) 
 
-## Contributing
+### Contributing
 
 Contributions to this package are more than welcome and can be arbitrarily, and not exhaustively, split as follows:
 - All features mentioned above
@@ -53,5 +61,5 @@ Contributions to this package are more than welcome and can be arbitrarily, and 
 - Creating other compositional networks which target other kind of constraints
 - Just making stuff better, faster, user-friendlier, etc.
 
-### Contact
-Do not hesitate to contact me (@azzaare) or other members of JuliaConstraints on GitHub (file an issue), the julialang discourse forum, the julialang slack channel, the julialang zulip server, or the Human of Julia (HoJ) discord server.
+#### Contact
+Do not hesitate to contact me (@azzaare) or other members of JuliaConstraints on GitHub (file an issue), the julialang discourse forum, the julialang slack channel, the julialang zulip server, or the Humans of Julia (HoJ) discord server.
