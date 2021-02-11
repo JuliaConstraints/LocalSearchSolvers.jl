@@ -75,7 +75,7 @@ objs = Dictionary(1:2, [o1, o2])
 end
 
 
-m = Model()
+m = model()
 describe(m)
 
 x1 = variable([4,3,2,1])

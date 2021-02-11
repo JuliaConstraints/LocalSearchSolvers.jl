@@ -17,7 +17,7 @@ An internal solver type called by Solver when multithreading is enabled.
 """
 struct _SubSolver <: AbstractSolver
     id::Int
-    model::Model
+    model::_Model
     state::_State
     options::Options
 end
@@ -34,7 +34,7 @@ Main solver. Handle the solving of a model, and optional multithreaded and/or di
 - `subs::Vector{_SubSolver}`: Optional subsolvers
 """
 mutable struct Solver <: AbstractSolver
-    model::Model
+    model::_Model
     state::_State
     options::Options
     subs::Vector{_SubSolver}
@@ -76,7 +76,7 @@ s = Solver{Int}(
 ```
 """
 function Solver(
-    m::Model,
+    m::_Model,
     options::Options=Options();
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where {T <: Number}
@@ -95,7 +95,7 @@ function Solver(;
     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where T <: Number
-    m = Model(; vars=variables, cons=constraints, objs=objectives)
+    m = model(; vars=variables, cons=constraints, objs=objectives)
     Solver(m; values=values)
 end
 
@@ -200,24 +200,6 @@ function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
     (sat = _error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
     return sat
-end
-
-# Neighbours
-function _neighbours(s, x, dim = 0)
-    if dim == 0
-        return _get_domain(get_domain(s, x)) # TODO: clean the get domain methods
-    else
-        neighbours = Set{Int}()
-        foreach(
-            c -> foreach(y ->
-                begin
-                    b = _value(s, x) ∈ get_variable(s, y) && _value(s, y) ∈ get_variable(s, x)
-                    b && push!(neighbours, y)
-                end, get_vars_from_cons(s, c)),
-            get_cons_from_var(s, x)
-        )
-        return delete!(neighbours, x)
-    end
 end
 
 """

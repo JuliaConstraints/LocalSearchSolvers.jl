@@ -1,5 +1,6 @@
 # Quick Start Guide
 This section introduce the main concepts of `LocalSearchSolvers.jl`. We model both a satisfaction and an optimization version of the [Golomb Ruler](https://en.wikipedia.org/wiki/Golomb_ruler) problem.
+For this quickstart, we will use [JuMP.jl](https://github.com/jump-dev/JuMP.jl) syntax.
 
 ## Golomb Ruler
 From Wikipedia's English page.
@@ -11,55 +12,58 @@ From Wikipedia's English page.
 Given a number of marks `n` and a ruler length `L`, we can model our problem in Julia as easily as follows. First create an empty problem.
 
  ```julia
-model = Model()
+using LocalSearchSolvers # a CBLS alias is exported
+using JuMP
+
+model = Model(CBLS.Optimizer)
 ```
 
-Then add `n` variables with domain `d`.
+Then add `n` variables with domain `0:L`.
 
 ```julia
-d = domain(0:L)
-foreach(_ -> variable!(model, d), 1:n)
+n = 4 # marks
+L = n^2 # ruler length
+@variable(model, X[1:n], DiscreteSet(0:L))
 ```
 
 Finally add the following constraints,
 * all marks have a different value
-* first mark has value 0
+* marks are ordered (optional)
 * finally, no two pairs of marks are the same distance appart
 
 ```julia
-constraint!(model, c_all_different, 1:n)
-constraint!(model, x -> c_all_equal_param(x; param = 0), 1:1)
+@constraint(model, X in AllDifferent()) # different marks
+@constraint(model, X in Ordered()) # for output layout, keep them ordered
+
+# No two pairs have the same length
 for i in 1:(n - 1), j in (i + 1):n, k in i:(n - 1), l in (k + 1):n
     (i, j) < (k, l) || continue
-    constraint!(model, c_dist_different, [i, j, k, l])
+    @constraint(model, [X[i], X[j], X[k], X[l]] in DistDifferent())
 end
 ```
 
 ### Optimization version
 A Golomb ruler can be either optimally dense (maximal `m` for a given `L`) or optimally short (minimal `L` for a given `n`). Until `LocalSearchSolvers.jl` implements dynamic problems, only optimal shortness is provided.
 
-The model objective is then to minimize the maximum distance between the two extrema marks in the ruler.
+The model objective is then to minimize the maximum distance between the two extrema marks in the ruler. As the domains are positive, we can simply minimize the maximum value.
 
 ```julia
-objective!(model, o_dist_extrema)
+@objective(model, Min, ScalarFunction(maximum))
 ```
 
 ### Ruling the solver
-For either version, the solver is built and run in a similar way. Please note that the satisfaction one will stop if a solution is found. The other will run until the maximum number of iteration is reached.
+For either version, the solver is built and run in a similar way. Please note that the satisfaction one will stop if a solution is found. The other will run until the maximum number of iteration is reached (1000 by default).
 
 ```julia
-s = Solver(model)
-solve!(s)
+optimize!(model)
 ```
 
-And finally retrieve the (best-known) solution info. (TODO: make it julian and clean)
+And finally retrieve the (best-known) solution info.
 
 ```julia
-@info "Results golomb!"
-@info "Values: $(s.state.values)"
-@info "Sol (val): $(s.state.best_solution_value)"
-@info "Sol (vals): $(!isnothing(s.state.best_solution_value) ? s.state.best_solution : nothing)"
+result = value.(X)
+@info "Golomb marks: $result"
 ```
 
-Please note, that the Golomb Ruler is already implemented in the package as `golomb(n::Int, L::Int=n^2)`. An hand-made printing function is also there: `TODO:`.
+Please note, that the Golomb Ruler is already implemented in the package as `golomb(n::Int, L::Int=n^2)`.
 

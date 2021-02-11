@@ -2,7 +2,7 @@ function sudoku(n, start, ::Val{:raw})
     N = n^2
     d = domain(1:N)
 
-    m = Model(;kind=:sudoku)
+    m = model(;kind=:sudoku)
 
     # Add variables
     if isempty(start)
