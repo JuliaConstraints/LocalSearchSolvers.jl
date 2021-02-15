@@ -5,7 +5,7 @@ function sudoku(n, start, ::Val{:raw})
     m = model(;kind=:sudoku)
 
     # Add variables
-    if isempty(start)
+    if isnothing(start)
         foreach(_ -> variable!(m, d), 1:(N^2))
     else
         foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v) : d), pairs(start))
@@ -70,6 +70,15 @@ function sudoku(n, start, ::Val{:JuMP})
 
     @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
 
+    if !isnothing(start)
+        for i in 1:N, j in 1:N
+            v_ij = start[i,j]
+            if 1 ≤ v_ij ≤ N 
+                @constraint(m, X[i,j] in DiscreteSet(v_ij))
+            end
+        end
+    end
+
     for i in 1:N
         @constraint(m, X[i,:] in AllDifferent()) # rows
         @constraint(m, X[:,i] in AllDifferent()) # columns
@@ -85,7 +94,7 @@ end
 
 Create a model for the sudoku problem of domain `1:n²` with optional starting values. The `modeler` argument accepts :raw, :MOI, and :JuMP (default), which refer respectively to the solver internal model, the MathOptInterface model, and the JuMP model.
 """
-sudoku(n; start=Dictionary{Int,Int}(), modeler = :JuMP) = sudoku(n, start, Val(modeler))
+sudoku(n; start=nothing, modeler = :JuMP) = sudoku(n, start, Val(modeler))
 
 @doc raw"""
 ```julia
