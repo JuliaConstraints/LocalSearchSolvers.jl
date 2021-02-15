@@ -25,7 +25,7 @@ DOCSTRING
 - `tabu_local::Int`: DESCRIPTION
 - `tabu_delta::Float64`: DESCRIPTION
 - `threads::Int`: DESCRIPTION
-- `time_limit::Union{Time}`: DESCRIPTION
+- `time_limit::Float64`: DESCRIPTION
 - `function Options(; dynamic = false, iteration = 1000, print_level = :minimal, solutions = 1, specialize = !dynamic, tabu_time = 0, tabu_local = 0, tabu_delta = 0.0, threads = typemax(0), time_limit = Time(0))
     #= none:13 =#
     #= none:25 =#
@@ -50,11 +50,11 @@ mutable struct Options
     tabu_local::Int
     tabu_delta::Float64
     threads::Int
-    time_limit::Union{Time} # nanoseconds
+    time_limit::Float64 # seconds
 
     function Options(;
         dynamic=false,
-        iteration=1000,
+        iteration=Inf,
         print_level=:minimal,
         solutions=1,
         specialize=!dynamic,
@@ -62,14 +62,18 @@ mutable struct Options
         tabu_local=0,
         tabu_delta=0.0,
         threads=typemax(0),
-        time_limit= Time(0),
+        time_limit= Inf,
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
         " and objectives types. Dynamic elements that add a new type will raise an error!"
-        notds_str = "The solver types are not specialized in a static model context," *
-        " which is sub-optimal."
         dynamic && specialize && @warn ds_str
+
+        notds_str = "The solver types are not specialized in a static model context," *
+        " which is sub-optimal."        
         !dynamic && !specialize && @info notds_str
+
+        itertime_str = "Both iteration and time limits are disabled. Optimization runs will run infinitely."
+        iteration == Inf == time_limit && @warn itertime_str
 
         new(
             dynamic,
