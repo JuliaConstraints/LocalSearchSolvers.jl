@@ -41,6 +41,7 @@ function sudoku(n, start, ::Val{:MOI})
     MOI.add_variables(m, N^2)
 
     # Add domain to variables
+    # TODO: make it accept starting solutions
     foreach(i -> MOI.add_constraint(m, VI(i), DiscreteSet(1:N)), 1:N^2)
 
     # Add constraints: line, columns; blocks
@@ -68,13 +69,16 @@ function sudoku(n, start, ::Val{:JuMP})
     N = n^2
     m = JuMP.Model(CBLS.Optimizer)
 
-    @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
-
-    if !isnothing(start)
+    if isnothing(start)
+        @variable(m, X[1:N, 1:N], DiscreteSet(1:N))
+    else
+        @variable(m, X[1:N, 1:N])
         for i in 1:N, j in 1:N
             v_ij = start[i,j]
             if 1 ≤ v_ij ≤ N 
                 @constraint(m, X[i,j] in DiscreteSet(v_ij))
+            else
+                @constraint(m, X[i,j] in DiscreteSet(1:N))
             end
         end
     end
