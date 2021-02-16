@@ -55,6 +55,9 @@ include("variable.jl")
 include("constraint.jl")
 include("objective.jl")
 
+# Include strategies
+include("restart.jl")
+
 # Include solvers
 include("options.jl")
 include("model.jl")

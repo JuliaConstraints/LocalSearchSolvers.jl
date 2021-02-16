@@ -72,8 +72,9 @@ mutable struct Options
         " which is sub-optimal."        
         !dynamic && !specialize && @info notds_str
 
-        itertime_str = "Both iteration and time limits are disabled. Optimization runs will run infinitely."
-        iteration == Inf == time_limit && @warn itertime_str
+        itertime_str = "Both iteration and time limits are disabled. " * 
+        "Optimization runs will run infinitely."
+        iteration == Inf && time_limit == Inf && @warn itertime_str
 
         new(
             dynamic,
