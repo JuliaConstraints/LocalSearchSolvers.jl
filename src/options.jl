@@ -54,7 +54,7 @@ mutable struct Options
 
     function Options(;
         dynamic=false,
-        iteration=Inf,
+        iteration=10000,
         print_level=:minimal,
         solutions=1,
         specialize=!dynamic,
@@ -237,11 +237,4 @@ _time_limit(options) = options.time_limit
 
 DOCSTRING
 """
-_time_limit!(options, time::Time) = options.time_limit = time
-
-"""
-    _time_limit!(options, time::Int) = begin
-
-DOCSTRING
-"""
-_time_limit!(options, time::Int) = _time_limit!(options, Time(Nanosecond(time)))
+_time_limit!(options, time) = options.time_limit = time
