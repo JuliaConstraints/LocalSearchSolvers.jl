@@ -56,7 +56,17 @@ include("constraint.jl")
 include("objective.jl")
 
 # Include strategies
-include("restart.jl")
+include("strategy.jl") # generic strategy methods and structures
+include("strategies/move.jl")
+include("strategies/neighbor.jl")
+include("strategies/objective.jl")
+include("strategies/parallel.jl")
+include("strategies/perturbation.jl")
+include("strategies/portfolio.jl")
+include("strategies/tabu.jl") # preceed restart.jl
+include("strategies/restart.jl")
+include("strategies/solution.jl")
+include("strategies/termination.jl")
 
 # Include solvers
 include("options.jl")
@@ -64,20 +74,20 @@ include("model.jl")
 include("state.jl")
 include("solver.jl")
 
-# Include MOI
+# Include MOI/JuMP
 include("MOI_wrapper/MOI_wrapper.jl")
 include("MOI_wrapper/variables.jl")
 include("MOI_wrapper/constraints.jl")
 include("MOI_wrapper/objectives.jl")
 include("MOI_wrapper/results.jl")
 
+# Include usual objectives
+include("objectives/extrema.jl")
+include("objectives/cut.jl")
+
 # Include specific models
 include("models/sudoku.jl")
 include("models/golomb.jl")
 include("models/cut.jl")
-
-# Include usual objectives
-include("objectives/extrema.jl")
-include("objectives/cut.jl")
 
 end
