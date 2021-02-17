@@ -3,6 +3,7 @@ abstract type RestartStrategy <: AbstractStrategy  end
 # Tabu restart
 struct TabuRestart <: RestartStrategy
     reset_limit::Int
+    reset_percentage::Float64
 end
 
 restart(strat, ::Val{:tabu}) = TabuRestart(tenure(strat, :tabu) - tenure(strat, :pick))

@@ -65,6 +65,7 @@ include("strategies/perturbation.jl")
 include("strategies/portfolio.jl")
 include("strategies/tabu.jl") # preceed restart.jl
 include("strategies/restart.jl")
+include("strategies/selection.jl")
 include("strategies/solution.jl")
 include("strategies/termination.jl")
 
