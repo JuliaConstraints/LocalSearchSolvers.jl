@@ -507,14 +507,30 @@ function empty!(s::MainSolver)
     empty!(s.subs)
 end
 
-_init!(s::MainSolver, ::Val{:global}) = nothing
-_init!(s::MainSolver, ::Val{:remote}) = nothing
-_init!(s::MainSolver, ::Val{:local}) = nothing
+## TODO: Initialization
+
+_init!(s, ::Val{:global}) = @warn "TODO: do something"
+_init!(s, ::Val{:remote}) = @warn "TODO: do something"
+_init!(s, ::Val{:meta}) = @warn "TODO: do something"
+_init!(s, ::Val{:local}) = @warn "TODO: do something"
 
 _init!(s, role::Symbol) = _init!(s, Val(role))
 
-function _init!(s)
+function _init!(s::MainSolver)
     _init!(s, :global)
     _init!(s, :remote)
+    _init!(s, :meta)
     _init!(s, :local)
+end
+
+function _init!(s::S) where {S <: MetaSolver}
+    _init!(s, :meta)
+    _init!(s, :local)
+end
+
+_init!(s) = _init!(s, :local)
+
+# newsolve
+function newsolve!(s)
+    
 end

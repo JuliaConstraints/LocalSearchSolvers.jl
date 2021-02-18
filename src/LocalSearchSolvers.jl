@@ -18,8 +18,6 @@ import Dates: Time, Nanosecond
 import JuMP
 import JuMP: @constraint, @variable, @objective, VariableRef, index
 
-
-
 # Const
 const CBLS = LocalSearchSolvers
 const MOI = MathOptInterface
@@ -50,10 +48,16 @@ export AllDifferent, AllEqual, AllEqualParam, Eq, DistDifferent, AlwaysTrue, Ord
 # Include utils
 include("utils.jl")
 
-# Include internal structures
+# Include model related files
 include("variable.jl")
 include("constraint.jl")
 include("objective.jl")
+include("model.jl")
+
+# Include state related files
+include("configuration.jl")
+include("pool.jl")
+include("state.jl")
 
 # Include strategies
 include("strategy.jl") # generic strategy methods and structures
@@ -71,8 +75,6 @@ include("strategies/termination.jl")
 
 # Include solvers
 include("options.jl")
-include("model.jl")
-include("state.jl")
 include("solver.jl")
 
 # Include MOI/JuMP
