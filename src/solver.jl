@@ -5,9 +5,14 @@ Abstract type to encapsulate the different solver types such as `Solver` or `_Su
 abstract type AbstractSolver end
 
 """
+Abstract type to encapsulate all solver types that manages other solvers.
+"""
+abstract type MetaSolver <: AbstractSolver end
+
+"""
     _SubSolver <: AbstractSolver
 
-An internal solver type called by Solver when multithreading is enabled.
+An internal solver type called by MetaSolver when multithreading is enabled.
 
 # Arguments:
 - `id::Int`: subsolver id for debugging
@@ -23,7 +28,18 @@ struct _SubSolver <: AbstractSolver
 end
 
 """
-    Solver <: AbstractSolver
+    LeadSolver <: MetaSolver
+Solver managed remotely by a MainSolver. Can manage its own set of local sub solvers.
+"""
+mutable struct LeadSolver <: MetaSolver
+    model::_Model
+    state::_State
+    options::Options
+    subs::Vector{_SubSolver}
+end
+
+"""
+    MainSolver <: AbstractSolver
 
 Main solver. Handle the solving of a model, and optional multithreaded and/or distributed subsolvers.
 
@@ -33,10 +49,11 @@ Main solver. Handle the solving of a model, and optional multithreaded and/or di
 - `options::Options`: User options for this solver
 - `subs::Vector{_SubSolver}`: Optional subsolvers
 """
-mutable struct Solver <: AbstractSolver
+mutable struct MainSolver <: MetaSolver
     model::_Model
     state::_State
     options::Options
+    remotes::Vector{_SubSolver} # TODO: make a fitting struct for remote LeadSolver
     subs::Vector{_SubSolver}
 end
 
@@ -44,7 +61,7 @@ end
     _SubSolver(ms::Solver, id)
 Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
 """
-_SubSolver(ms::Solver, id) = _SubSolver(id, ms.model, deepcopy(ms.state), ms.options)
+_SubSolver(ms::MainSolver, id) = _SubSolver(id, ms.model, deepcopy(ms.state), ms.options)
 
 """
     Solver{T}(m::Model; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
@@ -75,7 +92,7 @@ s = Solver{Int}(
 )
 ```
 """
-function Solver(
+function solver(
     m::_Model,
     options::Options=Options();
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
@@ -85,18 +102,19 @@ function Solver(
     # vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
     val, tabu = zero(Float64), Dictionary{Int,Int}()
     state = _State(values, vars, cons, val, tabu, false, copy(values), nothing, 0)
+    remotes = Vector{_SubSolver}()
     subs = Vector{_SubSolver}()
-    Solver(m, state, options, subs)
+    MainSolver(m, state, options, remotes, subs)
 end
 
-function Solver(;
+function solver(;
     variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
     constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
     values::Dictionary{Int,T}=Dictionary{Int,Number}(),
 ) where T <: Number
     m = model(; vars=variables, cons=constraints, objs=objectives)
-    Solver(m; values=values)
+    solver(m; values=values)
 end
 
 # Forwards from model field
@@ -282,7 +300,7 @@ end
 Initialize a solver in both sequential and parallel contexts.
 """
 _init_solve!(ss::_SubSolver) = (_draw!(ss); _compute!(ss))
-function _init_solve!(s::Solver)
+function _init_solve!(s::MainSolver)
     # Specialized the model if specialize = true (and not already done)
     !is_specialized(s) && _specialize(s) && specialize!(s)
     _verbose(s, describe(s.model))
@@ -483,8 +501,20 @@ solution(s) = is_sat(s) ? _values(s) : _solution(s)
 
 DOCSTRING
 """
-function empty!(s::Solver)
+function empty!(s::MainSolver)
     empty!(s.model)
     empty!(s.state)
     empty!(s.subs)
+end
+
+_init!(s::MainSolver, ::Val{:global}) = nothing
+_init!(s::MainSolver, ::Val{:remote}) = nothing
+_init!(s::MainSolver, ::Val{:local}) = nothing
+
+_init!(s, role::Symbol) = _init!(s, Val(role))
+
+function _init!(s)
+    _init!(s, :global)
+    _init!(s, :remote)
+    _init!(s, :local)
 end

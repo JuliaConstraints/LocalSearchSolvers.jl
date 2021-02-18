@@ -42,7 +42,7 @@ DOCSTRING
 - `options::Options`: DESCRIPTION
 """
 mutable struct Optimizer <: MOI.AbstractOptimizer
-    solver::Solver
+    solver::MainSolver
     status::MOI.TerminationStatusCode
     options::Options
 end
@@ -53,7 +53,7 @@ end
 DOCSTRING
 """
 function Optimizer(model = model(); options = Options())
-    Optimizer(Solver(model), MOI.OPTIMIZE_NOT_CALLED, options)
+    Optimizer(solver(model), MOI.OPTIMIZE_NOT_CALLED, options)
 end
 
 # forward functions from Solver

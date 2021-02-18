@@ -40,7 +40,7 @@ export model, sudoku, golomb, mincut
 export o_dist_extrema, o_mincut
 
 # Exports Solver
-export Solver, solve!, specialize, specialize!, Options
+export solver, solve!, specialize, specialize!, Options
 
 # Export MOI/JuMP
 export CBLS
