@@ -54,7 +54,7 @@ include("constraint.jl")
 include("objective.jl")
 include("model.jl")
 
-# Include state related files
+# Include solver state and pool of configurations related files
 include("configuration.jl")
 include("pool.jl")
 include("state.jl")
