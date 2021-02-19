@@ -1,29 +1,24 @@
+abstract type AbstractState end
+
 """
-    _State{T <: Number}
-A mutable structure to store the internal state of a solver. All methods applied to `_State` are forwarded to `S <: AbstractSolver`.
+    GeneralState{T <: Number}
+A mutable structure to store the general state of a solver. All methods applied to `GeneralState` are forwarded to `S <: AbstractSolver`.
 ```
-mutable struct _State{T <: Number}
-    values::Dictionary{Int,T} # TODO: handle multiple value type
-    vars_costs::Dictionary{Int,Float64}
-    cons_costs::Dictionary{Int,Float64}
-    error::Float64
-    tabu::Dictionary{Int,Int}
-    optimizing::Bool
-    best_solution::Dictionary{Int,T}
-    best_solution_value::Union{Nothing,T}
+mutable struct GeneralState{T <: Number} <: AbstractState
+    configuration::Configuration{T}
+    cons_costs::Dictionary{Int, Float64}
+    last_improvement::Int
+    tabu::Dictionary{Int, Int}
+    vars_costs::Dictionary{Int, Float64}
 end
 ```
 """
-mutable struct _State{T <: Number}
-    values::Dictionary{Int,T}
-    vars_costs::Dictionary{Int,Float64}
-    cons_costs::Dictionary{Int,Float64}
-    error::Float64
-    tabu::Dictionary{Int,Int}
-    optimizing::Bool
-    best_solution::Dictionary{Int,T}
-    best_solution_value::Union{Nothing,T}
+mutable struct _State{T <: Number} <: AbstractState
+    configuration::Configuration{T}
+    cons_costs::Dictionary{Int, Float64}
     last_improvement::Int
+    tabu::Dictionary{Int,Int}
+    vars_costs::Dictionary{Int, Float64}
 end
 
 """

@@ -6,7 +6,7 @@ struct TabuRestart <: RestartStrategy
     reset_percentage::Float64
 end
 
-restart(strat, ::Val{:tabu}) = TabuRestart(tenure(strat, :tabu) - tenure(strat, :pick))
+restart(strat, ::Val{:tabu}) = TabuRestart(tenure(strat, :tabu) - tenure(strat, :pick), 1.0)
 
 # Restart sequences
 mutable struct RestartSequence{F <: Function} <: RestartStrategy

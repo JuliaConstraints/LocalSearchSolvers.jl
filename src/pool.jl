@@ -7,4 +7,4 @@ mutable struct Pool{T <: Number}
     value::Float64
 end
 
-Pool{T}() = Pool(0, Vector{Configuration{T}}(), empty_pool, Inf)
+Pool() where {T <: Number}= Pool(0, Vector{Configuration{T}}(), empty_pool, Inf)
