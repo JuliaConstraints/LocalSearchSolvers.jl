@@ -21,7 +21,7 @@ mutable struct _State{T <: Number} <: AbstractState
     vars_costs::Dictionary{Int, Float64}
 end
 
-function _State(m::Model)
+function _State(m::_Model)
     config = Configuration(m)
     cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0

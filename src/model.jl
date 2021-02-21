@@ -419,18 +419,9 @@ end
 
 # Non modificating cost and objective computations
 
-draw(m::Model) = map(x -> draw(m, x), get_variables(m))
+draw(m::_Model) = map(x -> draw(m, x), get_variables(m))
 
 compute_cost(c::Constraint, values) = apply(c, map(x -> values[x], c.vars))
 compute_cost(m, values) = sum(c -> compute_cost(c, values), get_constraints(m))
-compute_cost(m, config::Configuration) = compute_cost(m, values(config))
 
 compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
-
-function Configuration(m::_Model)
-    values = draw(m)
-    val = compute_cost(m, values)
-    sat = val ≈ 0.0
-    return Configuration(sat, sat ? compute_objective(m, values) : val, values)
-end
-
