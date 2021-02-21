@@ -23,7 +23,7 @@ An internal solver type called by MetaSolver when multithreading is enabled.
 struct _SubSolver <: AbstractSolver
     id::Int
     model::_Model
-    state::_State
+    state::State
     options::Options
 end
 
@@ -33,7 +33,7 @@ Solver managed remotely by a MainSolver. Can manage its own set of local sub sol
 """
 mutable struct LeadSolver <: MetaSolver
     model::_Model
-    state::_State
+    state::State
     options::Options
     subs::Vector{_SubSolver}
 end
@@ -51,7 +51,7 @@ Main solver. Handle the solving of a model, and optional multithreaded and/or di
 """
 mutable struct MainSolver <: MetaSolver
     model::_Model
-    state::_State
+    state::State
     options::Options
     remotes::Vector{_SubSolver} # TODO: make a fitting struct for remote LeadSolver
     subs::Vector{_SubSolver}
@@ -92,29 +92,19 @@ s = Solver{Int}(
 )
 ```
 """
-function solver(
-    m::_Model,
-    options::Options=Options();
-    values::Dictionary{Int,T}=Dictionary{Int,Number}(),
-) where {T <: Number}
-    vars = length_vars(m) > 0 ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
-    cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
-    # vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
-    val, tabu = zero(Float64), Dictionary{Int,Int}()
-    state = _State(values, vars, cons, val, tabu, false, copy(values), nothing, 0)
+function solver(m::_Model, options::Options=Options())
     remotes = Vector{_SubSolver}()
     subs = Vector{_SubSolver}()
-    MainSolver(m, state, options, remotes, subs)
+    MainSolver(m, nothing, options, remotes, subs)
 end
 
 function solver(;
     variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
     constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
-    values::Dictionary{Int,T}=Dictionary{Int,Number}(),
-) where T <: Number
+)
     m = model(; vars=variables, cons=constraints, objs=objectives)
-    solver(m; values=values)
+    solver(m)
 end
 
 # Forwards from model field
@@ -512,7 +502,12 @@ end
 _init!(s, ::Val{:global}) = @warn "TODO: do something"
 _init!(s, ::Val{:remote}) = @warn "TODO: do something"
 _init!(s, ::Val{:meta}) = @warn "TODO: do something"
-_init!(s, ::Val{:local}) = @warn "TODO: do something"
+function _init!(s, ::Val{:local}; pool = Pool())
+    # Specialize
+    # init state
+end
+
+# Dispatchers: _init!
 
 _init!(s, role::Symbol) = _init!(s, Val(role))
 
@@ -529,8 +524,3 @@ function _init!(s::S) where {S <: MetaSolver}
 end
 
 _init!(s) = _init!(s, :local)
-
-function Configuration(s)
-    _draw!(s)
-    _compute!(s)
-end

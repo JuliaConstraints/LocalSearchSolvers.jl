@@ -1,5 +1,3 @@
-abstract type AbstractState end
-
 """
     GeneralState{T <: Number}
 A mutable structure to store the general state of a solver. All methods applied to `GeneralState` are forwarded to `S <: AbstractSolver`.
@@ -13,7 +11,7 @@ mutable struct GeneralState{T <: Number} <: AbstractState
 end
 ```
 """
-mutable struct _State{T <: Number} <: AbstractState
+mutable struct _State{T}
     configuration::Configuration{T}
     cons_costs::Dictionary{Int, Float64}
     last_improvement::Int
@@ -21,8 +19,10 @@ mutable struct _State{T <: Number} <: AbstractState
     vars_costs::Dictionary{Int, Float64}
 end
 
-function _State(m::_Model)
-    config = Configuration(m)
+State = Union{Nothing, _State}
+
+function _State(m::_Model, pool = Pool())
+    config = is_empty(pool) ? Configuration(m) : best_config(pool)
     cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
     tabu = Dictionary{Int,Int}()
