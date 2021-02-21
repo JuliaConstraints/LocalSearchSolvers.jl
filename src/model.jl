@@ -20,8 +20,7 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: O
 end
 ```
 """
-struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},
-    O <: Objective{<:Function}} <: MOI.ModelLike
+struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}} <: MOI.ModelLike
     variables::Dictionary{Int,V}
     constraints::Dictionary{Int,C}
     objectives::Dictionary{Int,O}
@@ -38,7 +37,7 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},
     kind::Symbol
 
     # Best known bound
-    best_bound::Union{Nothing, Float64}
+    best_bound::Union{Nothing,Float64}
 end
 
 """
@@ -262,7 +261,7 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::_Model, d = EmptyDomain())
+function variable!(m::_Model, d=EmptyDomain())
     add!(m, variable(d))
     return _max_vars(m)
 end
@@ -417,3 +416,21 @@ function empty!(m::_Model)
     m.max_objs[] = 0
     m.specialized[] = false
 end
+
+# Non modificating cost and objective computations
+
+draw(m::Model) = map(x -> draw(m, x), get_variables(m))
+
+compute_cost(c::Constraint, values) = apply(c, map(x -> values[x], c.vars))
+compute_cost(m, values) = sum(c -> compute_cost(c, values), get_constraints(m))
+compute_cost(m, config::Configuration) = compute_cost(m, values(config))
+
+compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
+
+function Configuration(m::_Model)
+    values = draw(m)
+    val = compute_cost(m, values)
+    sat = val ≈ 0.0
+    return Configuration(sat, sat ? compute_objective(m, values) : val, values)
+end
+

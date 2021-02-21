@@ -530,7 +530,7 @@ end
 
 _init!(s) = _init!(s, :local)
 
-# newsolve
-function newsolve!(s)
-    
+function Configuration(s)
+    _draw!(s)
+    _compute!(s)
 end

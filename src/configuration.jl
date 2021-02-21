@@ -1,4 +1,4 @@
-struct Configuration{T <: Number}
+mutable struct Configuration{T <: Number}
     solution::Bool
     value::Float64
     values::Dictionary{Int, T}

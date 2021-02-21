@@ -21,6 +21,15 @@ mutable struct _State{T <: Number} <: AbstractState
     vars_costs::Dictionary{Int, Float64}
 end
 
+function _State(m::Model)
+    config = Configuration(m)
+    cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
+    last_improvement = 0
+    tabu = Dictionary{Int,Int}()
+    vars = length_vars(m) > 0 ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
+    return _State(config, cons, last_improvement, tabu, vars)
+end
+
 """
     _cons_costs(s::S) where S <: Union{_State, AbstractSolver}
 Access the constraints costs.
