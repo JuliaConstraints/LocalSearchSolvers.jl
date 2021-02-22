@@ -53,7 +53,7 @@ end
 
 function MOI.set(optimizer::Optimizer, ::OF, func::ScalarFunction{F, VOV}
 ) where {F <: Function} # VOV, mainly for JuMP
-        objective_func = _ -> func.f(map(y -> _value(optimizer,y.value), func.X.variables))
+        objective_func = _ -> func.f(map(y -> get_value(optimizer,y.value), func.X.variables))
         return objective!(optimizer, objective_func)
  end
 

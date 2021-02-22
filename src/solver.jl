@@ -562,6 +562,6 @@ DOCSTRING
 """
 function empty!(s::MainSolver)
     empty!(s.model)
-    empty!(s.state)
+    !isnothing(s.state) && empty!(s.state)
     empty!(s.subs)
 end
