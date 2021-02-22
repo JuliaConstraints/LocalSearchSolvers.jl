@@ -5,15 +5,22 @@ mutable struct Configuration{T}
 end
 
 is_solution(c) = c.solution
+is_empty(::Configuration) = false
+
 get_value(c) = c.value
 get_error(c) = is_solution(c) ? 0.0 : get_value(c)
 get_values(c) = c.values
 get_value(c, x) = get_values(c)[x] 
 
-compute_cost(m, config::Configuration) = compute_cost(m, get_values(config))
+set_value!(c, val) = c.value = val
+set_value!(c, x, val) = get_values(c)[x] = val
+set_values!(c, values) = c.values = values
+set_sat!(c, b) = c.solution = b
 
-is_empty(::Configuration) = false
-best_config(config::Configuration) = config # TODO: what is that?
+compute_cost(m, config::Configuration) = compute_cost(m, get_values(config))
+compute_cost!(m, config::Configuration) = set_value!(config, compute_cost(m, config))
+
+# best_config(config::Configuration) = config # TODO: what is that?
 
 function empty!(c::Configuration)
     c.solution = false
@@ -23,7 +30,7 @@ end
 
 function Configuration(m::_Model)
     values = draw(m)
-    val = compute_cost(m, values)
+    val = compute_costs(m, values)
     sol = val ≈ 0.0
     opt = sol && !is_sat(m)
     return Configuration(sol, opt ? compute_objective(m, values) : val, values)

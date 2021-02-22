@@ -10,15 +10,14 @@ end
 const Pool = Union{Nothing, _Pool}
 
 pool() = nothing
-# function pool(config::Configuration)
-
-#     best = 1
-#     configs = [config]
-#     status = halfway_pool
-
-# end 
-
-# Pool{T}() where {T} = Pool(0, Vector{Configuration{T}}(), empty_pool, Inf)
+function pool(config::Configuration)
+    best = 1
+    configs = [config]
+    status = full_pool
+    value = get_value(config)
+end 
 
 is_empty(pool) = isnothing(pool)
-best_config(pool) = configurations[pool.best]
+best_config(pool) = pool.configurations[pool.best]
+best_value(pool) = get_value(best_config(pool))
+best_values(pool) = get_values(best_config(pool))

@@ -39,6 +39,7 @@ export o_dist_extrema, o_mincut
 
 # Exports Solver
 export solver, solve!, specialize, specialize!, Options
+export get_values, best_values, best_value
 
 # Export MOI/JuMP
 export CBLS

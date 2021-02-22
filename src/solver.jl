@@ -82,9 +82,7 @@ end
 function solver(mlid, model, options, pool, strats, ::Val{:sub})
     return _SubSolver(mlid, model, options, pool, nothing, strats)
 end
-function solver(ms::MS, id, role;
-    pool = pool(), strats = ms.strategies
-) where {MS <: MetaSolver}
+function solver(ms, id, role; pool = pool(), strats = ms.strategies)
     mlid = make_id(meta_id(ms), id, Val(role))
     return solver(mlid, ms.model, ms.options, pool, strats, Val(role))
 end
@@ -130,14 +128,14 @@ function solver(model = model();
     return MainSolver(mlid, model, options, pool, remotes, state, strategies, subs)
 end
 
-function solver(;
-    variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
-    constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
-    objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
-)
-    m = model(; vars=variables, cons=constraints, objs=objectives)
-    solver(m)
-end
+# function solver(::Val{:MOI};
+#     variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
+#     constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
+#     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
+# )
+#     m = model(; vars=variables, cons=constraints, objs=objectives)
+#     solver(m)
+# end
 
 # Forwards from model field
 @forward AbstractSolver.model get_constraints, get_objectives, get_variables
@@ -154,21 +152,24 @@ end
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
 @forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
-@forward AbstractSolver.state _cons_cost, _var_cost, _value
+@forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
 @forward AbstractSolver.state _cons_cost!, _var_cost!, _value!
 @forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
-@forward AbstractSolver.state _best!, _best, _select_worse, _solution, _error, _error!
+@forward AbstractSolver.state _best!, _best, _select_worse, _solution, get_error
 @forward AbstractSolver.state _last_improvement, _inc_last_improvement!
 @forward AbstractSolver.state _reset_last_improvement!, has_solution
 
-# Forward from utils.jl (options)
+# Forward from options
 @forward AbstractSolver.options _verbose, _dynamic, dynamic!, _iteration, _iteration!
 @forward AbstractSolver.options _print_level, _print_level!, _solutions, _solutions!
 @forward AbstractSolver.options _specialize, _specialize!, _tabu_time, _tabu_time!
 @forward AbstractSolver.options _tabu_local, _tabu_local!, _tabu_delta, _tabu_delta!
 @forward AbstractSolver.options _threads, _threads!, _time_limit, _time_limit!
+
+# Forwards from pool (of solutions)
+@forward AbstractSolver.pool best_config, best_value, best_values
 
 
 """
@@ -194,9 +195,8 @@ Compute the cost of constraint `c` with index `ind`.
 """
 function _compute_cost!(s, ind, c)
     old_cost = _cons_cost(s, ind)
-    new_cost = c.f(map(x -> _value(s, x), c.vars))
+    new_cost = compute_cost(c, _values(s))
     _cons_cost!(s, ind, new_cost)
-    # _up_error!(s, old_cost, new_cost) TODO: make it right
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
 
@@ -214,7 +214,7 @@ function _compute_costs!(s; cons_lst=Indices{Int}())
             pairs(view(get_constraints(s), cons_lst))
         )
     end
-    _error!(s, sum(_cons_costs(s)))
+    set_error!(s, sum(_cons_costs(s)))
 end
 
 """
@@ -238,7 +238,7 @@ Compute the objective `o`'s value if `s` is satisfied and return the current `er
 """
 function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
-    (sat = _error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
+    (sat = get_error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
     return sat
 end
 
@@ -282,7 +282,7 @@ Perform an improving move in `x` neighbourhood if possible.
 function _move!(s, x::Int, dim::Int=0)
     best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
-    best_cost = old_cost = _error(s)
+    best_cost = old_cost = get_error(s)
     old_vars_costs = copy(_vars_costs(s))
     old_cons_costs = copy(_cons_costs(s))
     for v in _neighbours(s, x, dim)
@@ -294,7 +294,7 @@ function _move!(s, x::Int, dim::Int=0)
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)
 
-        cost = _error(s)
+        cost = get_error(s)
         if cost < best_cost
             _verbose(s, "cost = $cost < $best_cost")
             tabu = false
@@ -308,7 +308,7 @@ function _move!(s, x::Int, dim::Int=0)
         # _verbose(s, "")
         _vars_costs!(s, copy(old_vars_costs))
         _cons_costs!(s, copy(old_cons_costs))
-        _error!(s, old_cost)
+        set_error!(s, old_cost)
 
         # swap/change back the value of x (and y/)
         dim == 0 ? _value!(s, x, old_v) : _swap_value!(s, x, v)
@@ -466,7 +466,7 @@ Check if any subsolver of a main solver `s`, for
 function _check_subs(s)
     if is_sat(s)
         for (id, ss) in enumerate(s.subs)
-            _error(ss) == 0.0 && return id
+            get_error(ss) == 0.0 && return id
         end
     else
         for (id, ss) in enumerate(s.subs)
@@ -492,7 +492,7 @@ function _solve!(s, stop)
 end
 
 function status(s)
-    e = _error(s)
+    e = get_error(s)
     if e == 0.0 # make tolerance
         return is_sat(s) ? :Solved : :LocalOptimum
     else

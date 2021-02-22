@@ -20,7 +20,8 @@ mutable struct _State{T}
     vars_costs::Dictionary{Int, Float64}
 end
 
-@forward _State.configuration values, error
+@forward _State.configuration get_values, get_error, get_value, compute_cost!, set_values!
+@forward _State.configuration set_value!, set_sat!
 
 const State = Union{Nothing, _State}
 
@@ -51,7 +52,7 @@ _vars_costs(s::_State) = s.vars_costs
     _vars_costs(s::S) where S <: Union{_State, AbstractSolver}
 Access the variables costs.
 """
-_values(s::_State) = values(s)
+_values(s::_State) = get_values(s)
 
 """
     _tabu(s::S) where S <: Union{_State, AbstractSolver}
@@ -93,7 +94,7 @@ _vars_costs!(s::_State, costs) = s.vars_costs = costs
     _values!(s::S, values) where S <: Union{_State, AbstractSolver}
 Set the variables values.
 """
-_values!(s::_State{T}, values) where T <: Number = s.values = values
+_values!(s::_State{T}, values) where T <: Number = set_values!(s, values)
 
 """
     _tabu!(s::S, tabu) where S <: Union{_State, AbstractSolver}
@@ -189,25 +190,24 @@ _solution!(s::_State, values) = s.best_solution = copy(values)
     _best!(s::S, val, values = Dictionary()) where S <: Union{_State, AbstractSolver}
 Set the best known value to `val` and, if `values` not empty, the best known solution.
 """
-function _best!(s::_State, val::Union{Nothing,T}, values=Dictionary{Int,T}()
-) where {T <: Number}
+function _best!(s::_State, val::Union{Nothing,T}, values=nothing) where {T <: Number}
     if isnothing(_best(s)) || val < _best(s)
         s.best_solution_value = val
-        s.best_solution = copy(isempty(values) ? s.values : values)
+        s.best_solution = copy(isnothing(values) ? s.values : values)
     end
 end
 
-"""
-    _error(s::S) where S <: Union{_State, AbstractSolver}
-Access the error of the current state of `s`.
-"""
-_error(s::_State) = error(s)
+# """
+#     _error(s::S) where S <: Union{_State, AbstractSolver}
+# Access the error of the current state of `s`.
+# """
+# get_error(s::_State) = get_error(s)
 
-"""
-    _error!(s::S, val) where S <: Union{_State, AbstractSolver}
-Set the error of the current state of `s` to `val`.
-"""
-_error!(s::_State, val) = s.error = val
+# """
+#     _error!(s::S, val) where S <: Union{_State, AbstractSolver}
+# Set the error of the current state of `s` to `val`.
+# """
+# set_error!(s::_State, val) = set_error!(s.config) = val
 
 """
     _insert_tabu!(s::S, x, tabu_time) where S <: Union{_State, AbstractSolver}
@@ -270,3 +270,9 @@ end
 
 has_solution(::Nothing) = false
 has_solution(s::_State) = is_solution(s.configuration)
+
+function set_error!(s::_State, err)
+    sat = err ≈ 0.0
+    set_sat!(s, sat)
+    !sat && set_value!(s, err)
+end

@@ -422,6 +422,9 @@ end
 draw(m::_Model) = map(_draw, get_variables(m))
 
 compute_cost(c::Constraint, values) = apply(c, map(x -> values[x], c.vars))
-compute_cost(m, values) = sum(c -> compute_cost(c, values), get_constraints(m); init = 0.0)
+compute_costs(m, values) = sum(c -> compute_cost(c, values), get_constraints(m); init = 0.0)
+function compute_costs(m, values, cons)
+    return  sum(c -> compute_cost(c, values), view(get_constraints(m), cons); init = 0.0)
+end
 
 compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
