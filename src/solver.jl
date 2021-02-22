@@ -153,7 +153,7 @@ end
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
 @forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
 @forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
-@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!
+@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!, get_value, get_values
 @forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
@@ -223,7 +223,12 @@ end
 
 Compute the objective `o`'s value.
 """
-_compute_objective!(s, o::Objective) = _best!(s, o.f(_values(s).values))
+function _compute_objective!(s, o::Objective)
+    val = apply(o, _values(s).values)
+    if isnothing(s.pool) || val < best_value(s)
+        s.pool = pool(s.state.configuration)
+    end
+end
 _compute_objective!(s, o=1) = _compute_objective!(s, get_objective(s, o))
 
 """

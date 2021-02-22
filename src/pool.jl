@@ -15,6 +15,7 @@ function pool(config::Configuration)
     configs = [config]
     status = full_pool
     value = get_value(config)
+    return _Pool(best, configs, status, value)
 end 
 
 is_empty(pool) = isnothing(pool)
