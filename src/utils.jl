@@ -25,3 +25,5 @@ end
 abstract type FunctionContainer end
 apply(fc::FC) where {FC <: FunctionContainer} = fc.f
 apply(fc::FC, x) where {FC <: FunctionContainer} = apply(fc)(x)
+
+is_empty(::Nothing) = true

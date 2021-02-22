@@ -12,22 +12,27 @@ end
 ```
 """
 mutable struct _State{T}
-    configuration::Configuration{T}
+    configuration::Union{Nothing, Configuration{T}}
     cons_costs::Dictionary{Int, Float64}
+    optimizing::Bool
     last_improvement::Int
     tabu::Dictionary{Int,Int}
     vars_costs::Dictionary{Int, Float64}
 end
 
-State = Union{Nothing, _State}
+@forward _State.configuration values, error
 
-function _State(m::_Model, pool = Pool())
+const State = Union{Nothing, _State}
+
+state() = nothing
+function state(m::_Model, pool = pool(); opt = false)
+    lc, lv = length_cons(m) > 0, length_vars(m) > 0
     config = is_empty(pool) ? Configuration(m) : best_config(pool)
-    cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
+    cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
     tabu = Dictionary{Int,Int}()
-    vars = length_vars(m) > 0 ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
-    return _State(config, cons, last_improvement, tabu, vars)
+    vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
+    return _State(config, cons, opt, last_improvement, tabu, vars)
 end
 
 """
@@ -46,7 +51,7 @@ _vars_costs(s::_State) = s.vars_costs
     _vars_costs(s::S) where S <: Union{_State, AbstractSolver}
 Access the variables costs.
 """
-_values(s::_State) = s.values
+_values(s::_State) = values(s)
 
 """
     _tabu(s::S) where S <: Union{_State, AbstractSolver}
@@ -196,7 +201,7 @@ end
     _error(s::S) where S <: Union{_State, AbstractSolver}
 Access the error of the current state of `s`.
 """
-_error(s::_State) = s.error
+_error(s::_State) = error(s)
 
 """
     _error!(s::S, val) where S <: Union{_State, AbstractSolver}
@@ -246,6 +251,9 @@ function _select_worse(s::_State)
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
+_last_improvement(s::_State) = s.last_improvement
+_inc_last_improvement!(s::_State) = s.last_improvement += 1
+_reset_last_improvement!(s::_State) = s.last_improvement = 0
 
 """
     empty!(s::_State)
@@ -253,16 +261,12 @@ end
 DOCSTRING
 """
 function empty!(s::_State)
-    empty!(s.values)
-    empty!(s.vars_costs)
+    s.configuration = nothing
     empty!(s.cons_costs)
-    _error!(s, 0.0)
+    _reset_last_improvement!(s)
     empty!(s.tabu)
-    _satisfying!(s)
-    empty!(s.best_solution)
-    s.best_solution_value = nothing
+    empty!(s.vars_costs)
 end
 
-_last_improvement(s::_State) = s.last_improvement
-_inc_last_improvement!(s::_State) = s.last_improvement += 1
-_reset_last_improvement!(s::_State) = s.last_improvement = 0
+has_solution(::Nothing) = false
+has_solution(s::_State) = is_solution(s.configuration)
