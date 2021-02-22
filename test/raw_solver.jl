@@ -5,7 +5,7 @@
 
     for m in models
         @info describe(m)
-        s = solver(m; options = Options(print_level =:verbose, iteration = 10))
+        s = solver(m; options = Options(print_level =:verbose, iteration = Inf))
         for x in keys(get_variables(s))
             @test get_name(s, x) == "x$x"
             for c in get_cons_from_var(s, x)
