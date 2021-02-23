@@ -12,7 +12,7 @@ end
 ```
 """
 mutable struct _State{T}
-    configuration::Union{Nothing, Configuration{T}}
+    configuration::Configuration{T}
     cons_costs::Dictionary{Int, Float64}
     optimizing::Bool
     last_improvement::Int
@@ -28,7 +28,8 @@ const State = Union{Nothing, _State}
 state() = nothing
 function state(m::_Model, pool = pool(); opt = false)
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
-    config = is_empty(pool) ? Configuration(m) : best_config(pool)
+    # config = is_empty(pool) ? Configuration(m) : best_config(pool)
+    config = Configuration(m)
     cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
     tabu = Dictionary{Int,Int}()

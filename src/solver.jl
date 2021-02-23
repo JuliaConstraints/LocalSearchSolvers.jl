@@ -324,8 +324,8 @@ end
 state!(s) = s.state = state(s) # TODO: add Pool
 
 _init!(s, ::Val{:global}) = !is_specialized(s) && _specialize(s) && specialize!(s)
-_init!(s, ::Val{:remote}) = @warn "TODO: implemented distributed solvers (LeadSolver)"
-_init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
+_init!(s, ::Val{:remote}) = @warn "TODO: implement distributed solvers (LeadSolver)"
+_init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:nthreads())
 function _init!(s, ::Val{:local}; pool = pool())
     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
     _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
@@ -478,7 +478,8 @@ function _check_subs(s)
         end
     else
         for (id, ss) in enumerate(s.subs)
-            bs, bss = _best(s), _best(ss)
+            bs = isnothing(s.pool) ? nothing : best_value(s)
+            bss = isnothing(ss.pool) ? nothing : best_value(ss)
             isnothing(bs) && (isnothing(bss) ? continue : return id)
             isnothing(bss) ? continue : (bss < bs && return id)
         end
@@ -537,7 +538,7 @@ function solve!(s)
                 if best_sub > 0
                     bs = s.subs[best_sub]
                     sat && (_values!(s, _values(bs)); break)
-                    _best!(s, _best(bs), solution(bs))
+                    s.pool = bs.pool
                 end
             end
             atomic_or!(stop, true)

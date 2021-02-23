@@ -22,3 +22,4 @@ is_empty(pool) = isnothing(pool)
 best_config(pool) = pool.configurations[pool.best]
 best_value(pool) = get_value(best_config(pool))
 best_values(pool) = get_values(best_config(pool))
+

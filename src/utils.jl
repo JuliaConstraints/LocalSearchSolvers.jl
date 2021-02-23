@@ -24,6 +24,6 @@ end
 
 abstract type FunctionContainer end
 apply(fc::FC) where {FC <: FunctionContainer} = fc.f
-apply(fc::FC, x) where {FC <: FunctionContainer} = apply(fc)(x)
+apply(fc::FC, x) where {FC <: FunctionContainer} = convert(Float64, apply(fc)(x))
 
 is_empty(::Nothing) = true

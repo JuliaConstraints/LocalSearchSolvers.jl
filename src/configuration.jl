@@ -10,7 +10,7 @@ is_empty(::Configuration) = false
 get_value(c) = c.value
 get_error(c) = is_solution(c) ? 0.0 : get_value(c)
 get_values(c) = c.values
-get_value(c, x) = get_values(c)[x] 
+get_value(c, x) = get_values(c)[x]
 
 set_value!(c, val) = c.value = val
 set_value!(c, x, val) = get_values(c)[x] = val
