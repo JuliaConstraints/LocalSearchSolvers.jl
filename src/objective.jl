@@ -8,7 +8,7 @@ struct Objective{F <: Function}
 end
 ````
 """
-struct Objective{F <: Function}
+struct Objective{F <: Function} <: FunctionContainer
     name::String
     f::F
 end

@@ -21,3 +21,9 @@ function _find_rand_argmax(d::DictionaryView)
     end
     return rand(argmax)
 end
+
+abstract type FunctionContainer end
+apply(fc::FC) where {FC <: FunctionContainer} = fc.f
+apply(fc::FC, x) where {FC <: FunctionContainer} = convert(Float64, apply(fc)(x))
+
+is_empty(::Nothing) = true

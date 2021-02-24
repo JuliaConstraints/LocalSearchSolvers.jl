@@ -1,29 +1,44 @@
+abstract type AbstractState end
+
+struct EmptyState <: AbstractState end
+
 """
-    _State{T <: Number}
-A mutable structure to store the internal state of a solver. All methods applied to `_State` are forwarded to `S <: AbstractSolver`.
+    GeneralState{T <: Number}
+A mutable structure to store the general state of a solver. All methods applied to `GeneralState` are forwarded to `S <: AbstractSolver`.
 ```
-mutable struct _State{T <: Number}
-    values::Dictionary{Int,T} # TODO: handle multiple value type
-    vars_costs::Dictionary{Int,Float64}
-    cons_costs::Dictionary{Int,Float64}
-    error::Float64
-    tabu::Dictionary{Int,Int}
-    optimizing::Bool
-    best_solution::Dictionary{Int,T}
-    best_solution_value::Union{Nothing,T}
+mutable struct GeneralState{T <: Number} <: AbstractState
+    configuration::Configuration{T}
+    cons_costs::Dictionary{Int, Float64}
+    last_improvement::Int
+    tabu::Dictionary{Int, Int}
+    vars_costs::Dictionary{Int, Float64}
 end
 ```
 """
-mutable struct _State{T <: Number}
-    values::Dictionary{Int,T}
-    vars_costs::Dictionary{Int,Float64}
-    cons_costs::Dictionary{Int,Float64}
-    error::Float64
-    tabu::Dictionary{Int,Int}
+mutable struct _State{T} <: AbstractState
+    configuration::Configuration{T}
+    cons_costs::Dictionary{Int, Float64}
     optimizing::Bool
-    best_solution::Dictionary{Int,T}
-    best_solution_value::Union{Nothing,T}
     last_improvement::Int
+    tabu::Dictionary{Int,Int}
+    vars_costs::Dictionary{Int, Float64}
+end
+
+@forward _State.configuration get_values, get_error, get_value, compute_cost!, set_values!
+@forward _State.configuration set_value!, set_sat!
+
+const State = Union{EmptyState, _State}
+
+state() = EmptyState()
+function state(m::_Model, pool = pool(); opt = false)
+    lc, lv = length_cons(m) > 0, length_vars(m) > 0
+    # config = is_empty(pool) ? Configuration(m) : best_config(pool)
+    config = Configuration(m)
+    cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
+    last_improvement = 0
+    tabu = Dictionary{Int,Int}()
+    vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
+    return _State(config, cons, opt, last_improvement, tabu, vars)
 end
 
 """
@@ -42,7 +57,7 @@ _vars_costs(s::_State) = s.vars_costs
     _vars_costs(s::S) where S <: Union{_State, AbstractSolver}
 Access the variables costs.
 """
-_values(s::_State) = s.values
+_values(s::_State) = get_values(s)
 
 """
     _tabu(s::S) where S <: Union{_State, AbstractSolver}
@@ -84,7 +99,7 @@ _vars_costs!(s::_State, costs) = s.vars_costs = costs
     _values!(s::S, values) where S <: Union{_State, AbstractSolver}
 Set the variables values.
 """
-_values!(s::_State{T}, values) where T <: Number = s.values = values
+_values!(s::_State{T}, values) where T <: Number = set_values!(s, values)
 
 """
     _tabu!(s::S, tabu) where S <: Union{_State, AbstractSolver}
@@ -180,25 +195,24 @@ _solution!(s::_State, values) = s.best_solution = copy(values)
     _best!(s::S, val, values = Dictionary()) where S <: Union{_State, AbstractSolver}
 Set the best known value to `val` and, if `values` not empty, the best known solution.
 """
-function _best!(s::_State, val::Union{Nothing,T}, values=Dictionary{Int,T}()
-) where {T <: Number}
+function _best!(s::_State, val::Union{Nothing,T}, values=nothing) where {T <: Number}
     if isnothing(_best(s)) || val < _best(s)
         s.best_solution_value = val
-        s.best_solution = copy(isempty(values) ? s.values : values)
+        s.best_solution = copy(isnothing(values) ? s.values : values)
     end
 end
 
-"""
-    _error(s::S) where S <: Union{_State, AbstractSolver}
-Access the error of the current state of `s`.
-"""
-_error(s::_State) = s.error
+# """
+#     _error(s::S) where S <: Union{_State, AbstractSolver}
+# Access the error of the current state of `s`.
+# """
+# get_error(s::_State) = get_error(s)
 
-"""
-    _error!(s::S, val) where S <: Union{_State, AbstractSolver}
-Set the error of the current state of `s` to `val`.
-"""
-_error!(s::_State, val) = s.error = val
+# """
+#     _error!(s::S, val) where S <: Union{_State, AbstractSolver}
+# Set the error of the current state of `s` to `val`.
+# """
+# set_error!(s::_State, val) = set_error!(s.config) = val
 
 """
     _insert_tabu!(s::S, x, tabu_time) where S <: Union{_State, AbstractSolver}
@@ -242,23 +256,17 @@ function _select_worse(s::_State)
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
-
-"""
-    empty!(s::_State)
-
-DOCSTRING
-"""
-function empty!(s::_State)
-    empty!(s.values)
-    empty!(s.vars_costs)
-    empty!(s.cons_costs)
-    _error!(s, 0.0)
-    empty!(s.tabu)
-    _satisfying!(s)
-    empty!(s.best_solution)
-    s.best_solution_value = nothing
-end
-
 _last_improvement(s::_State) = s.last_improvement
 _inc_last_improvement!(s::_State) = s.last_improvement += 1
 _reset_last_improvement!(s::_State) = s.last_improvement = 0
+
+has_solution(::Nothing) = false
+has_solution(s::_State) = is_solution(s.configuration)
+
+function set_error!(s::_State, err)
+    sat = err ≈ 0.0
+    set_sat!(s, sat)
+    !sat && set_value!(s, err)
+end
+
+get_error(::EmptyState) = Inf

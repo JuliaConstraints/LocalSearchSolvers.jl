@@ -4,10 +4,18 @@ Abstract type to encapsulate the different solver types such as `Solver` or `_Su
 """
 abstract type AbstractSolver end
 
+meta_id(s) = s.meta_local_id[1]
+local_id(s) = s.meta_local_id[2]
+
+"""
+Abstract type to encapsulate all solver types that manages other solvers.
+"""
+abstract type MetaSolver <: AbstractSolver end
+
 """
     _SubSolver <: AbstractSolver
 
-An internal solver type called by Solver when multithreading is enabled.
+An internal solver type called by MetaSolver when multithreading is enabled.
 
 # Arguments:
 - `id::Int`: subsolver id for debugging
@@ -15,15 +23,31 @@ An internal solver type called by Solver when multithreading is enabled.
 - `state::_State`: a `deepcopy` of the main solver that evolves independently
 - `options::Options`: a ref to the options of the main solver
 """
-struct _SubSolver <: AbstractSolver
-    id::Int
+mutable struct _SubSolver <: AbstractSolver
+    meta_id::Tuple{Int, Int}
     model::_Model
-    state::_State
     options::Options
+    pool::Pool
+    state::State
+    strategies::Nothing
 end
 
 """
-    Solver <: AbstractSolver
+    LeadSolver <: MetaSolver
+Solver managed remotely by a MainSolver. Can manage its own set of local sub solvers.
+"""
+mutable struct LeadSolver <: MetaSolver
+    meta_id::Tuple{Int, Int}
+    model::_Model
+    options::Options
+    pool::Pool
+    state::State
+    strategies::Nothing
+    subs::Vector{_SubSolver}
+end
+
+"""
+    MainSolver <: AbstractSolver
 
 Main solver. Handle the solving of a model, and optional multithreaded and/or distributed subsolvers.
 
@@ -33,18 +57,35 @@ Main solver. Handle the solving of a model, and optional multithreaded and/or di
 - `options::Options`: User options for this solver
 - `subs::Vector{_SubSolver}`: Optional subsolvers
 """
-mutable struct Solver <: AbstractSolver
+mutable struct MainSolver <: MetaSolver
+    meta_local_id::Tuple{Int, Int}
     model::_Model
-    state::_State
     options::Options
+    pool::Pool
+    remotes::Vector{LeadSolver} # TODO: make a fitting struct for remote LeadSolver
+    state::State
+    strategies::Nothing
     subs::Vector{_SubSolver}
 end
+
+make_id(::Int, id, ::Val{:lead}) = (id, 0)
+make_id(meta, id, ::Val{:sub}) = (meta, id)
 
 """
     _SubSolver(ms::Solver, id)
 Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
 """
-_SubSolver(ms::Solver, id) = _SubSolver(id, ms.model, deepcopy(ms.state), ms.options)
+function solver(mlid, model, options, pool, strats, ::Val{:lead})
+    return LeadSolver(mlid, model, options, pool, state(), strats, Vector{_SubSolver}())
+end
+
+function solver(mlid, model, options, pool, strats, ::Val{:sub})
+    return _SubSolver(mlid, model, options, pool, state(), strats)
+end
+function solver(ms, id, role; pool = pool(), strats = ms.strategies)
+    mlid = make_id(meta_id(ms), id, Val(role))
+    return solver(mlid, ms.model, ms.options, pool, strats, Val(role))
+end
 
 """
     Solver{T}(m::Model; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
@@ -75,34 +116,30 @@ s = Solver{Int}(
 )
 ```
 """
-function Solver(
-    m::_Model,
-    options::Options=Options();
-    values::Dictionary{Int,T}=Dictionary{Int,Number}(),
-) where {T <: Number}
-    vars = length_vars(m) > 0 ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
-    cons = length_cons(m) > 0 ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
-    # vars, cons = zeros(Float64, get_variables(m)), zeros(Float64, get_constraints(m))
-    val, tabu = zero(Float64), Dictionary{Int,Int}()
-    state = _State(values, vars, cons, val, tabu, false, copy(values), nothing, 0)
+function solver(model = model();
+    options = Options(),
+    pool = pool(),
+    strategies = nothing,
+)
+    mlid = (1, 0)
+    remotes = Vector{LeadSolver}()
     subs = Vector{_SubSolver}()
-    Solver(m, state, options, subs)
+    return MainSolver(mlid, model, options, pool, remotes, state(), strategies, subs)
 end
 
-function Solver(;
-    variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
-    constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
-    objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
-    values::Dictionary{Int,T}=Dictionary{Int,Number}(),
-) where T <: Number
-    m = model(; vars=variables, cons=constraints, objs=objectives)
-    Solver(m; values=values)
-end
+# function solver(::Val{:MOI};
+#     variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
+#     constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
+#     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
+# )
+#     m = model(; vars=variables, cons=constraints, objs=objectives)
+#     solver(m)
+# end
 
 # Forwards from model field
 @forward AbstractSolver.model get_constraints, get_objectives, get_variables
 @forward AbstractSolver.model get_constraint, get_objective, get_variable, get_domain
-@forward AbstractSolver.model get_cons_from_var, get_vars_from_cons
+@forward AbstractSolver.model get_cons_from_var, get_vars_from_cons, state
 @forward AbstractSolver.model add!, add_value!, add_var_to_cons!
 @forward AbstractSolver.model delete_value!, delete_var_from_cons!
 @forward AbstractSolver.model draw, constriction, describe, is_sat, is_specialized
@@ -114,21 +151,24 @@ end
 # Forwards from state field
 @forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
 @forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
-@forward AbstractSolver.state _cons_cost, _var_cost, _value
-@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!
+@forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
+@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!, get_value, get_values
 @forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
 @forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
-@forward AbstractSolver.state _best!, _best, _select_worse, _solution, _error, _error!
+@forward AbstractSolver.state _best!, _best, _select_worse, _solution, get_error
 @forward AbstractSolver.state _last_improvement, _inc_last_improvement!
-@forward AbstractSolver.state _reset_last_improvement!
+@forward AbstractSolver.state _reset_last_improvement!, has_solution
 
-# Forward from utils.jl (options)
+# Forward from options
 @forward AbstractSolver.options _verbose, _dynamic, dynamic!, _iteration, _iteration!
 @forward AbstractSolver.options _print_level, _print_level!, _solutions, _solutions!
 @forward AbstractSolver.options _specialize, _specialize!, _tabu_time, _tabu_time!
 @forward AbstractSolver.options _tabu_local, _tabu_local!, _tabu_delta, _tabu_delta!
 @forward AbstractSolver.options _threads, _threads!, _time_limit, _time_limit!
+
+# Forwards from pool (of solutions)
+@forward AbstractSolver.pool best_config, best_value, best_values
 
 
 """
@@ -154,9 +194,8 @@ Compute the cost of constraint `c` with index `ind`.
 """
 function _compute_cost!(s, ind, c)
     old_cost = _cons_cost(s, ind)
-    new_cost = c.f(map(x -> _value(s, x), c.vars))
+    new_cost = compute_cost(c, _values(s))
     _cons_cost!(s, ind, new_cost)
-    # _up_error!(s, old_cost, new_cost) TODO: make it right
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
 
@@ -174,7 +213,7 @@ function _compute_costs!(s; cons_lst=Indices{Int}())
             pairs(view(get_constraints(s), cons_lst))
         )
     end
-    _error!(s, sum(_cons_costs(s)))
+    set_error!(s, sum(_cons_costs(s)))
 end
 
 """
@@ -183,7 +222,12 @@ end
 
 Compute the objective `o`'s value.
 """
-_compute_objective!(s, o::Objective) = _best!(s, o.f(_values(s).values))
+function _compute_objective!(s, o::Objective)
+    val = apply(o, _values(s).values)
+    if is_empty(s.pool) || val < best_value(s)
+        s.pool = pool(s.state.configuration)
+    end
+end
 _compute_objective!(s, o=1) = _compute_objective!(s, get_objective(s, o))
 
 """
@@ -198,7 +242,7 @@ Compute the objective `o`'s value if `s` is satisfied and return the current `er
 """
 function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
-    (sat = _error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
+    (sat = get_error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
     return sat
 end
 
@@ -242,7 +286,7 @@ Perform an improving move in `x` neighbourhood if possible.
 function _move!(s, x::Int, dim::Int=0)
     best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
-    best_cost = old_cost = _error(s)
+    best_cost = old_cost = get_error(s)
     old_vars_costs = copy(_vars_costs(s))
     old_cons_costs = copy(_cons_costs(s))
     for v in _neighbours(s, x, dim)
@@ -254,7 +298,7 @@ function _move!(s, x::Int, dim::Int=0)
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst=cons_x_v)
 
-        cost = _error(s)
+        cost = get_error(s)
         if cost < best_cost
             _verbose(s, "cost = $cost < $best_cost")
             tabu = false
@@ -268,7 +312,7 @@ function _move!(s, x::Int, dim::Int=0)
         # _verbose(s, "")
         _vars_costs!(s, copy(old_vars_costs))
         _cons_costs!(s, copy(old_cons_costs))
-        _error!(s, old_cost)
+        set_error!(s, old_cost)
 
         # swap/change back the value of x (and y/)
         dim == 0 ? _value!(s, x, old_v) : _swap_value!(s, x, v)
@@ -276,39 +320,71 @@ function _move!(s, x::Int, dim::Int=0)
     return best_values, best_swap, tabu
 end
 
-"""
-    _init_solve!(s::S) where S <: AbstractSolver
+state!(s) = s.state = state(s) # TODO: add Pool
 
-Initialize a solver in both sequential and parallel contexts.
-"""
-_init_solve!(ss::_SubSolver) = (_draw!(ss); _compute!(ss))
-function _init_solve!(s::Solver)
-    # Specialized the model if specialize = true (and not already done)
-    !is_specialized(s) && _specialize(s) && specialize!(s)
-    _verbose(s, describe(s.model))
-    _verbose(s, "Starting solver")
-
-    # draw initial values unless provided and set best_values
-    isempty(_values(s)) && _draw!(s)
-    _verbose(s, "Initial values = $(_values(s))")
-
-    # compute initial constraints and variables costs
-    sat = _compute!(s)
-    _verbose(s, "Initial constraints costs = $(s.state.cons_costs)")
-    _verbose(s, "Initial variables costs = $(s.state.vars_costs)")
-
-    # Tabu times
+_init!(s, ::Val{:global}) = !is_specialized(s) && _specialize(s) && specialize!(s)
+_init!(s, ::Val{:remote}) = @warn "TODO: implement distributed solvers (LeadSolver)"
+_init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:nthreads())
+function _init!(s, ::Val{:local}; pool = pool())
     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
     _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
     _tabu_delta(s) == 0.0 && _tabu_delta!(s, _tabu_time(s) - _tabu_local(s))# 20-30
-
-    # @info "tabu stuff:" _tabu_time(s) _tabu_local(s) _tabu_delta(s)
-
-    # Create sub solvers
-    foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
-
-    return sat
+    state!(s)
+    return has_solution(s)
 end
+
+# Dispatchers: _init!
+
+_init!(s, role::Symbol) = _init!(s, Val(role))
+
+function _init!(s::MainSolver)
+    _init!(s, :global)
+    _init!(s, :remote)
+    _init!(s, :meta)
+    _init!(s, :local)
+end
+
+function _init!(s::S) where {S <: MetaSolver}
+    _init!(s, :meta)
+    _init!(s, :local)
+end
+
+_init!(s) = _init!(s, :local)
+
+
+# """
+#     _init_solve!(s::S) where S <: AbstractSolver
+
+# Initialize a solver in both sequential and parallel contexts.
+# """
+# _init_solve!(ss::_SubSolver) = (_draw!(ss); _compute!(ss))
+# function _init_solve!(s::MainSolver)
+#     # Specialized the model if specialize = true (and not already done)
+#    !is_specialized(s) && _specialize(s) && specialize!(s)
+#     _verbose(s, describe(s.model))
+#     _verbose(s, "Starting solver")
+
+#     # draw initial values unless provided and set best_values
+#     isempty(_values(s)) && _draw!(s)
+#     _verbose(s, "Initial values = $(_values(s))")
+
+#     # compute initial constraints and variables costs
+#     sat = _compute!(s)
+#     _verbose(s, "Initial constraints costs = $(s.state.cons_costs)")
+#     _verbose(s, "Initial variables costs = $(s.state.vars_costs)")
+
+#     # Tabu times
+#     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
+#     _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
+#     _tabu_delta(s) == 0.0 && _tabu_delta!(s, _tabu_time(s) - _tabu_local(s))# 20-30
+
+#     # @info "tabu stuff:" _tabu_time(s) _tabu_local(s) _tabu_delta(s)
+
+#     # Create sub solvers
+#     foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
+
+#     return sat
+# end
 
 """
     _restart!(s, k = 10)
@@ -397,11 +473,12 @@ Check if any subsolver of a main solver `s`, for
 function _check_subs(s)
     if is_sat(s)
         for (id, ss) in enumerate(s.subs)
-            _error(ss) == 0.0 && return id
+            get_error(ss) == 0.0 && return id
         end
     else
         for (id, ss) in enumerate(s.subs)
-            bs, bss = _best(s), _best(ss)
+            bs = is_empty(s.pool) ? nothing : best_value(s)
+            bss = is_empty(ss.pool) ? nothing : best_value(ss)
             isnothing(bs) && (isnothing(bss) ? continue : return id)
             isnothing(bss) ? continue : (bss < bs && return id)
         end
@@ -416,14 +493,14 @@ Start a solving run of a subsolver with a shared `Atomic` boolean stop.
 """
 function _solve!(s, stop)
     sat = is_sat(s)
-    _init_solve!(s)
+    _init!(s)
     while !(stop[])
         _step!(s) && sat && break
     end
 end
 
 function status(s)
-    e = _error(s)
+    e = get_error(s)
     if e == 0.0 # make tolerance
         return is_sat(s) ? :Solved : :LocalOptimum
     else
@@ -448,7 +525,7 @@ function solve!(s)
     iter = 0
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
-    _init_solve!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+    _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
     @threads for id in 1:min(nthreads(), _threads(s))
         if id == 1
             while iter < _iteration(s)
@@ -460,7 +537,7 @@ function solve!(s)
                 if best_sub > 0
                     bs = s.subs[best_sub]
                     sat && (_values!(s, _values(bs)); break)
-                    _best!(s, _best(bs), solution(bs))
+                    s.pool = bs.pool
                 end
             end
             atomic_or!(stop, true)
@@ -483,8 +560,8 @@ solution(s) = is_sat(s) ? _values(s) : _solution(s)
 
 DOCSTRING
 """
-function empty!(s::Solver)
+function empty!(s::MainSolver)
     empty!(s.model)
-    empty!(s.state)
+    s.state = state()
     empty!(s.subs)
 end
