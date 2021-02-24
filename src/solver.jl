@@ -153,10 +153,9 @@ end
 @forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
 @forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
 @forward AbstractSolver.state _cons_cost!, _var_cost!, _value!, get_value, get_values
-@forward AbstractSolver.state _decrease_tabu!, _delete_tabu!, _decay_tabu!, _length_tabu
-@forward AbstractSolver.state _set!, _swap_value!, _insert_tabu!, _empty_tabu!
+@forward AbstractSolver.state _set!, _swap_value!
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
-@forward AbstractSolver.state _best!, _best, _select_worse, _solution, get_error
+@forward AbstractSolver.state _best!, _best, _solution, get_error
 @forward AbstractSolver.state _last_improvement, _inc_last_improvement!
 @forward AbstractSolver.state _reset_last_improvement!, has_solution
 
@@ -172,6 +171,8 @@ end
 
 # Forwards from strategies
 @forward AbstractSolver.strategies check_restart!
+@forward AbstractSolver.strategies decrease_tabu!, delete_tabu!, decay_tabu!
+@forward AbstractSolver.strategies length_tabu, insert_tabu!, empty_tabu!, tabu_list
 
 """
     specialize!(s) = begin
@@ -396,7 +397,7 @@ Restart a solver.
 function _restart!(s, k=10)
     _verbose(s, "\n============== RESTART!!!!================\n")
     _draw!(s)
-    _empty_tabu!(s)
+    empty_tabu!(s)
     δ = ((k - 1) * _tabu_delta(s)) + _tabu_time(s) / k
     _tabu_delta!(s, δ)
     _optimizing(s) && _satisfying!(s)
@@ -411,6 +412,14 @@ function _check_restart(s)
     return _last_improvement(s) > length_vars(s) || check_restart!(s)
 end
 
+"""
+    _select_worse(s::S) where S <: Union{_State, AbstractSolver}
+Within the non-tabu variables, select the one with the worse error .
+"""
+function _select_worse(s)
+    nontabu = setdiff(keys(_vars_costs(s)), keys(tabu_list(s)))
+    return _find_rand_argmax(view(_vars_costs(s), nontabu))
+end
 
 """
     _step!(s)
@@ -435,10 +444,10 @@ function _step!(s)
     end
 
     # decay tabu list
-    _decay_tabu!(s)
+    decay_tabu!(s)
 
     # update tabu list with either worst or selected variable
-    _insert_tabu!(s, x, tabu ? _tabu_time(s) : _tabu_local(s))
+    insert_tabu!(s, x, tabu ? :tabu : :pick)
     _verbose(s, "Tabu list: $(_tabu(s))")
 
     # Inc last improvement if tabu
