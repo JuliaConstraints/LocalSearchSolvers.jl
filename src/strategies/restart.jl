@@ -1,4 +1,4 @@
-abstract type RestartStrategy <: AbstractStrategy  end
+abstract type RestartStrategy end
 
 # Tabu restart
 struct TabuRestart <: RestartStrategy
@@ -6,15 +6,18 @@ struct TabuRestart <: RestartStrategy
     reset_percentage::Float64
 end
 
-restart(strat, ::Val{:tabu}) = TabuRestart(tenure(strat, :tabu) - tenure(strat, :pick), 1.0)
+restart(strat,::Val{:tabu}) = TabuRestart(tenure(strat, :tabu) - tenure(strat, :pick), 1.0)
+
+check_restart!(rs::TabuRestart; tabu_length) = rs.reset_limit ≤ tabu
 
 # Restart sequences
 mutable struct RestartSequence{F <: Function} <: RestartStrategy
     index::Int
     current::Int
+    last_restart::Int
     next::F
 
-    RestartSequence(seq) = new{typeof(seq)}(1, seq(1), seq)
+    RestartSequence(seq) = new{typeof(seq)}(1, seq(1), 1, seq)
 end
 
 current(r) = r.current
@@ -22,7 +25,16 @@ current(r) = r.current
 function next!(r)
     r.index += 1
     r.current = r.next(r.index)
+    r.last_restart = 1
     return r.current
+end
+
+inc_last!(rs) = rs.last_restart += 1
+
+function check_restart!(rs::RestartSequence; tabu_length = nothing)
+    proceed = rs.current > rs.last_restart
+    proceed ? inc_last!(rs) : next!(rs)
+    return !proceed
 end
 
 ## Universal restart sequence
