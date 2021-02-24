@@ -1,4 +1,4 @@
-abstract type TabuStrategy <: AbstractStrategy end
+abstract type TabuStrategy end
 
 struct KeenTabu <: TabuStrategy
     tabu_tenure::Int

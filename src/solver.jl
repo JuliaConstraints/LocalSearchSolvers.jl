@@ -29,7 +29,7 @@ mutable struct _SubSolver <: AbstractSolver
     options::Options
     pool::Pool
     state::State
-    strategies::Nothing
+    strategies::MetaStrategy
 end
 
 """
@@ -42,7 +42,7 @@ mutable struct LeadSolver <: MetaSolver
     options::Options
     pool::Pool
     state::State
-    strategies::Nothing
+    strategies::MetaStrategy
     subs::Vector{_SubSolver}
 end
 
@@ -64,7 +64,7 @@ mutable struct MainSolver <: MetaSolver
     pool::Pool
     remotes::Vector{LeadSolver} # TODO: make a fitting struct for remote LeadSolver
     state::State
-    strategies::Nothing
+    strategies::MetaStrategy
     subs::Vector{_SubSolver}
 end
 
@@ -119,7 +119,7 @@ s = Solver{Int}(
 function solver(model = model();
     options = Options(),
     pool = pool(),
-    strategies = nothing,
+    strategies = MetaStrategy(),
 )
     mlid = (1, 0)
     remotes = Vector{LeadSolver}()
@@ -170,6 +170,8 @@ end
 # Forwards from pool (of solutions)
 @forward AbstractSolver.pool best_config, best_value, best_values
 
+# Forwards from strategies
+@forward AbstractSolver.strategies check_restart!
 
 """
     specialize!(s) = begin
@@ -406,9 +408,9 @@ end
 Check if a restart of `s` is necessary. If `s` has subsolvers, this check is independent for all of them.
 """
 function _check_restart(s)
-    no_improvement = _last_improvement(s) > length_vars(s)
-    return no_improvement || rand() ≤ (_length_tabu(s) - _tabu_delta(s)) / _tabu_local(s)
+    return _last_improvement(s) > length_vars(s) || check_restart!(s)
 end
+
 
 """
     _step!(s)

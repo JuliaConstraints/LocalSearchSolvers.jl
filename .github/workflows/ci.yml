@@ -13,7 +13,7 @@ jobs:
         os:
           - ubuntu-latest
           - macOS-latest
-          - windows-latest
+          # - windows-latest
         arch:
           - x64
           - x86

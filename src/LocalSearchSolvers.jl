@@ -61,7 +61,6 @@ include("pool.jl")
 include("state.jl")
 
 # Include strategies
-include("strategy.jl") # generic strategy methods and structures
 include("strategies/move.jl")
 include("strategies/neighbor.jl")
 include("strategies/objective.jl")
@@ -73,6 +72,7 @@ include("strategies/restart.jl")
 include("strategies/selection.jl")
 include("strategies/solution.jl")
 include("strategies/termination.jl")
+include("strategy.jl") # meta strategy methods and structures
 
 # Include solvers
 include("options.jl")
