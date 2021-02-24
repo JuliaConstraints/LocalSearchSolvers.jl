@@ -76,11 +76,11 @@ make_id(meta, id, ::Val{:sub}) = (meta, id)
 Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
 """
 function solver(mlid, model, options, pool, strats, ::Val{:lead})
-    return LeadSolver(mlid, model, options, pool, nothing, strats, Vector{_SubSolver}())
+    return LeadSolver(mlid, model, options, pool, state(), strats, Vector{_SubSolver}())
 end
 
 function solver(mlid, model, options, pool, strats, ::Val{:sub})
-    return _SubSolver(mlid, model, options, pool, nothing, strats)
+    return _SubSolver(mlid, model, options, pool, state(), strats)
 end
 function solver(ms, id, role; pool = pool(), strats = ms.strategies)
     mlid = make_id(meta_id(ms), id, Val(role))
@@ -123,9 +123,8 @@ function solver(model = model();
 )
     mlid = (1, 0)
     remotes = Vector{LeadSolver}()
-    state = nothing
     subs = Vector{_SubSolver}()
-    return MainSolver(mlid, model, options, pool, remotes, state, strategies, subs)
+    return MainSolver(mlid, model, options, pool, remotes, state(), strategies, subs)
 end
 
 # function solver(::Val{:MOI};
@@ -225,7 +224,7 @@ Compute the objective `o`'s value.
 """
 function _compute_objective!(s, o::Objective)
     val = apply(o, _values(s).values)
-    if isnothing(s.pool) || val < best_value(s)
+    if is_empty(s.pool) || val < best_value(s)
         s.pool = pool(s.state.configuration)
     end
 end
@@ -478,8 +477,8 @@ function _check_subs(s)
         end
     else
         for (id, ss) in enumerate(s.subs)
-            bs = isnothing(s.pool) ? nothing : best_value(s)
-            bss = isnothing(ss.pool) ? nothing : best_value(ss)
+            bs = is_empty(s.pool) ? nothing : best_value(s)
+            bss = is_empty(ss.pool) ? nothing : best_value(ss)
             isnothing(bs) && (isnothing(bss) ? continue : return id)
             isnothing(bss) ? continue : (bss < bs && return id)
         end
@@ -563,6 +562,6 @@ DOCSTRING
 """
 function empty!(s::MainSolver)
     empty!(s.model)
-    !isnothing(s.state) && empty!(s.state)
+    s.state = state()
     empty!(s.subs)
 end

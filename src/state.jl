@@ -1,3 +1,7 @@
+abstract type AbstractState end
+
+struct EmptyState <: AbstractState end
+
 """
     GeneralState{T <: Number}
 A mutable structure to store the general state of a solver. All methods applied to `GeneralState` are forwarded to `S <: AbstractSolver`.
@@ -11,7 +15,7 @@ mutable struct GeneralState{T <: Number} <: AbstractState
 end
 ```
 """
-mutable struct _State{T}
+mutable struct _State{T} <: AbstractState
     configuration::Configuration{T}
     cons_costs::Dictionary{Int, Float64}
     optimizing::Bool
@@ -23,9 +27,9 @@ end
 @forward _State.configuration get_values, get_error, get_value, compute_cost!, set_values!
 @forward _State.configuration set_value!, set_sat!
 
-const State = Union{Nothing, _State}
+const State = Union{EmptyState, _State}
 
-state() = nothing
+state() = EmptyState()
 function state(m::_Model, pool = pool(); opt = false)
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
     # config = is_empty(pool) ? Configuration(m) : best_config(pool)
@@ -256,19 +260,6 @@ _last_improvement(s::_State) = s.last_improvement
 _inc_last_improvement!(s::_State) = s.last_improvement += 1
 _reset_last_improvement!(s::_State) = s.last_improvement = 0
 
-"""
-    empty!(s::_State)
-
-DOCSTRING
-"""
-function empty!(s::_State)
-    s.configuration = nothing
-    empty!(s.cons_costs)
-    _reset_last_improvement!(s)
-    empty!(s.tabu)
-    empty!(s.vars_costs)
-end
-
 has_solution(::Nothing) = false
 has_solution(s::_State) = is_solution(s.configuration)
 
@@ -277,3 +268,5 @@ function set_error!(s::_State, err)
     set_sat!(s, sat)
     !sat && set_value!(s, err)
 end
+
+get_error(::EmptyState) = Inf
