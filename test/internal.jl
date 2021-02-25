@@ -123,4 +123,4 @@ objs = Dictionary(1:2, [o1, o2])
 end
 
 ## Test Solver
-s1 = Solver()
+s1 = solver()

@@ -9,9 +9,9 @@ MOI.get(optimizer::Optimizer, ::MOI.ResultCount) = 1
 
 function MOI.get(optimizer::Optimizer, ::MOI.VariablePrimal, vi::MOI.VariableIndex)
     if is_sat(optimizer)
-        return _value(optimizer, vi.value)
+        return get_value(optimizer, vi.value)
     else
-        return _solution(optimizer)[vi.value]
+        return best_values(optimizer)[vi.value]
     end
 end
 

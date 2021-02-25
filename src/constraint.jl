@@ -3,7 +3,7 @@
 
 Structure to store an error function and the variables it constrains.
 """
-struct Constraint{F <: Function}
+struct Constraint{F <: Function} <: FunctionContainer
     f::F
     vars::Vector{Int}
 end

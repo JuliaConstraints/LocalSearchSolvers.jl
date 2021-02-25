@@ -53,18 +53,18 @@ const CONFIG = MOIT.TestConfig(atol=1e-6, rtol=1e-6)
 #     MOIT.intconictest(BRIDGED, CONFIG)
 # end
 @testset "MOI: examples" begin
-    m = LocalSearchSolvers.Optimizer()
-    MOI.add_variables(m, 3)
-    MOI.add_constraint(m, VI(1), LS.DiscreteSet([1,2,3]))
-    MOI.add_constraint(m, VI(2), LS.DiscreteSet([1,2,3]))
-    MOI.add_constraint(m, VI(3), LS.DiscreteSet([1,2,3]))
+    # m = LocalSearchSolvers.Optimizer()
+    # MOI.add_variables(m, 3)
+    # MOI.add_constraint(m, VI(1), LS.DiscreteSet([1,2,3]))
+    # MOI.add_constraint(m, VI(2), LS.DiscreteSet([1,2,3]))
+    # MOI.add_constraint(m, VI(3), LS.DiscreteSet([1,2,3]))
 
-    MOI.add_constraint(m, VOV([VI(1),VI(2)]), LS.MOIPredicate(allunique))
-    MOI.add_constraint(m, VOV([VI(2),VI(3)]), LS.MOIAllDifferent(2))
+    # MOI.add_constraint(m, VOV([VI(1),VI(2)]), LS.MOIPredicate(allunique))
+    # MOI.add_constraint(m, VOV([VI(2),VI(3)]), LS.MOIAllDifferent(2))
 
-    MOI.set(m, MOI.ObjectiveFunction{LS.ScalarFunction}(), LS.ScalarFunction(sum, VI(1)))
+    # MOI.set(m, MOI.ObjectiveFunction{LS.ScalarFunction}(), LS.ScalarFunction(sum, VI(1)))
 
-    MOI.optimize!(m)
+    # MOI.optimize!(m)
 
     m1 = LocalSearchSolvers.Optimizer()
     MOI.add_variable(m1)

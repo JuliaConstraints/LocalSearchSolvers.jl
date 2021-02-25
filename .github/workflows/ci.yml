@@ -9,12 +9,11 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.5"
-          # - 'nightly'
+          - "^1.6.0-0"
         os:
           - ubuntu-latest
           - macOS-latest
-          - windows-latest
+          # - windows-latest
         arch:
           - x64
           - x86
