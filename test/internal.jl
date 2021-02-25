@@ -124,3 +124,5 @@ end
 
 ## Test Solver
 s1 = solver()
+
+CBLS.get_error(CBLS.EmptyState())

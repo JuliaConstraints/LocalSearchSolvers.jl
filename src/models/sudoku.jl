@@ -125,22 +125,22 @@ mutable struct SudokuInstance{T <: Integer} <: AbstractMatrix{T}
         isequal(sqrt(size(A, 1)), isqrt(size(A, 1))) || throw(error("SudokuInstances must be able to split into equal boxes (e.g., a 9×9 SudokuInstance has three 3×3 squares).  Size given is $(size(A, 1))×$(size(A, 2))."))
         new{T}(A)
     end
-    # fill in blank sudoku if needed
-    SudokuInstance(::Type{T}, n::Int) where {T <: Integer} = new{T}(fill(zero(T), n, n))
-    SudokuInstance(n::Int) = new{Int}(SudokuInstance(Int, n))
-    # Use "standard" 9×9 if no size provided
-    SudokuInstance(::Type{T}) where {T <: Integer} = new{T}(SudokuInstance(T, 9))
-    SudokuInstance() = new{Int}(SudokuInstance(9))
-    # Construct a sudoku given coordinates and values
-    function SudokuInstance(n::Int, P::Pair{Tuple{Int,Int},T}...) where {T <: Integer}
-        A = zeros(T, n, n)
-        for (i, v) in P
-            A[i...] = v
-        end
-        new{T}(A)
-    end
-    # again, default to 9×9
-    SudokuInstance(P::Pair{Tuple{Int,Int},T}...) where {T <: Integer} = new{T}(SudokuInstance(9, P...))
+    # # fill in blank sudoku if needed
+    # SudokuInstance(::Type{T}, n::Int) where {T <: Integer} = new{T}(fill(zero(T), n, n))
+    # SudokuInstance(n::Int) = new{Int}(SudokuInstance(Int, n))
+    # # Use "standard" 9×9 if no size provided
+    # SudokuInstance(::Type{T}) where {T <: Integer} = new{T}(SudokuInstance(T, 9))
+    # SudokuInstance() = new{Int}(SudokuInstance(9))
+    # # Construct a sudoku given coordinates and values
+    # function SudokuInstance(n::Int, P::Pair{Tuple{Int,Int},T}...) where {T <: Integer}
+    #     A = zeros(T, n, n)
+    #     for (i, v) in P
+    #         A[i...] = v
+    #     end
+    #     new{T}(A)
+    # end
+    # # again, default to 9×9
+    # SudokuInstance(P::Pair{Tuple{Int,Int},T}...) where {T <: Integer} = new{T}(SudokuInstance(9, P...))
 end
 
 """
@@ -172,7 +172,7 @@ Base.size(S::SudokuInstance) = size(S.A)
 
 Extends `Base.getindex` for `SudokuInstance`.
 """
-Base.getindex(S::SudokuInstance, i::Int) = getindex(S.A, i)
+# Base.getindex(S::SudokuInstance, i::Int) = getindex(S.A, i)
 Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N} = getindex(S.A, I...)
 
 """
@@ -181,8 +181,8 @@ Base.getindex(S::SudokuInstance, I::Vararg{Int,N}) where {N} = getindex(S.A, I..
 
 Extends `Base.setindex!` for `SudokuInstance`.
 """
-Base.setindex!(S::SudokuInstance, v, i) = setindex!(S.A, v, i)
-Base.setindex!(S::SudokuInstance, v, I::Vararg) = setindex!(S.A, v, I...)
+# Base.setindex!(S::SudokuInstance, v, i) = setindex!(S.A, v, i)
+# Base.setindex!(S::SudokuInstance, v, I::Vararg) = setindex!(S.A, v, I...)
 
 const _rules = Dict(
     :up_right_corner => '┐',

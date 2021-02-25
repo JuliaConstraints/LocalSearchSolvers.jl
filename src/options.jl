@@ -105,14 +105,14 @@ end
 
 DOCSTRING
 """
-_dynamic(options) = options.dynamic
+# _dynamic(options) = options.dynamic
 
 """
     _dynamic!(options, dynamic) = begin
 
 DOCSTRING
 """
-_dynamic!(options, dynamic) = options.dynamic = dynamic
+# _dynamic!(options, dynamic) = options.dynamic = dynamic
 
 """
     _iteration(options) = begin
@@ -126,35 +126,35 @@ _iteration(options) = options.iteration
 
 DOCSTRING
 """
-_iteration!(options, iterations) = options.iteration = iterations
+# _iteration!(options, iterations) = options.iteration = iterations
 
 """
     _print_level(options) = begin
 
 DOCSTRING
 """
-_print_level(options) = options.print_level
+# _print_level(options) = options.print_level
 
 """
     _print_level!(options, level) = begin
 
 DOCSTRING
 """
-_print_level!(options, level) = options.print_level = print_levels[level]
+# _print_level!(options, level) = options.print_level = print_levels[level]
 
 """
     _solutions(options) = begin
 
 DOCSTRING
 """
-_solutions(options) = options.solutions
+# _solutions(options) = options.solutions
 
 """
     _solutions!(options, solutions) = begin
 
 DOCSTRING
 """
-_solutions!(options, solutions) = options.solutions = solutions
+# _solutions!(options, solutions) = options.solutions = solutions
 
 """
     _specialize(options) = begin
@@ -168,7 +168,7 @@ _specialize(options) = options.specialize
 
 DOCSTRING
 """
-_specialize!(options, specialize) = options.specialize = specialize
+# _specialize!(options, specialize) = options.specialize = specialize
 
 """
     _tabu_time(options) = begin
@@ -224,18 +224,18 @@ _threads(options) = options.threads
 
 DOCSTRING
 """
-_threads!(options, threads) = options.threads = threads
+# _threads!(options, threads) = options.threads = threads
 
 """
     _time_limit(options) = begin
 
 DOCSTRING
 """
-_time_limit(options) = options.time_limit
+# _time_limit(options) = options.time_limit
 
 """
     _time_limit!(options, time::Time) = begin
 
 DOCSTRING
 """
-_time_limit!(options, time) = options.time_limit = time
+# _time_limit!(options, time) = options.time_limit = time
