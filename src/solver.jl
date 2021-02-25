@@ -82,7 +82,7 @@ end
 function solver(mlid, model, options, pool, strats, ::Val{:sub})
     return _SubSolver(mlid, model, options, pool, state(), strats)
 end
-function solver(ms, id, role; pool = pool(), strats = ms.strategies)
+function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
     mlid = make_id(meta_id(ms), id, Val(role))
     return solver(mlid, ms.model, ms.options, pool, strats, Val(role))
 end
