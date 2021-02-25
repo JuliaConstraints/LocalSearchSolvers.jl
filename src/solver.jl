@@ -119,7 +119,7 @@ s = Solver{Int}(
 function solver(model = model();
     options = Options(),
     pool = pool(),
-    strategies = MetaStrategy(),
+    strategies = MetaStrategy(model),
 )
     mlid = (1, 0)
     remotes = Vector{LeadSolver}()
@@ -149,8 +149,8 @@ end
 @forward AbstractSolver.model _set_domain!, domain_size, max_domains_size
 
 # Forwards from state field
-@forward AbstractSolver.state _cons_costs, _vars_costs, _values, _tabu
-@forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!, _tabu!
+@forward AbstractSolver.state _cons_costs, _vars_costs, _values
+@forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!
 @forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
 @forward AbstractSolver.state _cons_cost!, _var_cost!, _value!, get_value, get_values
 @forward AbstractSolver.state _set!, _swap_value!
@@ -448,7 +448,7 @@ function _step!(s)
 
     # update tabu list with either worst or selected variable
     insert_tabu!(s, x, tabu ? :tabu : :pick)
-    _verbose(s, "Tabu list: $(_tabu(s))")
+    _verbose(s, "Tabu list: $(tabu_list(s))")
 
     # Inc last improvement if tabu
     tabu ? _inc_last_improvement!(s) : _reset_last_improvement!(s)

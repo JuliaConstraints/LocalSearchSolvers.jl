@@ -3,9 +3,9 @@ struct MetaStrategy{RS <: RestartStrategy, TS <: TabuStrategy}
     tabu::TS
 end
 
-function MetaStrategy(;
+function MetaStrategy(model;
     restart = restart(:universal),
-    tabu = tabu(10),
+    tabu = tabu(min(length_vars(model) ÷ 2, 10)),
 )
     return MetaStrategy(restart, tabu)
 end

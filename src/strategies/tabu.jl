@@ -36,12 +36,6 @@ Access the list of tabu variables.
 tabu_list(ts) = ts.tabu_list
 
 """
-    _tabu!(s::S, tabu) where S <: Union{_State, AbstractSolver}
-Set the variables tabu list.
-"""
-tabu_list!(ts, tabu) = ts.tabu_list = tabu
-
-"""
     _tabu(s::S, x) where S <: Union{_State, AbstractSolver}
 Return the tabu value of variable `x`.
 """
@@ -76,9 +70,9 @@ length_tabu(ts) = length(tabu_list(ts))
 Insert the bariable `x` as tabu for `tabu_time`.
 """
 insert_tabu!(ts, x, ::Val{:tabu}) = insert!(tabu_list(ts), x, max(1, tenure(ts, :tabu)))
-insert_tabu!(ts::KeenTabu, x, kind) = insert_tabu!(ts, x, Val(kind))
+insert_tabu!(ts::KeenTabu, x, kind::Symbol) = insert_tabu!(ts, x, Val(kind))
 insert_tabu!(ts::WeakTabu, x, kind) = insert!(tabu_list(ts), x, max(1, tenure(ts, kind)))
-insert_tabu!(ts, x, kind) = nothin
+insert_tabu!(ts, x, kind) = nothing
 
 
 """
