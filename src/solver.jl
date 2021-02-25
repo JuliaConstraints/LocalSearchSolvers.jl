@@ -5,7 +5,7 @@ Abstract type to encapsulate the different solver types such as `Solver` or `_Su
 abstract type AbstractSolver end
 
 meta_id(s) = s.meta_local_id[1]
-local_id(s) = s.meta_local_id[2]
+# local_id(s) = s.meta_local_id[2]
 
 """
 Abstract type to encapsulate all solver types that manages other solvers.
@@ -68,16 +68,16 @@ mutable struct MainSolver <: MetaSolver
     subs::Vector{_SubSolver}
 end
 
-make_id(::Int, id, ::Val{:lead}) = (id, 0)
+# make_id(::Int, id, ::Val{:lead}) = (id, 0)
 make_id(meta, id, ::Val{:sub}) = (meta, id)
 
 """
     _SubSolver(ms::Solver, id)
 Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
 """
-function solver(mlid, model, options, pool, strats, ::Val{:lead})
-    return LeadSolver(mlid, model, options, pool, state(), strats, Vector{_SubSolver}())
-end
+# function solver(mlid, model, options, pool, strats, ::Val{:lead})
+#     return LeadSolver(mlid, model, options, pool, state(), strats, Vector{LeadSolver}())
+# end
 
 function solver(mlid, model, options, pool, strats, ::Val{:sub})
     return _SubSolver(mlid, model, options, pool, state(), strats)
@@ -126,15 +126,6 @@ function solver(model = model();
     subs = Vector{_SubSolver}()
     return MainSolver(mlid, model, options, pool, remotes, state(), strategies, subs)
 end
-
-# function solver(::Val{:MOI};
-#     variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
-#     constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
-#     objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
-# )
-#     m = model(; vars=variables, cons=constraints, objs=objectives)
-#     solver(m)
-# end
 
 # Forwards from model field
 @forward AbstractSolver.model get_constraints, get_objectives, get_variables
@@ -347,47 +338,12 @@ function _init!(s::MainSolver)
     _init!(s, :local)
 end
 
-function _init!(s::S) where {S <: MetaSolver}
-    _init!(s, :meta)
-    _init!(s, :local)
-end
+# function _init!(s::S) where {S <: MetaSolver}
+#     _init!(s, :meta)
+#     _init!(s, :local)
+# end
 
 _init!(s) = _init!(s, :local)
-
-
-# """
-#     _init_solve!(s::S) where S <: AbstractSolver
-
-# Initialize a solver in both sequential and parallel contexts.
-# """
-# _init_solve!(ss::_SubSolver) = (_draw!(ss); _compute!(ss))
-# function _init_solve!(s::MainSolver)
-#     # Specialized the model if specialize = true (and not already done)
-#    !is_specialized(s) && _specialize(s) && specialize!(s)
-#     _verbose(s, describe(s.model))
-#     _verbose(s, "Starting solver")
-
-#     # draw initial values unless provided and set best_values
-#     isempty(_values(s)) && _draw!(s)
-#     _verbose(s, "Initial values = $(_values(s))")
-
-#     # compute initial constraints and variables costs
-#     sat = _compute!(s)
-#     _verbose(s, "Initial constraints costs = $(s.state.cons_costs)")
-#     _verbose(s, "Initial variables costs = $(s.state.vars_costs)")
-
-#     # Tabu times
-#     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
-#     _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
-#     _tabu_delta(s) == 0.0 && _tabu_delta!(s, _tabu_time(s) - _tabu_local(s))# 20-30
-
-#     # @info "tabu stuff:" _tabu_time(s) _tabu_local(s) _tabu_delta(s)
-
-#     # Create sub solvers
-#     foreach(id -> push!(s.subs, _SubSolver(s, id)), 2:nthreads())
-
-#     return sat
-# end
 
 """
     _restart!(s, k = 10)

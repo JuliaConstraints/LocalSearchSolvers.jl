@@ -31,7 +31,6 @@ const State = Union{EmptyState, _State}
 state() = EmptyState()
 function state(m::_Model, pool = pool(); opt = false)
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
-    # config = is_empty(pool) ? Configuration(m) : best_config(pool)
     config = Configuration(m)
     cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
@@ -62,18 +61,6 @@ _values(s::_State) = get_values(s)
 Check if `s` is in an optimizing state.
 """
 _optimizing(s::_State) = s.optimizing
-
-"""
-    _best(s::S) where S <: Union{_State, AbstractSolver}
-Access the best known solution value (defined for optimization models only).
-"""
-_best(s::_State) = s.best_solution_value
-
-"""
-    _solution(s::S) where S <: Union{_State, AbstractSolver}
-Access the best known solution.
-"""
-_solution(s::_State) = s.best_solution
 
 """
     _cons_costs!(s::S, costs) where S <: Union{_State, AbstractSolver}
@@ -141,39 +128,6 @@ Set the value of variable `x` to `val`.
 """
 _value!(s::_State, x, val) = _values(s)[x] = val
 
-
-
-"""
-    _solution!(s::S, values) where S <: Union{_State, AbstractSolver}
-Set the best known solution to `values`.
-"""
-_solution!(s::_State, values) = s.best_solution = copy(values)
-
-"""
-    _best!(s::S, val, values = Dictionary()) where S <: Union{_State, AbstractSolver}
-Set the best known value to `val` and, if `values` not empty, the best known solution.
-"""
-function _best!(s::_State, val::Union{Nothing,T}, values=nothing) where {T <: Number}
-    if isnothing(_best(s)) || val < _best(s)
-        s.best_solution_value = val
-        s.best_solution = copy(isnothing(values) ? s.values : values)
-    end
-end
-
-# """
-#     _error(s::S) where S <: Union{_State, AbstractSolver}
-# Access the error of the current state of `s`.
-# """
-# get_error(s::_State) = get_error(s)
-
-# """
-#     _error!(s::S, val) where S <: Union{_State, AbstractSolver}
-# Set the error of the current state of `s` to `val`.
-# """
-# set_error!(s::_State, val) = set_error!(s.config) = val
-
-
-
 """
     _set!(s::S, x, val) where S <: Union{_State, AbstractSolver}
 Set the value of variable `x` to `val`.
@@ -194,7 +148,6 @@ _last_improvement(s::_State) = s.last_improvement
 _inc_last_improvement!(s::_State) = s.last_improvement += 1
 _reset_last_improvement!(s::_State) = s.last_improvement = 0
 
-has_solution(::Nothing) = false
 has_solution(s::_State) = is_solution(s.configuration)
 
 function set_error!(s::_State, err)
