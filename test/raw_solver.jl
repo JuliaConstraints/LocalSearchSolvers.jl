@@ -39,10 +39,9 @@
         solution(s)
 
         # TODO: temp patch for coverage, make it nice
-        for x in keys(LS._tabu(s))
-            LS._tabu(s, x)
+        for x in keys(LS.tabu_list(s))
+            LS.tabu_value(s, x)
         end
-        LS._tabu!(s, Dictionary{Int,Int}())
         LS._values!(s, Dictionary{Int,Int}())
     end
 end

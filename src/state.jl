@@ -20,7 +20,6 @@ mutable struct _State{T} <: AbstractState
     cons_costs::Dictionary{Int, Float64}
     optimizing::Bool
     last_improvement::Int
-    tabu::Dictionary{Int,Int}
     vars_costs::Dictionary{Int, Float64}
 end
 
@@ -36,9 +35,8 @@ function state(m::_Model, pool = pool(); opt = false)
     config = Configuration(m)
     cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
-    tabu = Dictionary{Int,Int}()
     vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
-    return _State(config, cons, opt, last_improvement, tabu, vars)
+    return _State(config, cons, opt, last_improvement, vars)
 end
 
 """
@@ -58,12 +56,6 @@ _vars_costs(s::_State) = s.vars_costs
 Access the variables costs.
 """
 _values(s::_State) = get_values(s)
-
-"""
-    _tabu(s::S) where S <: Union{_State, AbstractSolver}
-Access the list of tabu variables.
-"""
-_tabu(s::_State) = s.tabu
 
 """
     _optimizing(s::S) where S <: Union{_State, AbstractSolver}
@@ -102,12 +94,6 @@ Set the variables values.
 _values!(s::_State{T}, values) where T <: Number = set_values!(s, values)
 
 """
-    _tabu!(s::S, tabu) where S <: Union{_State, AbstractSolver}
-Set the variables tabu list.
-"""
-_tabu!(s::_State, tabu) = s.tabu = tabu
-
-"""
     _optimizing!(s::S) where S <: Union{_State, AbstractSolver}
 Set the solver `optimizing` status to `true`.
 """
@@ -138,12 +124,6 @@ Return the value of variable `x`.
 _value(s::_State, x) = _values(s)[x]
 
 """
-    _tabu(s::S, x) where S <: Union{_State, AbstractSolver}
-Return the tabu value of variable `x`.
-"""
-_tabu(s::_State, x) = _tabu(s)[x]
-
-"""
     _cons_cost!(s::S, c, cost) where S <: Union{_State, AbstractSolver}
 Set the `cost` of constraint `c`.
 """
@@ -161,29 +141,7 @@ Set the value of variable `x` to `val`.
 """
 _value!(s::_State, x, val) = _values(s)[x] = val
 
-"""
-    _decrease_tabu!(s::S, x) where S <: Union{_State, AbstractSolver}
-Decrement the tabu value of variable `x`.
-"""
-_decrease_tabu!(s::_State, x) = _tabu(s)[x] -= 1
 
-"""
-    _delete_tabu!(s::S, x) where S <: Union{_State, AbstractSolver}
-Delete the tabu entry of variable `x`.
-"""
-_delete_tabu!(s::_State, x) = delete!(_tabu(s), x)
-
-"""
-    _empty_tabu!(s::S) where S <: Union{_State, AbstractSolver}
-Empty the tabu list.
-"""
-_empty_tabu!(s::_State) = empty!(_tabu(s))
-
-"""
-    _length_tabu!(s::S) where S <: Union{_State, AbstractSolver}
-Return the length of the tabu list.
-"""
-_length_tabu(s::_State) = length(_tabu(s))
 
 """
     _solution!(s::S, values) where S <: Union{_State, AbstractSolver}
@@ -214,22 +172,7 @@ end
 # """
 # set_error!(s::_State, val) = set_error!(s.config) = val
 
-"""
-    _insert_tabu!(s::S, x, tabu_time) where S <: Union{_State, AbstractSolver}
-Insert the bariable `x` as tabu for `tabu_time`.
-"""
-_insert_tabu!(s::_State, x, tabu_time) = insert!(_tabu(s), x, max(1, tabu_time))
 
-"""
-    _decay_tabu!(s::S) where S <: Union{_State, AbstractSolver}
-Decay the tabu list.
-"""
-function _decay_tabu!(s::_State)
-    foreach(
-        ((x, tabu),) -> tabu == 1 ? _delete_tabu!(s, x) : _decrease_tabu!(s, x),
-        pairs(_tabu(s))
-    )
-end
 
 """
     _set!(s::S, x, val) where S <: Union{_State, AbstractSolver}
@@ -245,15 +188,6 @@ function _swap_value!(s::_State, x, y)
     aux = _value(s, x)
     _value!(s, x, _value(s, y))
     _value!(s, y, aux)
-end
-
-"""
-    _select_worse(s::S) where S <: Union{_State, AbstractSolver}
-Within the non-tabu variables, select the one with the worse error .
-"""
-function _select_worse(s::_State)
-    nontabu = setdiff(keys(_vars_costs(s)), keys(_tabu(s)))
-    return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
 _last_improvement(s::_State) = s.last_improvement
