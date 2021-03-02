@@ -297,7 +297,7 @@ function describe(m::_Model) # TODO: rewrite _describe
             mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(m); init="")[1:end - 1]
     end
     variables = mapreduce(
-        x -> "\t\tx$(x[1]): " * string(x[2].domain.points) * "\n",
+        x -> "\t\tx$(x[1]): " * string(_get_domain(x[2])) * "\n",
         *, pairs(m.variables); init=""
     )[1:end - 1]
     constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n", *, pairs(m.constraints); init="")[1:end - 1]
@@ -350,7 +350,7 @@ function specialize(m::_Model)
     cons = similar(get_constraints(m), Constraint{cons_union})
     objs = similar(get_objectives(m), Objective{objs_union})
 
-    foreach(x -> vars[x] = get_variable(m, x), keys(vars))
+    foreach(x -> vars[x] = Variable(vars_union, get_variable(m, x)), keys(vars))
     foreach(c -> cons[c] = Constraint(cons_union, get_constraint(m, c)), keys(cons))
     foreach(o -> objs[o] = Objective(objs_union, get_objective(m, o)), keys(objs))
 
