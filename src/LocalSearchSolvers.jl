@@ -32,7 +32,7 @@ export get_variable, get_variables, get_constraint, get_constraints, get_objecti
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
 # Exports Model
-export model, sudoku, golomb, mincut
+export model, sudoku, golomb, mincut, magic_square
 
 # Exports error/predicate/objective functions
 export o_dist_extrema, o_mincut
@@ -90,8 +90,9 @@ include("objectives/extrema.jl")
 include("objectives/cut.jl")
 
 # Include specific models
-include("models/sudoku.jl")
-include("models/golomb.jl")
 include("models/cut.jl")
+include("models/golomb.jl")
+include("models/magic_square.jl")
+include("models/sudoku.jl")
 
 end

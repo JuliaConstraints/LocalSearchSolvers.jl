@@ -28,7 +28,10 @@ DOCSTRING
 - ``: DESCRIPTION
 - ``: DESCRIPTION
 """
-MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIError}) = true
+function MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIError{F}}
+) where {F <: Function}
+    return true
+end
 
 """
     MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::MOIError)
@@ -40,9 +43,9 @@ DOCSTRING
 - `vars`: DESCRIPTION
 - `set`: DESCRIPTION
 """
-function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::MOIError)
+function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::MOIError{F}) where {F <: Function}
     cidx = constraint!(optimizer, set.f, map(x -> x.value, vars.variables))
-    return CI{SVF, MOIError}(cidx)
+    return CI{VOV, MOIError{F}}(cidx)
 end
 
 """
@@ -50,7 +53,7 @@ end
 
 DOCSTRING
 """
-Base.copy(set::MOIError) = MOIError(copy(set.f), copy(set.dimension))
+Base.copy(set::MOIError) = MOIError(deepcopy(set.f), set.dimension)
 
 """
     Error{F <: Function} <: JuMP.AbstractVectorSet
@@ -87,14 +90,17 @@ struct MOIPredicate{F <: Function} <: MOI.AbstractVectorSet
 
     MOIPredicate(f, dim = 0) = new{typeof(f)}(f, dim)
 end
-MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIPredicate}) = true
-function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::MOIPredicate)
+function MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIPredicate{F}}
+) where {F <: Function}
+    return true
+end
+function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::MOIPredicate{F}) where {F <: Function}
     err = x -> convert(Float64, !set.f(x))
     cidx = constraint!(optimizer, err, map(x -> x.value, vars.variables))
-    return CI{SVF, MOIPredicate}(cidx)
+    return CI{VOV, MOIPredicate{F}}(cidx)
 end
 
-Base.copy(set::MOIPredicate) = MOIEMOIPredicaterror(copy(set.f), copy(set.dimension))
+Base.copy(set::MOIPredicate) = MOIPredicate(deepcopy(set.f), copy(set.dimension))
 
 """
     Predicate{F <: Function} <: JuMP.AbstractVectorSet
@@ -320,7 +326,10 @@ struct MOIAllEqualParam{T <: Number} <: MOI.AbstractVectorSet
 
     MOIAllEqualParam(param, dim = 0) = new{typeof(param)}(param, dim)
 end
-MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIAllEqualParam}) = true
+function MOI.supports_constraint(::Optimizer, ::Type{VOV}, ::Type{MOIAllEqualParam{T}}
+) where {T <: Number}
+    return true
+end
 function MOI.add_constraint(optimizer::Optimizer, vars::MOI.VectorOfVariables, set::MOIAllEqualParam)
     max_dom_size = max_domains_size(optimizer, map(x -> x.value, vars.variables))
     e = (x; param=set.param, dom_size=max_dom_size) -> error_f(
@@ -343,4 +352,4 @@ Global constraint ensuring that all the values of `X` are all equal to a given p
 struct AllEqualParam{T <: Number} <: JuMP.AbstractVectorSet
     param::T
 end
-JuMP.moi_set(set::AllEqualParam, dim::Int) = MOIAllEqualParam(dim, set.param)
+JuMP.moi_set(set::AllEqualParam, dim::Int) = MOIAllEqualParam(set.param, dim)
