@@ -13,6 +13,10 @@ mutable struct Variable{D <: AbstractDomain}
     constraints::Indices{Int}
 end
 
+function Variable(D, x::Variable{D2}) where {D2 <: AbstractDomain}
+    return Variable{D}(x.domain, x.constraints)
+end
+
 # Methods: lazy forwarding from ConstraintDomains.domain.jl
 @forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain, _domain_size
 
