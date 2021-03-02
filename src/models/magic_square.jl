@@ -16,13 +16,6 @@ function magic_square(n, ::Val{:JuMP})
     @constraint(model, [X[i,i] for i in 1:n] in Predicate(Σeq))
     @constraint(model, [X[i,n + 1 - i] for i in 1:n] in Predicate(Σeq))
 
-    #@constraint(model,[sum(vars[j] for j in 1:n), magic_sum_var] in CBLS.Eq())
-
-    # @constraint(model, vars[1:3] in LocalSearchSolvers.Predicate(_ -> (i -> reduce(+, i)) == magic_sum))
-    #@constraint(model, vars in LocalSearchSolvers.Predicate(_ -> sum(vars[i] for i in 1:3) == magic_sum))
-
-    #@constraint(model,sum(vars[j] for j in 1:n) == magic_sum)
-
     return model, X
 end
 
