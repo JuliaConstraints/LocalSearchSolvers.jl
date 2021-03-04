@@ -14,3 +14,5 @@ function n_queens(n, ::Val{:JuMP})
 
     return model, queens
 end
+
+n_queens(n; modeler = :JuMP) = n_queens(n, Val(modeler))

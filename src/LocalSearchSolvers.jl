@@ -1,8 +1,6 @@
 module LocalSearchSolvers
 
-# TODO: return types: nothing, ind for internals etc
-
-# Usings
+# Usings # QUESTION: make it a list of import once the JuMP integration is done
 using MathOptInterface
 
 # Imports
@@ -12,8 +10,8 @@ import Base.Threads: nthreads, @threads, Atomic, atomic_or!
 import Lazy: @forward
 import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw, _length
-import ConstraintDomains: _get, _get_domain, _domain_size
+import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw
+import ConstraintDomains: _length, _get, _get_domain, _domain_size
 import Dates: Time, Nanosecond
 import JuMP
 import JuMP: @constraint, @variable, @objective, VariableRef, index
@@ -24,27 +22,25 @@ const MOI = MathOptInterface
 const MOIU = MOI.Utilities
 
 # Exports internal
-export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
-export delete!, delete_value!, delete_var_from_cons!
-export domain, variable, constraint, objective
-export length_var, length_cons, constriction, draw, ∈, describe
-export get_variable, get_variables, get_constraint, get_constraints, get_objective, get_objectives
+export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!, delete!
+export delete_value!, delete_var_from_cons!, domain, variable, constraint, objective
+export length_var, length_cons, constriction, draw, ∈, describe, get_variable
+export get_variables, get_constraint, get_constraints, get_objective, get_objectives
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
 # Exports Model
-export model, sudoku, golomb, mincut, magic_square
+export model, sudoku, golomb, mincut, magic_square, n_queens
 
 # Exports error/predicate/objective functions
 export o_dist_extrema, o_mincut
 
 # Exports Solver
-export solver, solve!, specialize, specialize!, Options
-export get_values, best_values, best_value
+export solver, solve!, specialize, specialize!, Options, get_values, best_values
+export best_value
 
 # Export MOI/JuMP
-export CBLS
-export DiscreteSet, Predicate, Error, ScalarFunction
-export AllDifferent, AllEqual, AllEqualParam, Eq, DistDifferent, AlwaysTrue, Ordered
+export CBLS, DiscreteSet, Predicate, Error, ScalarFunction, AllDifferent, AllEqual
+export AllEqualParam, Eq, DistDifferent, AlwaysTrue, Ordered
 
 # Include utils
 include("utils.jl")
@@ -93,6 +89,7 @@ include("objectives/cut.jl")
 include("models/cut.jl")
 include("models/golomb.jl")
 include("models/magic_square.jl")
+include("models/n_queens.jl")
 include("models/sudoku.jl")
 
 end
