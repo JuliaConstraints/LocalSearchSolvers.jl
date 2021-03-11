@@ -1,7 +1,7 @@
 name = "LocalSearchSolvers"
 uuid = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
 authors = ["Jean-Francois Baffier"]
-version = "0.2.3"
+version = "0.2.4"
 
 [deps]
 CompositionalNetworks = "4b67e4b5-442d-4ef5-b760-3f5df3a57537"

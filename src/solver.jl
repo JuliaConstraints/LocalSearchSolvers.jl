@@ -144,7 +144,7 @@ end
 @forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!
 @forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
 @forward AbstractSolver.state _cons_cost!, _var_cost!, _value!, get_value, get_values
-@forward AbstractSolver.state _set!, _swap_value!
+@forward AbstractSolver.state _set!, _swap_value!, set_value!
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
 @forward AbstractSolver.state _best!, _best, _solution, get_error
 @forward AbstractSolver.state _last_improvement, _inc_last_improvement!
@@ -218,6 +218,7 @@ Compute the objective `o`'s value.
 """
 function _compute_objective!(s, o::Objective)
     val = apply(o, _values(s).values)
+    set_value!(s, val)
     if is_empty(s.pool) || val < best_value(s)
         s.pool = pool(s.state.configuration)
     end
@@ -236,8 +237,11 @@ Compute the objective `o`'s value if `s` is satisfied and return the current `er
 """
 function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
-    (sat = get_error(s) == 0.0) && _optimizing(s) && _compute_objective!(s, o)
-    return sat
+    if get_error(s) == 0.0
+        _optimizing(s) && _compute_objective!(s, o)
+        return true
+    end
+    return false
 end
 
 """
@@ -356,7 +360,7 @@ function _restart!(s, k=10)
     empty_tabu!(s)
     δ = ((k - 1) * _tabu_delta(s)) + _tabu_time(s) / k
     _tabu_delta!(s, δ)
-    _optimizing(s) && _satisfying!(s)
+    _compute!(s) ? _optimizing!(s) : _satisfying!(s)
 end
 
 """

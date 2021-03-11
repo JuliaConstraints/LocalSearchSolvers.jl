@@ -1,7 +1,7 @@
 using JuMP
 
 @testset "JuMP: constraints" begin
-    m = JuMP.Model(CBLS.Optimizer)
+    m = Model(CBLS.Optimizer)
 
     err = _ -> 1.0
     concept = _ -> true
@@ -21,20 +21,26 @@ using JuMP
 end
 
 @testset "JuMP: sudoku 9x9" begin
-    m, X = CBLS.sudoku(3)
-    JuMP.optimize!(m)
+    m, X = sudoku(3)
+    optimize!(m)
     solution_ = value.(X)
     display(solution_, Val(:sudoku))
 end
 
 @testset "JuMP: golomb(5)" begin
-    m, X = CBLS.golomb(5)
-    JuMP.optimize!(m)
-    @info solution_ = value.(X)
+    m, X = golomb(5)
+    optimize!(m)
+    @info "JuMP: golomb(5)" value.(X)
 end
 
 @testset "JuMP: magic_square(3)" begin
-    m, X = CBLS.magic_square(3)
-    JuMP.optimize!(m)
-    @info solution_ = value.(X)
+    m, X = magic_square(3)
+    optimize!(m)
+    @info "JuMP: magic_square(3)" value.(X)
+end
+
+@testset "JuMP: n_queens(5)" begin
+    m, X = n_queens(5)
+    optimize!(m)
+    @info "JuMP: n_queens(5)" value.(X)
 end

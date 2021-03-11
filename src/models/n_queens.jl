@@ -1,6 +1,6 @@
 function n_queens(n, ::Val{:JuMP})
     model = JuMP.Model(CBLS.Optimizer)
-    
+
     @variable(model, queens[1:n], DiscreteSet(1:n))
     @constraint(model, queens in CBLS.AllDifferent())
 
@@ -14,3 +14,10 @@ function n_queens(n, ::Val{:JuMP})
 
     return model, queens
 end
+
+"""
+    n_queens(n; modeler = :JuMP)
+
+Create a model for the n-queens problem with `n` queens. The `modeler` argument accepts :JuMP (default), which refer to the JuMP model.
+"""
+n_queens(n; modeler = :JuMP) = n_queens(n, Val(modeler))
