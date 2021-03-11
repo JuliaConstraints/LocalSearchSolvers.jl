@@ -46,7 +46,6 @@ end
 end
 
 @testset "JuMP: basic opt" begin
-    # model = Model(optimizer_with_attributes(CBLS.Optimizer, "PrintLevel" => :verbose))
     model = Model(CBLS.Optimizer)
 
     @variable(model, x in DiscreteSet(0:20))
@@ -60,7 +59,5 @@ end
 
     optimize!(model)
 
-    @info value(x);
-    @info value(y);
-    @info (12*value(x)+20*value(y))
+    @info "JuMP: basic opt" value(x) value(y) (12*value(x)+20*value(y))
 end
