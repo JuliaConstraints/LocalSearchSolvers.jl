@@ -69,10 +69,10 @@ mutable struct Options
         dynamic && specialize && @warn ds_str
 
         notds_str = "The solver types are not specialized in a static model context," *
-        " which is sub-optimal."        
+        " which is sub-optimal."
         !dynamic && !specialize && @info notds_str
 
-        itertime_str = "Both iteration and time limits are disabled. " * 
+        itertime_str = "Both iteration and time limits are disabled. " *
         "Optimization runs will run infinitely."
         iteration == Inf && time_limit == Inf && @warn itertime_str
 
