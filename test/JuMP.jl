@@ -30,17 +30,17 @@ end
 @testset "JuMP: golomb(5)" begin
     m, X = golomb(5)
     optimize!(m)
-    @info solution_ = value.(X)
+    @info "JuMP: golomb(5)" value.(X)
 end
 
 @testset "JuMP: magic_square(3)" begin
     m, X = magic_square(3)
     optimize!(m)
-    @info solution_ = value.(X)
+    @info "JuMP: magic_square(3)" value.(X)
 end
 
 @testset "JuMP: n_queens(5)" begin
     m, X = n_queens(5)
     optimize!(m)
-    @info solution_ = value.(X)
+    @info "JuMP: n_queens(5)" value.(X)
 end
