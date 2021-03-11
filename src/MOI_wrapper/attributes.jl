@@ -1,5 +1,3 @@
 struct PrintLevel <: MOI.AbstractOptimizerAttribute end
 
-function MOI.set(model::Optimizer, ::PrintLevel, level::Int)
-
-end
+MOI.set(model::Optimizer, ::PrintLevel, level::Symbol) = _print_level!(model, level)

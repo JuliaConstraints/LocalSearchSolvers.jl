@@ -140,7 +140,7 @@ DOCSTRING
 
 DOCSTRING
 """
-# _print_level!(options, level) = options.print_level = print_levels[level]
+_print_level!(options, level) = options.print_level = level
 
 """
     _solutions(options) = begin
