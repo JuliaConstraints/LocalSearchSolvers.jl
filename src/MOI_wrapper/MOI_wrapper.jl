@@ -52,7 +52,7 @@ end
 DOCSTRING
 """
 function Optimizer(model = model(); options = Options())
-    Optimizer(solver(model), MOI.OPTIMIZE_NOT_CALLED, options)
+    Optimizer(solver(model, options = options), MOI.OPTIMIZE_NOT_CALLED)
 end
 
 # forward functions from Solver

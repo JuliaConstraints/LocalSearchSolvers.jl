@@ -44,3 +44,23 @@ end
     optimize!(m)
     @info "JuMP: n_queens(5)" value.(X)
 end
+
+@testset "JuMP: basic opt" begin
+    # model = Model(optimizer_with_attributes(CBLS.Optimizer, "PrintLevel" => :verbose))
+    model = Model(CBLS.Optimizer)
+
+    @variable(model, x in DiscreteSet(0:20))
+    @variable(model, y in DiscreteSet(0:20))
+
+    @constraint(model, [x,y] in Predicate(v -> 6v[1] + 8v[2] >= 100 ))
+    @constraint(model, [x,y] in Predicate(v -> 7v[1] + 12v[2] >= 120 ))
+
+    objFunc = v -> 12v[1] + 20v[2]
+    @objective(model, Min, ScalarFunction(objFunc))
+
+    optimize!(model)
+
+    @info value(x);
+    @info value(y);
+    @info (12*value(x)+20*value(y))
+end
