@@ -47,6 +47,10 @@ end
 
 @testset "JuMP: basic opt" begin
     model = Model(CBLS.Optimizer)
+    MOI.set(model, CBLS.PrintLevel(), :verbose) # NOTE - work
+    # set_optimizer_attribute(model, "CBLS.PrintLevel", :verbose) # FIXME - RawParameter
+    set_time_limit_sec(model, 10.0)
+    @info time_limit_sec(model)
 
     @variable(model, x in DiscreteSet(0:20))
     @variable(model, y in DiscreteSet(0:20))

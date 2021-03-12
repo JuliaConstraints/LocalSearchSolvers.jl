@@ -493,13 +493,14 @@ solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
 function solve!(s)
+    time_start = time()
     iter = 0
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
     @threads for id in 1:min(nthreads(), _threads(s))
         if id == 1
-            while iter < _iteration(s)
+            while iter < _iteration(s) && time() - time_start < _time_limit(s)
                 iter += 1
                 _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
                 _step!(s) && sat && break

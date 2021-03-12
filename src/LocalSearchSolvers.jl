@@ -76,6 +76,7 @@ include("solver.jl")
 
 # Include MOI/JuMP
 include("MOI_wrapper/MOI_wrapper.jl")
+include("MOI_wrapper/attributes.jl")
 include("MOI_wrapper/variables.jl")
 include("MOI_wrapper/constraints.jl")
 include("MOI_wrapper/objectives.jl")
