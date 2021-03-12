@@ -126,7 +126,7 @@ _iteration(options) = options.iteration
 
 DOCSTRING
 """
-# _iteration!(options, iterations) = options.iteration = iterations
+_iteration!(options, iterations) = options.iteration = iterations
 
 """
     _print_level(options) = begin
