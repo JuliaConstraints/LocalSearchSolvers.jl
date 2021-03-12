@@ -80,7 +80,9 @@ Internal structure used in multithreading and distributed version of the solvers
 # end
 
 function solver(mlid, model, options, pool, strats, ::Val{:sub})
-    return _SubSolver(mlid, model, options, pool, state(), strats)
+    sub_options = deepcopy(options)
+    _print_level!(sub_options, :silent)
+    return _SubSolver(mlid, model, sub_options, pool, state(), strats)
 end
 function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
     mlid = make_id(meta_id(ms), id, Val(role))
@@ -493,13 +495,14 @@ solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
 function solve!(s)
+    time_start = time()
     iter = 0
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
     @threads for id in 1:min(nthreads(), _threads(s))
         if id == 1
-            while iter < _iteration(s)
+            while iter < _iteration(s) && time() - time_start < _time_limit(s)
                 iter += 1
                 _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
                 _step!(s) && sat && break

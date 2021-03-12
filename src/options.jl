@@ -126,7 +126,7 @@ _iteration(options) = options.iteration
 
 DOCSTRING
 """
-# _iteration!(options, iterations) = options.iteration = iterations
+_iteration!(options, iterations) = options.iteration = iterations
 
 """
     _print_level(options) = begin
@@ -140,7 +140,7 @@ DOCSTRING
 
 DOCSTRING
 """
-# _print_level!(options, level) = options.print_level = print_levels[level]
+_print_level!(options, level) = options.print_level = level
 
 """
     _solutions(options) = begin
@@ -231,11 +231,11 @@ DOCSTRING
 
 DOCSTRING
 """
-# _time_limit(options) = options.time_limit
+_time_limit(options) = options.time_limit
 
 """
     _time_limit!(options, time::Time) = begin
 
 DOCSTRING
 """
-# _time_limit!(options, time) = options.time_limit = time
+_time_limit!(options, time) = options.time_limit = time
