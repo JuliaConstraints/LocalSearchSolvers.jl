@@ -2,9 +2,9 @@
 CurrentModule = LocalSearchSolvers
 ```
 
-# Constraint-Based Local Search
+# Constraint-Based Local Search Framework
 
-LocalSearchSolvers.jl proposes sets of technical components of Constraint-Based Local Search (CBLS) solvers and combine them in various ways.
+The **LocalSearchSolvers.jl** framework proposes sets of technical components of Constraint-Based Local Search (CBLS) solvers and combine them in various ways. Make your own CBLS solver!
 
 <!-- TODO: what is a CBLS solver etc. -->
 
@@ -28,7 +28,7 @@ Wanted features list:
   - [ ] Dynamic problems
 - [ ] Domains
   - [x] Discrete domains (any type of numbers)
-  - [ ] Continuous domains
+  - [x] Continuous domains
   - [ ] Arbitrary Objects such as physical ones
 - [ ] Parallelization
   - [x] Multithreading
@@ -36,21 +36,22 @@ Wanted features list:
   - [ ] Asynchronicity (for dynamic problems)
 - [ ] Solvers
   - [x] Weak-tabu list (based on the method in GHOST, the C++ lib)
-  - [ ] Adaptive Search
+  - [x] Adaptive Search
   - [ ] Extremal optimization
   - [ ] Neighbourhoud selection
   - [ ] Variable selection
   - [ ] Neighbourhood discovery and weighting
 - [ ] Domain Specific Languages (DSL)
-  - [x| ] Straight Julia | MathOptInterface.jl 
-  - [x] JuMP*ish*
+  - [x] Straight Julia
+  - [x] JuMP*ish* | MathOptInterface.jl
   - [ ] MiniZinc
+  - [ ] OR-tools ?
 - [ ] Learning settings
   - [x] Compositional Networks (error functions, cost functions)
   - [ ] Restart: partial, probability
   - [ ] Mixed-solvers
   - [ ] Reinforcement learning for above mentioned learning features
-  - [ ] Automatic benchmarking and learning from all the possible parameter combination (instance, model, solver, size, restart, hardware, etc.) 
+  - [ ] Automatic benchmarking and learning from all the possible parameter combination (instance, model, solver, size, restart, hardware, etc.)
 
 ### Contributing
 
