@@ -231,11 +231,11 @@ DOCSTRING
 
 DOCSTRING
 """
-# _time_limit(options) = options.time_limit
+_time_limit(options) = options.time_limit
 
 """
     _time_limit!(options, time::Time) = begin
 
 DOCSTRING
 """
-# _time_limit!(options, time) = options.time_limit = time
+_time_limit!(options, time) = options.time_limit = time
