@@ -80,7 +80,9 @@ Internal structure used in multithreading and distributed version of the solvers
 # end
 
 function solver(mlid, model, options, pool, strats, ::Val{:sub})
-    return _SubSolver(mlid, model, options, pool, state(), strats)
+    sub_options = deepcopy(options)
+    _print_level!(sub_options, :silent)
+    return _SubSolver(mlid, model, sub_options, pool, state(), strats)
 end
 function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
     mlid = make_id(meta_id(ms), id, Val(role))

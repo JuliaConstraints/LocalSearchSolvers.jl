@@ -1,9 +1,5 @@
 struct PrintLevel <: MOI.AbstractOptimizerAttribute end
 
-MOI.set(model::Optimizer, ::PrintLevel, level::Symbol) = _print_level!(model, level)
-
-MOI.supports(::Optimizer, ::PrintLevel) = true
-
 MOI.supports(::Optimizer, ::MOI.RawParameter) = true
 MOI.supports(::Optimizer, ::MOI.TimeLimitSec) = true
 
@@ -16,3 +12,14 @@ function MOI.set(model::Optimizer, ::MOI.TimeLimitSec, value::Union{Nothing,Floa
 end
 MOI.get(model::Optimizer, ::MOI.TimeLimitSec) = _time_limit(model)
 
+"""
+    MOI.set(model::Optimizer, p::MOI.RawParameter, value)
+Set a RawParameter to `value`
+"""
+function MOI.set(model::Optimizer, p::MOI.RawParameter, value)
+    eval(Symbol("_" * p.name * "!"))(model, value)
+end
+
+function MOI.get(model::Optimizer, p::MOI.RawParameter)
+    eval(Symbol("_" * p.name))(model)
+end
