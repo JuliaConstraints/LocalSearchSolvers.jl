@@ -323,7 +323,7 @@ end
 state!(s) = s.state = state(s) # TODO: add Pool
 
 _init!(s, ::Val{:global}) = !is_specialized(s) && _specialize(s) && specialize!(s)
-_init!(s, ::Val{:remote}) = @warn "TODO: implement distributed solvers (LeadSolver)"
+_init!(s, ::Val{:remote}) = @debug "TODO: implement distributed solvers (LeadSolver)"
 _init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:nthreads())
 function _init!(s, ::Val{:local}; pool = pool())
     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
