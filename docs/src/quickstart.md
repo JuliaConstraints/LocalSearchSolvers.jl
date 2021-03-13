@@ -1,6 +1,6 @@
 # Quick Start Guide
 This section introduce the main concepts of `LocalSearchSolvers.jl`. We model both a satisfaction and an optimization version of the [Golomb Ruler](https://en.wikipedia.org/wiki/Golomb_ruler) problem.
-For this quickstart, we will use [JuMP.jl](https://github.com/jump-dev/JuMP.jl) syntax.
+For this quick-start, we will use [JuMP.jl](https://github.com/jump-dev/JuMP.jl) syntax.
 
 ## Golomb Ruler
 From Wikipedia's English page.
@@ -29,7 +29,7 @@ L = n^2 # ruler length
 Finally add the following constraints,
 * all marks have a different value
 * marks are ordered (optional)
-* finally, no two pairs of marks are the same distance appart
+* finally, no two pairs of marks are the same distance apart
 
 ```julia
 @constraint(model, X in AllDifferent()) # different marks

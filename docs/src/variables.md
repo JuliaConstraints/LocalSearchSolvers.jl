@@ -15,7 +15,7 @@ Domains can be used both statically or dynamically.
 @variable(model, x)
 
 # free variables in a X vector
-@varialbe(model, X[1:5])
+@variable(model, X[1:5])
 
 # variables with discrete domain 1:9 in a matrix M
 @variable(model, M[1:9,1:9] in DiscreteDomain(1:9))
