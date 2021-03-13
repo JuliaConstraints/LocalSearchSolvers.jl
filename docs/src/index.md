@@ -30,9 +30,9 @@ Wanted features list:
   - [ ] *Move*: local move, permutation between `n` variables
   - [ ] *Neighbor*: simple or multiplexed neighborhood, dimension/depth
   - [ ] *Objective(s)*: single/multiple objectives, Pareto, etc.
-  - [ ] *Parallelisation*: distributed and multithreaded, HPC clusters
-  - [ ] *Perturbation*: dynamicity, restart, pool of solutions
-  - [ ] *Portfolio*: portfolio of solvers, partition in subproblems
+  - [ ] *Parallel*: distributed and multi-threaded, HPC clusters
+  - [ ] *Perturbation*: dynamic, restart, pool of solutions
+  - [ ] *Portfolio*: portfolio of solvers, partition in sub-problems
   - [ ] *Restart*
     - [x] restart sequence
     - [ ] partial/probabilistic restart (in coordination with perturbation strategies)
@@ -43,7 +43,7 @@ Wanted features list:
     - [x] Weak-tabu
     - [x] Keen-tabu
   - *Termination*: when, why, how, interactive, results storage (remote)
-- **Featured startegies**
+- **Featured strategies**
   - [ ] Adaptive search
   - [ ] Extremal optimization
 - **Others**
@@ -56,10 +56,6 @@ Wanted features list:
     - [x] Discrete domains (any type of numbers)
     - [x] Continuous domains
     - [ ] Arbitrary Objects such as physical ones
-  - [ ] Parallelization
-    - [x] Multithreading
-    - [ ] Distributed
-    - [ ] Asynchronicity (for dynamic problems)
   - [ ] Domain Specific Languages (DSL)
     - [x] Straight Julia `:raw`
     - [x] JuMP*ish* | MathOptInterface.jl

@@ -1,6 +1,6 @@
 # Mincut
 
-Doc is still in construction. Please check models/mincut.jl for details on the implementation.
+Doc is still in construction. Please check `models/mincut.jl` for details on the implementation.
 
 ## Constructing a Mincut model
 
