@@ -16,7 +16,7 @@ model = Model(CBLS.Optimizer) # CBLS is an exported alias of LocalSearchSolvers
 ## Solver
 
 ```julia
-# run the solver. If no objectives are provided, it will look for a satisfying solution
+# run the solver. If no objectives are provided, it will look for a satisfying solution and stop
 optimize!(model)
 
 # extract the values (assuming X, a (collection of) variable(s) is the target)
@@ -25,5 +25,6 @@ solution = value.(X)
 
 ### Solver options
 
-Several solver options are available, such as time and iteration limits. Please check the following list. (TODO:)
-
+```@docs
+LocalSearchSolvers.Options
+```

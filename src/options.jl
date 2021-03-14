@@ -11,34 +11,27 @@ const print_levels = Dict(
     # get!(s, :δ_tabu, setting(s, :tabu_time) - setting(s, :local_tabu))# 20-30
 
 """
-    Options
-
-DOCSTRING
-
+    Options()
 # Arguments:
-- `dynamic::Bool`: DESCRIPTION
-- `iteration::Union{Int, Float64}`: DESCRIPTION
-- `print_level::Symbol`: DESCRIPTION
-- `solutions::Int`: DESCRIPTION
-- `specialize::Bool`: DESCRIPTION
+- `dynamic::Bool`: is the model dynamic?
+- `iteration::Union{Int, Float64}`: limit on the number of iterations
+- `print_level::Symbol`: verbosity to choose among `:silent`, `:minimal`, `:partial`, `:verbose`
+- `solutions::Int`: number of solutions to return
+- `specialize::Bool`: should the types of the model be specialized or not. Usually yes for static problems. For dynamic in depends if the user intend to introduce new types. The specialized model is about 10% faster.
 - `tabu_time::Int`: DESCRIPTION
 - `tabu_local::Int`: DESCRIPTION
 - `tabu_delta::Float64`: DESCRIPTION
-- `threads::Int`: DESCRIPTION
-- `time_limit::Float64`: DESCRIPTION
-- `function Options(; dynamic = false, iteration = 1000, print_level = :minimal, solutions = 1, specialize = !dynamic, tabu_time = 0, tabu_local = 0, tabu_delta = 0.0, threads = typemax(0), time_limit = Time(0))
-    #= none:13 =#
-    #= none:25 =#
-    ds_str = "The model types are specialized to the starting domains, constraints," * " and objectives types. Dynamic elements that add a new type will raise an error!"
-    #= none:27 =#
-    notds_str = "The solver types are not specialized in a static model context," * " which is sub-optimal."
-    #= none:29 =#
-    dynamic && (specialize && #= none:29 =# @warn(ds_str))
-    #= none:30 =#
-    !dynamic && (!specialize && #= none:30 =# @info(notds_str))
-    #= none:32 =#
-    new(dynamic, iteration, print_level, solutions, specialize, tabu_time, tabu_local, tabu_delta, threads, time_limit)
-end`: DESCRIPTION
+- `threads::Int`: Number of threads to use
+- `time_limit::Float64`: time limit in seconds
+- `function Options(; dynamic = false, iteration = 10000, print_level = :minimal, solutions = 1, specialize = !dynamic, tabu_time = 0, tabu_local = 0, tabu_delta = 0.0, threads = typemax(0), time_limit = Inf)
+
+```julia
+# Setting options in JuMP syntax: print_level, time_limit, iteration
+model = Model(CBLS.Optimizer)
+set_optimizer_attribute(model, "iteration", 100)
+set_optimizer_attribute(model, "print_level", :verbose)
+set_time_limit_sec(model, 5.0)
+```
 """
 mutable struct Options
     dynamic::Bool

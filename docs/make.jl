@@ -7,6 +7,7 @@ using Documenter
 @info "Makeing documentation..."
 makedocs(;
     modules=[LocalSearchSolvers, ConstraintDomains, CompositionalNetworks, Constraints],
+    expandfirst = ["variables.md", "constraints.md", "objectives.md", "solving.md"],
     authors="Jean-François Baffier",
     repo="https://github.com/JuliaConstraints/LocalSearchSolvers.jl/blob/{commit}{path}#L{line}",
     sitename="LocalSearchSolvers.jl",
