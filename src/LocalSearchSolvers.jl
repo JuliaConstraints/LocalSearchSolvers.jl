@@ -1,20 +1,19 @@
 module LocalSearchSolvers
 
-# Usings # QUESTION: make it a list of import once the JuMP integration is done
+# NOTE - Usings : make it a list of import once the JuMP integration is done
 using MathOptInterface
 
 # Imports
-import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
 import Base: ∈, convert, copy
 import Base.Threads: nthreads, @threads, Atomic, atomic_or!
-import Lazy: @forward
-import Constraints: usual_constraints, error_f
 import CompositionalNetworks: optimize!, csv2space, compose, ICN
 import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw
 import ConstraintDomains: _length, _get, _get_domain, _domain_size
-import Dates: Time, Nanosecond
+import Constraints: usual_constraints, error_f
+import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
 import JuMP
 import JuMP: @constraint, @variable, @objective, VariableRef, index
+import Lazy: @forward
 
 # Const
 const CBLS = LocalSearchSolvers

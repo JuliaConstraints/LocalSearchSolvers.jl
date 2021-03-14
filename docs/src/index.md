@@ -77,5 +77,4 @@ Contributions to this package are more than welcome and can be arbitrarily, and 
 - Just making stuff better, faster, user-friendlier, etc.
 
 #### Contact
-Do not hesitate to contact me (@azzaare) or other members of JuliaConstraints on GitHub (file an issue), the julialang [Discourse](discourse.julialang.org
-) forum, the julialang [Slack](https://julialang.org/slack/) workspace, the julialang [Zulip](https://julialang.zulipchat.com/) server (*Constraint Programming* stream), or the Humans of Julia [Humans-of-Julia](https://humansofjulia.org/) discord server(*julia-constraint* channel).
+Do not hesitate to contact me (@azzaare) or other members of JuliaConstraints on GitHub (file an issue), the julialang [Discourse](https://discourse.julialang.org) forum, the julialang [Slack](https://julialang.org/slack/) workspace, the julialang [Zulip](https://julialang.zulipchat.com/) server (*Constraint Programming* stream), or the Humans of Julia [Humans-of-Julia](https://humansofjulia.org/) discord server(*julia-constraint* channel).
