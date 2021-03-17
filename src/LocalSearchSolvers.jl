@@ -2,13 +2,14 @@ module LocalSearchSolvers
 
 # NOTE - Usings : make it a list of import once the JuMP integration is done
 using MathOptInterface
+using ConstraintDomains
 
 # Imports
 import Base: ∈, convert, copy
 import Base.Threads: nthreads, @threads, Atomic, atomic_or!
-import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw
-import ConstraintDomains: _length, _get, _get_domain, _domain_size
+import CompositionalNetworks: optimize!, compose, ICN
+import ConstraintDomains: AbstractDomain, EmptyDomain, domain, add!, delete!, rand
+import ConstraintDomains: length, get_domain, domain_size
 import Constraints: usual_constraints, error_f
 import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
 import JuMP
