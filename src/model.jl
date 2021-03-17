@@ -393,7 +393,7 @@ end
 
 DOCSTRING
 """
-domain_size(m::_Model, x) = _domain_size(get_domain(m, x))
+domain_size(m::_Model, x) = domain_size(get_domain(m, x))
 
 """
     max_domains_size(m::Model, vars) = begin
