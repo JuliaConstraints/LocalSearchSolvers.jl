@@ -419,7 +419,7 @@ end
 
 # Non modificating cost and objective computations
 
-draw(m::_Model) = map(_draw, get_variables(m))
+draw(m::_Model) = map(rand, get_variables(m))
 
 compute_cost(c::Constraint, values) = apply(c, map(x -> values[x], c.vars))
 compute_costs(m, values) = sum(c -> compute_cost(c, values), get_constraints(m); init = 0.0)
