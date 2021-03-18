@@ -1,5 +1,6 @@
-using LocalSearchSolvers
+import ConstraintDomains
 using Dictionaries
+using LocalSearchSolvers
 using Test
 
 import Constraints: usual_constraints, error_f

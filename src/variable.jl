@@ -18,8 +18,13 @@ function Variable(D, x::Variable{D2}) where {D2 <: AbstractDomain}
 end
 
 # Methods: lazy forwarding from ConstraintDomains.domain.jl
-@forward Variable.domain length, rand, delete!, add!, get_domain, domain_size
+@forward Variable.domain Base.length, Base.rand, Base.delete!
+# @forward Variable.domain get_domain, domain_size
 
+add!(x::Variable, value) = ConstraintDomains.add!(x.domain, value)
+get_domain(x::Variable) = ConstraintDomains.get_domain(x.domain)
+domain_size(x::Variable) = ConstraintDomains.domain_size(x.domain)
+ 
 """
     _get_constraints(x::Variable)
 Access the list of `constraints` of `x`.
@@ -63,13 +68,6 @@ x1 = variable(d, "x1")
 x2 = variable([-89,56,28], "x2", domain = :indices)
 ```
 """
-variable() = Variable(EmptyDomain(), Indices{Int}())
+variable() = Variable(domain(), Indices{Int}())
 variable(domain::D) where {D <: AbstractDomain} = Variable(domain, Indices{Int}())
 variable(vals) = isempty(vals) ? variable() : variable(domain(vals))
-
-"""
-    _get_domain(x::Variable) = begin
-
-DOCSTRING
-"""
-_get_domain(x::Variable) = x.domain

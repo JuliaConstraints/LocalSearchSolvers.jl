@@ -149,7 +149,7 @@ get_objective(m::_Model, o) = get_objectives(m)[o]
     get_domain(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the domain of variable `x`.
 """
-get_domain(m::_Model, x) = _get_domain(get_variable(m, x))
+get_domain(m::_Model, x) = get_domain(get_variable(m, x))
 
 """
     get_name(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -261,7 +261,7 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::_Model, d=EmptyDomain())
+function variable!(m::_Model, d=domain())
     add!(m, variable(d))
     return _max_vars(m)
 end
@@ -289,7 +289,7 @@ Describe the model.
 """
 function describe(m::_Model) # TODO: rewrite _describe
     objectives = ""
-    if length(m.objectives) == 0
+    if Dictionaries.length(m.objectives) == 0
         objectives = "Constraint Satisfaction Program (CSP)"
     else
         objectives = "Constraint Optimization Program (COP) with Objective(s)\n"
@@ -297,7 +297,7 @@ function describe(m::_Model) # TODO: rewrite _describe
             mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(m); init="")[1:end - 1]
     end
     variables = mapreduce(
-        x -> "\t\tx$(x[1]): " * string(_get_domain(x[2])) * "\n",
+        x -> "\t\tx$(x[1]): " * string(get_domain(x[2])) * "\n",
         *, pairs(m.variables); init=""
     )[1:end - 1]
     constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n", *, pairs(m.constraints); init="")[1:end - 1]
@@ -393,7 +393,7 @@ end
 
 DOCSTRING
 """
-domain_size(m::_Model, x) = domain_size(get_domain(m, x))
+domain_size(m::_Model, x) = domain_size(get_variable(m, x))
 
 """
     max_domains_size(m::Model, vars) = begin
