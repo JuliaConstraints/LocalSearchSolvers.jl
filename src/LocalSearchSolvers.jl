@@ -1,20 +1,13 @@
 module LocalSearchSolvers
 
-# Usings # QUESTION: make it a list of import once the JuMP integration is done
+using Base.Threads
+using CompositionalNetworks
+using ConstraintDomains
+using Constraints
+using Dictionaries
+using JuMP
+using Lazy
 using MathOptInterface
-
-# Imports
-import Dictionaries: Dictionary, Indices, DictionaryView, insert!, set!, empty!
-import Base: ∈, convert, copy
-import Base.Threads: nthreads, @threads, Atomic, atomic_or!
-import Lazy: @forward
-import Constraints: usual_constraints, error_f
-import CompositionalNetworks: optimize!, csv2space, compose, ICN
-import ConstraintDomains: AbstractDomain, EmptyDomain, domain, _add!, _delete!, _draw
-import ConstraintDomains: _length, _get, _get_domain, _domain_size
-import Dates: Time, Nanosecond
-import JuMP
-import JuMP: @constraint, @variable, @objective, VariableRef, index
 
 # Const
 const CBLS = LocalSearchSolvers
@@ -22,9 +15,9 @@ const MOI = MathOptInterface
 const MOIU = MOI.Utilities
 
 # Exports internal
-export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!, delete!
+export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
 export delete_value!, delete_var_from_cons!, domain, variable, constraint, objective
-export length_var, length_cons, constriction, draw, ∈, describe, get_variable
+export length_var, length_cons, constriction, draw, describe, get_variable
 export get_variables, get_constraint, get_constraints, get_objective, get_objectives
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 

@@ -149,7 +149,7 @@ get_objective(m::_Model, o) = get_objectives(m)[o]
     get_domain(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the domain of variable `x`.
 """
-get_domain(m::_Model, x) = _get_domain(get_variable(m, x))
+get_domain(m::_Model, x) = get_domain(get_variable(m, x))
 
 """
     get_name(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -173,7 +173,7 @@ get_vars_from_cons(m::_Model, c) = _get_vars(get_constraint(m, c))
     length_var(m::M, x) where M <: Union{Model, AbstractSolver}
 Return the domain length of variable `x`.
 """
-length_var(m::_Model, x) = _length(get_variable(m, x))
+length_var(m::_Model, x) = length(get_variable(m, x))
 
 """
     length_cons(m::M, c) where M <: Union{Model, AbstractSolver}
@@ -203,7 +203,7 @@ length_cons(m::_Model) = length(get_constraints(m))
     draw(m::M, x) where M <: Union{Model, AbstractSolver}
 Draw a random value of `x` domain.
 """
-draw(m::_Model, x) = _draw(get_variable(m, x))
+draw(m::_Model, x) = rand(get_variable(m, x))
 
 """
     constriction(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -215,7 +215,7 @@ constriction(m::_Model, x) = _constriction(get_variable(m, x))
     delete_value(m::M, x, val) where M <: Union{Model, AbstractSolver}
 Delete `val` from `x` domain.
 """
-delete_value!(m::_Model, x, val) = _delete!(get_variable(m, x), val)
+delete_value!(m::_Model, x, val) = delete!(get_variable(m, x), val)
 
 """
     delete_var_from_cons(m::M, c, x) where M <: Union{Model, AbstractSolver}
@@ -227,7 +227,7 @@ delete_var_from_cons!(m::_Model, c, x) = _delete!(get_constraint(m, c), x)
     add_value!(m::M, x, val) where M <: Union{Model, AbstractSolver}
 Add `val` to `x` domain.
 """
-add_value!(m::_Model, x, val) = _add!(get_variable(m, x), val)
+add_value!(m::_Model, x, val) = add!(get_variable(m, x), val)
 
 """
     add_var_to_cons!(m::M, c, x) where M <: Union{Model, AbstractSolver}
@@ -261,7 +261,7 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::_Model, d=EmptyDomain())
+function variable!(m::_Model, d=domain())
     add!(m, variable(d))
     return _max_vars(m)
 end
@@ -289,7 +289,7 @@ Describe the model.
 """
 function describe(m::_Model) # TODO: rewrite _describe
     objectives = ""
-    if length(m.objectives) == 0
+    if Dictionaries.length(m.objectives) == 0
         objectives = "Constraint Satisfaction Program (CSP)"
     else
         objectives = "Constraint Optimization Program (COP) with Objective(s)\n"
@@ -297,7 +297,7 @@ function describe(m::_Model) # TODO: rewrite _describe
             mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(m); init="")[1:end - 1]
     end
     variables = mapreduce(
-        x -> "\t\tx$(x[1]): " * string(_get_domain(x[2])) * "\n",
+        x -> "\t\tx$(x[1]): " * string(get_domain(x[2])) * "\n",
         *, pairs(m.variables); init=""
     )[1:end - 1]
     constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n", *, pairs(m.constraints); init="")[1:end - 1]
@@ -393,7 +393,7 @@ end
 
 DOCSTRING
 """
-domain_size(m::_Model, x) = _domain_size(get_domain(m, x))
+domain_size(m::_Model, x) = domain_size(get_variable(m, x))
 
 """
     max_domains_size(m::Model, vars) = begin
@@ -407,7 +407,7 @@ max_domains_size(m::_Model, vars) = maximum(map(x -> domain_size(m, x), vars))
 
 DOCSTRING
 """
-function empty!(m::_Model)
+function Base.empty!(m::_Model)
     empty!(m.variables)
     empty!(m.constraints)
     empty!(m.objectives)
@@ -419,7 +419,7 @@ end
 
 # Non modificating cost and objective computations
 
-draw(m::_Model) = map(_draw, get_variables(m))
+draw(m::_Model) = map(rand, get_variables(m))
 
 compute_cost(c::Constraint, values) = apply(c, map(x -> values[x], c.vars))
 compute_costs(m, values) = sum(c -> compute_cost(c, values), get_constraints(m); init = 0.0)

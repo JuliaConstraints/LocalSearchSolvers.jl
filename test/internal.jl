@@ -1,25 +1,23 @@
 d1 = domain([4,3,2,1])
-d2 = domain([4,3,2,1]; type=:indices)
+d2 = domain(1:4)
 domains = Dictionary(1:2, [d1, d2])
 @testset "Internals: Domains" begin
-    # get
-    @test LS._get(d2, 2) == 3
     for d in domains
         # constructors and ∈
         for x in [1,2,3,4]
             @test x ∈ d
         end
         # length
-        @test LS._length(d) == 4
+        @test length(d) == 4
         # draw and ∈
-        @test LS._draw(d) ∈ d
-        # add!
-        LS._add!(d, 5)
-        @test 5 ∈ d
-        # delete!
-        LS._delete!(d, 5)
-        @test 5 ∉ d
+        @test rand(d) ∈ d
     end
+    # add!
+    ConstraintDomains.add!(d1, 5)
+    @test 5 ∈ d1
+    # delete!
+    delete!(d1, 5)
+    @test 5 ∉ d1
 end
 
 x1 = variable([4,3,2,1])
@@ -27,7 +25,6 @@ x2 = variable(d2)
 x3 = variable() # TODO: tailored test for free variable
 vars = Dictionary(1:2, [x1, x2])
 @testset "Internals: variables" begin
-    @test LS._get(x2, 2) == 3
     for x in vars
         # add and delete from constraint
         LS._add_to_constraint!(x, 1)
@@ -36,16 +33,16 @@ vars = Dictionary(1:2, [x1, x2])
         @test x ∈ 1
         @test x ∉ 2
         @test LS._constriction(x) == 1
-        @test LS._length(x) == 4
+        @test length(x) == 4
         for y in [1,2,3,4]
             @test y ∈ x
         end
-        @test LS._draw(x) ∈ x
-        LS._add!(x, 5)
-        @test 5 ∈ x
-        LS._delete!(x, 5)
-        @test 5 ∉ x
+        @test rand(x) ∈ x
     end
+    add!(x1, 5)
+    @test 5 ∈ x1
+    delete!(x1, 5)
+    @test 5 ∉ x1
 end
 
 values = [1, 2, 3]

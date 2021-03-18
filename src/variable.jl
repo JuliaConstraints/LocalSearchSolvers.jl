@@ -18,8 +18,13 @@ function Variable(D, x::Variable{D2}) where {D2 <: AbstractDomain}
 end
 
 # Methods: lazy forwarding from ConstraintDomains.domain.jl
-@forward Variable.domain _length, _get, _draw, _delete!, _add!, _get_domain, _domain_size
+@forward Variable.domain Base.length, Base.rand, Base.delete!
+# @forward Variable.domain get_domain, domain_size
 
+add!(x::Variable, value) = ConstraintDomains.add!(x.domain, value)
+get_domain(x::Variable) = ConstraintDomains.get_domain(x.domain)
+domain_size(x::Variable) = ConstraintDomains.domain_size(x.domain)
+ 
 """
     _get_constraints(x::Variable)
 Access the list of `constraints` of `x`.
@@ -45,12 +50,12 @@ Return the `cosntriction` of `x`, i.e. the number of constraints restricting `x`
 _constriction(x::Variable) = length(x.constraints)
 
 """
-    ∈(x::Variable, constraint)
-    ∈(value, x::Variable)
+    x::Variable ∈ constraint
+    value ∈ x::Variable
 Check if a variable `x` is restricted by a `constraint::Int`, or if a `value` belongs to the domain of `x`.
 """
-∈(x::Variable, constraint) = constraint ∈ x.constraints
-∈(value, x::Variable) = value ∈ x.domain
+Base.in(x::Variable, constraint) = constraint ∈ x.constraints
+Base.in(value, x::Variable) = value ∈ x.domain
 
 """
     variable(values::AbstractVector{T}, name::AbstractString; domain = :set) where T <: Number
@@ -63,13 +68,6 @@ x1 = variable(d, "x1")
 x2 = variable([-89,56,28], "x2", domain = :indices)
 ```
 """
-variable() = Variable(EmptyDomain(), Indices{Int}())
+variable() = Variable(domain(), Indices{Int}())
 variable(domain::D) where {D <: AbstractDomain} = Variable(domain, Indices{Int}())
-variable(vals; dom=:set) = isempty(vals) ? variable() : variable(domain(vals; type=dom))
-
-"""
-    _get_domain(x::Variable) = begin
-
-DOCSTRING
-"""
-_get_domain(x::Variable) = x.domain
+variable(vals) = isempty(vals) ? variable() : variable(domain(vals))

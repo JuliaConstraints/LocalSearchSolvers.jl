@@ -258,7 +258,7 @@ DOCSTRING
 """
 function _neighbours(s, x, dim = 0)
     if dim == 0
-        return _get_domain(get_domain(s, x)) # TODO: clean the get domain methods
+        return get_domain(s, x)
     else
         neighbours = Set{Int}()
         foreach(
@@ -323,7 +323,7 @@ end
 state!(s) = s.state = state(s) # TODO: add Pool
 
 _init!(s, ::Val{:global}) = !is_specialized(s) && _specialize(s) && specialize!(s)
-_init!(s, ::Val{:remote}) = @warn "TODO: implement distributed solvers (LeadSolver)"
+_init!(s, ::Val{:remote}) = @debug "TODO: implement distributed solvers (LeadSolver)"
 _init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:nthreads())
 function _init!(s, ::Val{:local}; pool = pool())
     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
@@ -534,7 +534,7 @@ solution(s) = is_sat(s) ? _values(s) : _solution(s)
 
 DOCSTRING
 """
-function empty!(s::MainSolver)
+function Base.empty!(s::MainSolver)
     empty!(s.model)
     s.state = state()
     empty!(s.subs)
