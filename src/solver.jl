@@ -534,7 +534,7 @@ solution(s) = is_sat(s) ? _values(s) : _solution(s)
 
 DOCSTRING
 """
-function empty!(s::MainSolver)
+function Base.empty!(s::MainSolver)
     empty!(s.model)
     s.state = state()
     empty!(s.subs)

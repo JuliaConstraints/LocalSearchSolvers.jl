@@ -43,7 +43,7 @@ _length(c::Constraint) = length(c.vars)
 """
     var::Int ∈ c::Constraint
 """
-∈(var::Int, c::Constraint) = var ∈ c.vars
+Base.in(var::Int, c::Constraint) = var ∈ c.vars
 
 """
     constraint(f, vars)
