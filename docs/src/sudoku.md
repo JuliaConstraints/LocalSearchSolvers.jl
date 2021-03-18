@@ -7,11 +7,11 @@ Each column, row, and region of the sudoku grid can only have a number from each
 
 For instance, given this initial grid:
 
-![](img/initial_sudoku.svg){:height="128px" width="128px"}
+![](img/initial_sudoku.svg)
 
 The final state (i.e. solution) must be:
 
-![](img/final_sudoku.svg){:height="128px" width="128px"}
+![](img/final_sudoku.svg =128x128)
 
 ## Constructing a sudoku model
 
