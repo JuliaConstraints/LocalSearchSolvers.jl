@@ -1,6 +1,5 @@
 module LocalSearchSolvers
 
-# NOTE - Usings : make it a list of import once the JuMP integration is done
 using Base.Threads
 using CompositionalNetworks
 using ConstraintDomains
@@ -18,7 +17,7 @@ const MOIU = MOI.Utilities
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
 export delete_value!, delete_var_from_cons!, domain, variable, constraint, objective
-export length_var, length_cons, constriction, draw, ∈, describe, get_variable
+export length_var, length_cons, constriction, draw, describe, get_variable
 export get_variables, get_constraint, get_constraints, get_objective, get_objectives
 export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
