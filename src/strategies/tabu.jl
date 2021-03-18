@@ -57,7 +57,7 @@ delete_tabu!(ts, x) = delete!(tabu_list(ts), x)
     _empty_tabu!(s::S) where S <: Union{_State, AbstractSolver}
 Empty the tabu list.
 """
-empty_tabu!(ts) = empty!(tabu_list(ts))
+empty_tabu!(ts) = Dictionaries.empty!(tabu_list(ts))
 
 """
     _length_tabu!(s::S) where S <: Union{_State, AbstractSolver}

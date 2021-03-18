@@ -50,12 +50,12 @@ Return the `cosntriction` of `x`, i.e. the number of constraints restricting `x`
 _constriction(x::Variable) = length(x.constraints)
 
 """
-    ∈(x::Variable, constraint)
-    ∈(value, x::Variable)
+    x::Variable ∈ constraint
+    value ∈ x::Variable
 Check if a variable `x` is restricted by a `constraint::Int`, or if a `value` belongs to the domain of `x`.
 """
-∈(x::Variable, constraint) = constraint ∈ x.constraints
-∈(value, x::Variable) = value ∈ x.domain
+Base.in(x::Variable, constraint) = constraint ∈ x.constraints
+Base.in(value, x::Variable) = value ∈ x.domain
 
 """
     variable(values::AbstractVector{T}, name::AbstractString; domain = :set) where T <: Number

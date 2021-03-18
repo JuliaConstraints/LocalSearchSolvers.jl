@@ -407,7 +407,7 @@ max_domains_size(m::_Model, vars) = maximum(map(x -> domain_size(m, x), vars))
 
 DOCSTRING
 """
-function empty!(m::_Model)
+function Base.empty!(m::_Model)
     empty!(m.variables)
     empty!(m.constraints)
     empty!(m.objectives)

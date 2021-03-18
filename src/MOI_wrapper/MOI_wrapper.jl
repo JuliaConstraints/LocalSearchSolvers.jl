@@ -57,7 +57,7 @@ end
 
 # forward functions from Solver
 @forward Optimizer.solver variable!, _set_domain!, constraint!, solution, domain_size
-@forward Optimizer.solver max_domains_size, objective!, empty!, _inc_cons!, _max_cons
+@forward Optimizer.solver max_domains_size, objective!, Base.empty!, _inc_cons!, _max_cons
 @forward Optimizer.solver _best_bound, best_value, is_sat, get_value, best_values
 
 # forward functions from Solver (from Options)
