@@ -11,7 +11,7 @@ For instance, given this initial grid:
 
 The final state (i.e. solution) must be:
 
-![](img/final_sudoku.svg =128x128)
+![](img/final_sudoku.svg=128x128)
 
 ## Constructing a sudoku model
 
