@@ -258,7 +258,7 @@ DOCSTRING
 """
 function _neighbours(s, x, dim = 0)
     if dim == 0
-        return get_domain(get_domain(s, x)) # TODO: clean the get domain methods
+        return get_domain(s, x)
     else
         neighbours = Set{Int}()
         foreach(

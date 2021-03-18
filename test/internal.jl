@@ -13,7 +13,7 @@ domains = Dictionary(1:2, [d1, d2])
         @test rand(d) ∈ d
     end
     # add!
-    add!(d1, 5)
+    ConstraintDomains.add!(d1, 5)
     @test 5 ∈ d1
     # delete!
     delete!(d1, 5)
