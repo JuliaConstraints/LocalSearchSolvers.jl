@@ -20,7 +20,7 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: O
 end
 ```
 """
-struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}} <: MOI.ModelLike
+struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}# <: MOI.ModelLike
     variables::Dictionary{Int,V}
     constraints::Dictionary{Int,C}
     objectives::Dictionary{Int,O}
