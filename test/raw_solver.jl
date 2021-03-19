@@ -36,10 +36,10 @@
         solution(s)
 
         # TODO: temp patch for coverage, make it nice
-        for x in keys(LS.tabu_list(s))
-            LS.tabu_value(s, x)
+        for x in keys(LocalSearchSolvers.tabu_list(s))
+            LocalSearchSolvers.tabu_value(s, x)
         end
-        LS._values!(s, Dictionary{Int,Int}())
+        LocalSearchSolvers._values!(s, Dictionary{Int,Int}())
     end
 end
 
