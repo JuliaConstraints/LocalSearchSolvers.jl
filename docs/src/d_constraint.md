@@ -20,12 +20,12 @@ It provides the following features:
 Follow the list of the constraints currently stored in `usual_constraint`. Note that if the constraint is named `_my_constraint`, it can be accessed as `usual_constraint[:my_constraint]`.
 
 ```@docs
-Constraints._all_different
-Constraints._all_equal
-Constraints._all_equal_param
-Constraints._dist_different
-Constraints._eq
-Constraints._ordered
+Constraints.all_different
+Constraints.all_equal
+Constraints.all_equal_param
+Constraints.dist_different
+Constraints.eq
+Constraints.ordered
 ```
 
 ```@autodocs

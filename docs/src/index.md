@@ -8,6 +8,8 @@ The **LocalSearchSolvers.jl** framework proposes sets of technical components of
 
 <!-- TODO: what is a CBLS solver etc. -->
 
+A higher-level *JuMP* interface is available as [CBLS.jl](https://github.com/JuliaConstraints/CBLS.jl) and is the recommended way to use this package. A set of examples is available within [ConstraintModels.jl](https://github.com/JuliaConstraints/ConstraintModels.jl).
+
 ![](img/sudoku3x3.png)
 
 ### Dependencies
@@ -17,11 +19,15 @@ This package makes use of several dependencies from the JuliaConstraints GitHub 
 - [Constraints.jl](https://github.com/JuliaConstraints/Constraints.jl): a constraints back-end package for all JuliaConstraints front packages
 - [CompositionalNetworks.jl](https://github.com/JuliaConstraints/CompositionalNetworks.jl): a module to learn error functions automatically given a *concept*
 - [Garamon.jl](https://github.com/JuliaConstraints/Garamon.jl) (incoming): geometrical constraints
-- [COPInstances.jl](https://github.com/JuliaConstraints/COPInstances.jl) (incoming): a package to store, download, and generate combinatorial optimization instances 
 
 It also relies on great packages from the julialang ecosystem, among others,
 - [ModernGraphs.jl](https://github.com/Humans-of-Julia/ModernGraphs.jl) (incoming): a dynamic multilayer framework for complex graphs which allows a fine exploration of entangled neighborhoods
+
+### Related packages
 - [JuMP.jl](https://github.com/jump-dev/JuMP.jl): a rich interface for optimization solvers
+- [CBLS.jl](https://github.com/JuliaConstraints/CBLS.jl): the actual interface with JuMP for `LocalSearchSolvers.jl`
+- [ConstraintModels.jl](https://github.com/JuliaConstraints/ConstraintModels.jl): a dataset of models for Constraint Programming
+- [COPInstances.jl](https://github.com/JuliaConstraints/COPInstances.jl) (incoming): a package to store, download, and generate combinatorial optimization instances 
 
 ### Features
 
