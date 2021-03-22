@@ -25,7 +25,7 @@ To start modeling with Sudoku with the solver,  we will use [JuMP.jl](https://gi
 * First, create a model with `JuMP.Model(CBLS.Optimizer)`. Given `n = 3` the grid will be of size `n^2 by n^2` (i.e. 9×9)
 
  ```julia
-using LocalSearchSolvers # a CBLS alias is exported
+using CBLS # the JuMP interface of LocalSearchSolvers.jl
 using JuMP
 
 N = n^2
