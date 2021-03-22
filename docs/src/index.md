@@ -27,7 +27,7 @@ It also relies on great packages from the julialang ecosystem, among others,
 - [JuMP.jl](https://github.com/jump-dev/JuMP.jl): a rich interface for optimization solvers
 - [CBLS.jl](https://github.com/JuliaConstraints/CBLS.jl): the actual interface with JuMP for `LocalSearchSolvers.jl`
 - [ConstraintModels.jl](https://github.com/JuliaConstraints/ConstraintModels.jl): a dataset of models for Constraint Programming
-- [COPInstances.jl](https://github.com/JuliaConstraints/COPInstances.jl) (incoming): a package to store, download, and generate combinatorial optimization instances 
+- [COPInstances.jl](https://github.com/JuliaConstraints/COPInstances.jl) (incoming): a package to store, download, and generate combinatorial optimization instances
 
 ### Features
 
