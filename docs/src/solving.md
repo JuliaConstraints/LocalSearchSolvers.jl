@@ -4,7 +4,7 @@ Ideally, given a problem, one just want to model and solve. That is what *LocalS
 
 ## Model
 ```julia
-using LocalSearchSolvers, JuMP
+using CBLS, JuMP
 
 model = Model(CBLS.Optimizer) # CBLS is an exported alias of LocalSearchSolvers
 

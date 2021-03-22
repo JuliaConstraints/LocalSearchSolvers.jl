@@ -1,4 +1,6 @@
 using LocalSearchSolvers
+using CBLS
+using ConstraintModels
 using ConstraintDomains
 using CompositionalNetworks
 using Constraints
@@ -6,7 +8,8 @@ using Documenter
 
 @info "Makeing documentation..."
 makedocs(;
-    modules=[LocalSearchSolvers, ConstraintDomains, CompositionalNetworks, Constraints],
+    modules=[LocalSearchSolvers, CBLS, ConstraintModels,
+        ConstraintDomains, CompositionalNetworks, Constraints],
     expandfirst = ["variables.md", "constraints.md", "objectives.md", "solving.md"],
     authors="Jean-François Baffier",
     repo="https://github.com/JuliaConstraints/LocalSearchSolvers.jl/blob/{commit}{path}#L{line}",
@@ -30,10 +33,12 @@ makedocs(;
             "Golomb ruler" => "golomb.md",
             "Mincut" => "mincut.md",
         ],
-        "Dependencies" => [
+        "Related" => [
             "ConstraintDomains.jl" => "domain.md",
             "Constraints.jl" => "d_constraint.md",
             "CompositionalNetworks.jl" => "icn.md",
+            "CBLS.jl" => "cbls.md",
+            "ConstraintModels.jl" => "models.md",
         ],
         "Library" => [
             "Public" => "public.md",

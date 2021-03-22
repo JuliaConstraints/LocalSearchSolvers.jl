@@ -1,6 +1,6 @@
 # Quick Start Guide
 This section introduce the main concepts of `LocalSearchSolvers.jl`. We model both a satisfaction and an optimization version of the [Golomb Ruler](https://en.wikipedia.org/wiki/Golomb_ruler) problem.
-For this quick-start, we will use [JuMP.jl](https://github.com/jump-dev/JuMP.jl) syntax.
+For this quick-start, we will use [JuMP.jl](https://github.com/jump-dev/JuMP.jl).
 
 ## Golomb Ruler
 From Wikipedia's English page.
@@ -12,7 +12,7 @@ From Wikipedia's English page.
 Given a number of marks `n` and a ruler length `L`, we can model our problem in Julia as easily as follows. First create an empty problem.
 
  ```julia
-using LocalSearchSolvers # a CBLS alias is exported
+using CBLS # the JuMP interface for LocalSearchSolvers.jl
 using JuMP
 
 model = Model(CBLS.Optimizer)

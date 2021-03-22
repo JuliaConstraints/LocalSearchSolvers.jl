@@ -1,9 +1,9 @@
 # Sudoku
 
-Doc is still in construction. Please check models/sudoku.jl for details on the implementation.
+Doc is still in construction. Please check `sudoku.jl` in `ConstraintModels.jl` for details on the implementation.
 
 ## Constructing a sudoku model
 
 ```@docs
-LocalSearchSolvers.sudoku
+ConstraintModels.sudoku
 ```
