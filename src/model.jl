@@ -384,7 +384,19 @@ DOCSTRING
 """
 function _set_domain!(m::_Model, x, values)
     d = domain(values)
-    var = get_variable(m, x)
+    @info "discrete " values
+    m.variables[x] = Variable(d, get_cons_from_var(m, x))
+end
+
+function _set_domain!(m::_Model, x, a::Tuple, b::Tuple)
+    d = domain(a, b)
+    @info "interval " a b
+    m.variables[x] = Variable(d, get_cons_from_var(m, x))
+end
+
+function _set_domain!(m::_Model, x,r::R) where {R <: AbstractRange}
+    d = domain(r)
+    @info "range " r
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
@@ -428,3 +440,7 @@ function compute_costs(m, values, cons)
 end
 
 compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
+
+function update_domain!(m, x, d)
+    isempty(get_variable(m,x))
+end
