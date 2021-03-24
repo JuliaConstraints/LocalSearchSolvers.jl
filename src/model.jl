@@ -440,12 +440,10 @@ compute_objective(m, values; objective = 1) = apply(get_objective(m, objective),
 
 function update_domain!(m, x, d)
     if isempty(get_variable(m,x))
-        @info "empty domain update" d
         _set_domain!(m, x, ConstraintDomains.get_domain(d))
     else
         old_d = get_variable(m, x).domain
         new_d = intersect_domains(old_d, d)
-        @info "domain update" d old_d new_d
         _set_domain!(m, x, new_d)
     end
 end
