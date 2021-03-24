@@ -442,5 +442,11 @@ end
 compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
 
 function update_domain!(m, x, d)
-    isempty(get_variable(m,x))
+    if isempty(get_variable(m,x))
+        _set_domain!(m, x, d.domain)
+    else
+        old_d = get_variable(m, x).domain
+        new_d = intersect_domains(old_d, d)
+        _set_domain!(m, x, new_d)
+    end
 end
