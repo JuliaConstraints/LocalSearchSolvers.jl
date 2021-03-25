@@ -443,6 +443,7 @@ function update_domain!(m, x, d)
         _set_domain!(m, x, ConstraintDomains.get_domain(d))
     else
         old_d = get_variable(m, x).domain
+        old_d = typeof(d) != typeof(old_d) ? convert(typeof(d), old_d) : old_d
         new_d = intersect_domains(old_d, d)
         _set_domain!(m, x, new_d)
     end
