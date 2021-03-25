@@ -204,6 +204,7 @@ length_cons(m::_Model) = length(get_constraints(m))
 Draw a random value of `x` domain.
 """
 draw(m::_Model, x) = rand(get_variable(m, x))
+draw(m::_Model, x, n) = rand(get_variable(m, x), n)
 
 """
     constriction(m::M, x) where M <: Union{Model, AbstractSolver}

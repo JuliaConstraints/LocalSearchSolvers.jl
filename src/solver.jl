@@ -150,7 +150,7 @@ end
 @forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
 @forward AbstractSolver.state _best!, _best, _solution, get_error
 @forward AbstractSolver.state _last_improvement, _inc_last_improvement!
-@forward AbstractSolver.state _reset_last_improvement!, has_solution
+@forward AbstractSolver.state _reset_last_improvement!
 
 # Forward from options
 @forward AbstractSolver.options _verbose, _dynamic, dynamic!, _iteration, _iteration!
@@ -258,7 +258,8 @@ DOCSTRING
 """
 function _neighbours(s, x, dim = 0)
     if dim == 0
-        return get_domain(s, x)
+        is_discrete = typeof(get_variable(s, x).domain) <: ContinuousDomain
+        return is_discrete ? map(_ -> draw(s, x), 1:(length_vars(s)*length_cons(s))) : get_domain(s, x)
     else
         neighbours = Set{Int}()
         foreach(
@@ -290,6 +291,7 @@ function _move!(s, x::Int, dim::Int=0)
     old_vars_costs = copy(_vars_costs(s))
     old_cons_costs = copy(_cons_costs(s))
     for v in _neighbours(s, x, dim)
+        @debug "debug neighbour" v
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
@@ -539,3 +541,10 @@ function Base.empty!(s::MainSolver)
     s.state = state()
     empty!(s.subs)
 end
+
+has_solution(s::AbstractSolver, ::Val{:state}) = has_solution(s.state)
+has_solution(s::AbstractSolver, ::Val{:pool}) = has_solution(s.pool)
+function has_solution(s::AbstractSolver, ::Val{:both})
+    return has_solution(s, Val(:pool)) || has_solution(s, Val(:state))
+end
+has_solution(s::AbstractSolver, place = :both) = has_solution(s, Val(place))
