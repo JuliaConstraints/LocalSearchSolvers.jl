@@ -392,8 +392,12 @@ function _set_domain!(m::_Model, x, a::Tuple, b::Tuple)
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
-function _set_domain!(m::_Model, x,r::R) where {R <: AbstractRange}
-    d = domain(r)
+# function _set_domain!(m::_Model, x,r::R) where {R <: AbstractRange}
+#     d = domain(r)
+#     m.variables[x] = Variable(d, get_cons_from_var(m, x))
+# end
+
+function _set_domain!(m::_Model, x, d::D) where {D <: AbstractDomain}
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
@@ -440,10 +444,16 @@ compute_objective(m, values; objective = 1) = apply(get_objective(m, objective),
 
 function update_domain!(m, x, d)
     if isempty(get_variable(m,x))
+        old_d = get_variable(m, x).domain
         _set_domain!(m, x, d.domain)
     else
         old_d = get_variable(m, x).domain
-        new_d = intersect_domains(old_d, d)
+        are_continuous = typeof(d) <: ContinuousDomain && typeof(old_d) <: ContinuousDomain
+        new_d = if are_continuous
+            intersect_domains(old_d, d)
+        else
+            intersect_domains(convert(RangeDomain,old_d), convert(RangeDomain, d))
+        end
         _set_domain!(m, x, new_d)
     end
 end
