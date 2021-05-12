@@ -5,6 +5,7 @@ using CompositionalNetworks
 using ConstraintDomains
 using Constraints
 using Dictionaries
+using Distributed
 using Lazy
 
 # Exports internal
