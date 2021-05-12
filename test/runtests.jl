@@ -12,15 +12,15 @@ using Dictionaries
 using Test
 
 
-@testset "Distributed" begin
-    @test workers() == [2]
-end
+# @testset "Distributed" begin
+#     @test workers() == [2]
+# end
 
 
 
 const LS = LocalSearchSolvers
 
 @testset "LocalSearchSolvers.jl" begin
-    # include("internal.jl")
+    include("internal.jl")
     include("raw_solver.jl")
 end
