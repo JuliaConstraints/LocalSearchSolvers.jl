@@ -24,7 +24,7 @@ An internal solver type called by MetaSolver when multithreading is enabled.
 - `options::Options`: a ref to the options of the main solver
 """
 mutable struct _SubSolver <: AbstractSolver
-    meta_id::Tuple{Int, Int}
+    meta_local_id::Tuple{Int, Int}
     model::_Model
     options::Options
     pool::Pool
@@ -37,10 +37,13 @@ end
 Solver managed remotely by a MainSolver. Can manage its own set of local sub solvers.
 """
 mutable struct LeadSolver <: MetaSolver
-    meta_id::Tuple{Int, Int}
+    meta_local_id::Tuple{Int, Int}
     model::_Model
     options::Options
     pool::Pool
+    rc_report::RemoteChannel
+    rc_sol::RemoteChannel
+    rc_stop::RemoteChannel
     state::State
     strategies::MetaStrategy
     subs::Vector{_SubSolver}
@@ -62,31 +65,37 @@ mutable struct MainSolver <: MetaSolver
     model::_Model
     options::Options
     pool::Pool
-    remotes::Vector{LeadSolver} # TODO: make a fitting struct for remote LeadSolver
+    rc_report::RemoteChannel
+    rc_sol::RemoteChannel
+    rc_stop::RemoteChannel
+    remotes::Dict{Int, Future}
     state::State
     strategies::MetaStrategy
     subs::Vector{_SubSolver}
 end
 
-# make_id(::Int, id, ::Val{:lead}) = (id, 0)
+make_id(::Int, id, ::Val{:lead}) = (id, 0)
 make_id(meta, id, ::Val{:sub}) = (meta, id)
 
 """
     _SubSolver(ms::Solver, id)
 Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
 """
-# function solver(mlid, model, options, pool, strats, ::Val{:lead})
-#     return LeadSolver(mlid, model, options, pool, state(), strats, Vector{LeadSolver}())
-# end
+function solver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, strats, ::Val{:lead})
+    l_options = deepcopy(options)
+    _print_level!(l_options, :silent)
+    ss = Vector{_SubSolver}()
+    return LeadSolver(mlid, model, l_options, pool, rc_report, rc_sol, rc_stop, state(), strats, ss)
+end
 
-function solver(mlid, model, options, pool, strats, ::Val{:sub})
+function solver(mlid, model, options, pool, ::RemoteChannel, ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
     sub_options = deepcopy(options)
     _print_level!(sub_options, :silent)
     return _SubSolver(mlid, model, sub_options, pool, state(), strats)
 end
 function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
     mlid = make_id(meta_id(ms), id, Val(role))
-    return solver(mlid, ms.model, ms.options, pool, strats, Val(role))
+    return solver(mlid, ms.model, ms.options, pool, ms.rc_report, ms.rc_sol, ms.rc_stop, strats, Val(role))
 end
 
 """
@@ -124,9 +133,12 @@ function solver(model = model();
     strategies = MetaStrategy(model),
 )
     mlid = (1, 0)
-    remotes = Vector{LeadSolver}()
+    rc_report = RemoteChannel(() -> Channel{Nothing}(length(workers())))
+    rc_sol = RemoteChannel(() -> Channel{Pool}(length(workers())))
+    rc_stop = RemoteChannel(() -> Channel{Nothing}(1))
+    remotes = Dict{Int, Future}()
     subs = Vector{_SubSolver}()
-    return MainSolver(mlid, model, options, pool, remotes, state(), strategies, subs)
+    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), strategies, subs)
 end
 
 # Forwards from model field
@@ -324,9 +336,22 @@ end
 
 state!(s) = s.state = state(s) # TODO: add Pool
 
-_init!(s, ::Val{:global}) = !is_specialized(s) && _specialize(s) && specialize!(s)
-_init!(s, ::Val{:remote}) = @debug "TODO: implement distributed solvers (LeadSolver)"
+function _init!(s, ::Val{:global})
+    !is_specialized(s) && _specialize(s) && specialize!(s)
+    put!(s.rc_stop, nothing)
+    foreach(i -> put!(s.rc_report, nothing), workers())
+end
 _init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:nthreads())
+
+function _init!(s, ::Val{:remote})
+    for w in workers()
+        ls = remotecall(solver, w, s, w, :lead)
+        remote_do(_print_level!, w, fetch(ls), :silent)
+        remote_do(_threads!, w, fetch(ls), remotecall_fetch(Threads.nthreads, w))
+        push!(s.remotes, w => ls)
+    end
+end
+
 function _init!(s, ::Val{:local}; pool = pool())
     _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
     _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
@@ -346,10 +371,10 @@ function _init!(s::MainSolver)
     _init!(s, :local)
 end
 
-# function _init!(s::S) where {S <: MetaSolver}
-#     _init!(s, :meta)
-#     _init!(s, :local)
-# end
+function _init!(s::LeadSolver)
+    _init!(s, :meta)
+    _init!(s, :local)
+end
 
 _init!(s) = _init!(s, :local)
 
@@ -483,6 +508,45 @@ function status(s)
     end
 end
 
+function _solve!(s::LeadSolver)
+    sat = is_sat(s)
+    stop = Atomic{Bool}(false)
+    _init!(s)
+    @threads for id in 1:min(nthreads(), _threads(s))
+        if id == 1
+            while isready(s.rc_stop)
+                _step!(s) && sat && break
+                best_sub = _check_subs(s)
+                if best_sub > 0
+                    bs = s.subs[best_sub]
+                    sat && (_values!(s, _values(bs)); break)
+                    s.pool = bs.pool
+                end
+            end
+            atomic_or!(stop, true)
+        else
+            _solve!(s.subs[id - 1], stop)
+        end
+    end
+    isready(s.rc_stop) && take!(s.rc_stop)
+    @warn "before put"
+    put!(s.rc_sol, s.pool)
+    @warn "after put"
+    # take!(s.rc_report)
+    @warn s.rc_report s.rc_sol isready(s.rc_report) isready(s.rc_sol)
+end
+
+function update_pool!(s, pool)
+    is_empty(pool) && return nothing
+    if is_sat(s) && !has_solution(s) && has_solution(pool)
+        @info solution(s) best_value(s) best_value(pool)
+        s.pool = pool
+        @info solution(s)
+    elseif best_value(s) > best_value(pool)
+        s.pool = pool
+    end
+end
+
 """
     solve!(s; max_iteration=1000, verbose::Bool=false)
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -502,6 +566,9 @@ function solve!(s)
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+    for (w, ls) in s.remotes
+        remote_do(_solve!, w, fetch(ls))
+    end
     @threads for id in 1:min(nthreads(), _threads(s))
         if id == 1
             while iter < _iteration(s) && time() - time_start < _time_limit(s)
@@ -521,12 +588,18 @@ function solve!(s)
             _solve!(s.subs[id - 1], stop)
         end
     end
+    isready(s.rc_stop) && take!(s.rc_stop)
+    while isready(s.rc_report)
+        wait(s.rc_sol)
+        t = take!(s.rc_sol)
+        update_pool!(s, t)
+        take!(s.rc_report)
+    end
     return status(s)
 end
 
 """
     solution(s)
-tabu
 Return the only/best known solution of a satisfaction/optimization model.
 """
 solution(s) = is_sat(s) ? _values(s) : _solution(s)

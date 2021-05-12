@@ -217,7 +217,7 @@ _threads(options) = options.threads
 
 DOCSTRING
 """
-# _threads!(options, threads) = options.threads = threads
+_threads!(options, threads) = options.threads = threads
 
 """
     _time_limit(options) = begin
