@@ -55,7 +55,7 @@ mutable struct Options
         tabu_local=0,
         tabu_delta=0.0,
         threads=typemax(0),
-        time_limit= Inf,
+        time_limit= 60, # seconds
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
         " and objectives types. Dynamic elements that add a new type will raise an error!"
