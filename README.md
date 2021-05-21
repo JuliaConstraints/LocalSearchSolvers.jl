@@ -46,11 +46,11 @@ Wanted features list:
     - [ ] partial/probabilistic restart (in coordination with perturbation strategies)
   - [ ] *Selection* of variables: roulette selection, multi-variables, meta-variables (cf subproblem)
   - [ ] *Solution(s)*: management of pool, best versus diverse
-  - *Tabu*
+  - [x] *Tabu*
     - [x] No Tabu
     - [x] Weak-tabu
     - [x] Keen-tabu
-  - *Termination*: when, why, how, interactive, results storage (remote)
+  - [ ] *Termination*: when, why, how, interactive, results storage (remote)
 - **Featured strategies**
   - [ ] Adaptive search
   - [ ] Extremal optimization
