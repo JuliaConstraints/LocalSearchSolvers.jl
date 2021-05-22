@@ -18,3 +18,16 @@ add_time!(stamps, ts, ::Val{5}) = stamps.ts5 += ts
 add_time!(stamps, ts, ::Val{6}) = stamps.ts6 += ts
 
 add_time!(stamps, i) = add_time!(stamps, time(), Val(i))
+
+function time_info(stamps)
+    info = Dict([
+        :model => stamps.ts1,
+        :init => stamps.ts3 - stamps.ts2,
+        :remote_start => stamps.ts4 - stamps.ts3,
+        :local_run => stamps.ts5 - stamps.ts4,
+        :remote_stop => stamps.ts6 - stamps.ts5,
+        :total_run => stamps.ts6 - stamps.ts1,
+        :model_and_run => stamps.ts6,
+    ])
+    return info
+end

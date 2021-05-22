@@ -35,6 +35,7 @@ set_time_limit_sec(model, 5.0)
 """
 mutable struct Options
     dynamic::Bool
+    info_path::String
     iteration::Union{Int,Float64}
     print_level::Symbol
     solutions::Int
@@ -47,6 +48,7 @@ mutable struct Options
 
     function Options(;
         dynamic=false,
+        info_path="",
         iteration=10000,
         print_level=:minimal,
         solutions=1,
@@ -71,6 +73,7 @@ mutable struct Options
 
         new(
             dynamic,
+            info_path,
             iteration,
             print_level,
             solutions,
@@ -106,6 +109,20 @@ DOCSTRING
 DOCSTRING
 """
 # _dynamic!(options, dynamic) = options.dynamic = dynamic
+
+"""
+    _info_path(options, path)
+
+DOCSTRING
+"""
+_info_path(options) = options.info_path
+
+"""
+    _info_path!(options, iterations) = begin
+
+DOCSTRING
+"""
+_info_path!(options, path) = options.info_path = path
 
 """
     _iteration(options) = begin
