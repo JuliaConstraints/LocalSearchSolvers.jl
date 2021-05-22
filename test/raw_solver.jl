@@ -56,10 +56,12 @@ end
         0  7  0  0  0  0  0  5  3
     ]))
 
-    s = solver(sudoku(3; start = sudoku_instance, modeler = :raw); options = Options(print_level = :minimal, iteration = 100000))
+    s = solver(sudoku(3; start = sudoku_instance, modeler = :raw); options = Options(print_level = :minimal, iteration = 100000, info_path = "info.json"))
     display(Dictionary(1:length(sudoku_instance), sudoku_instance))
     solve!(s)
     display(solution(s))
+    @info time_info(s)
+    rm("info.json")
 end
 
 @testset "Raw solver: golomb" begin

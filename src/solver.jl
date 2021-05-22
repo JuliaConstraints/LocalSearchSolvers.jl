@@ -172,6 +172,7 @@ end
 @forward AbstractSolver.options _specialize, _specialize!, _tabu_time, _tabu_time!
 @forward AbstractSolver.options _tabu_local, _tabu_local!, _tabu_delta, _tabu_delta!
 @forward AbstractSolver.options _threads, _threads!, _time_limit, _time_limit!
+@forward AbstractSolver.options _info_path, _info_path!
 
 # Forwards from pool (of solutions)
 @forward AbstractSolver.pool best_config, best_value, best_values
@@ -182,7 +183,7 @@ end
 @forward AbstractSolver.strategies length_tabu, insert_tabu!, empty_tabu!, tabu_list
 
 # Forwards from TimeStamps
-@forward MainSolver.time_stamps add_time!
+@forward MainSolver.time_stamps add_time!, time_info
 
 """
     specialize!(s) = begin
@@ -545,6 +546,11 @@ function update_pool!(s, pool)
     end
 end
 
+function post_process(s)
+    path = _info_path(s)
+    !isempty(path) && write(path, JSON.json(time_info(s)))
+end
+
 """
     solve!(s; max_iteration=1000, verbose::Bool=false)
 Run the solver until a solution is found or `max_iteration` is reached.
@@ -599,6 +605,7 @@ function solve!(s)
         take!(s.rc_report)
     end
     add_time!(s, 6)
+    post_process(s)
     return status(s)
 end
 

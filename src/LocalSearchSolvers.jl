@@ -6,6 +6,7 @@ using ConstraintDomains
 using Constraints
 using Dictionaries
 using Distributed
+using JSON
 using Lazy
 
 # Exports internal
@@ -27,7 +28,7 @@ export o_dist_extrema, o_mincut
 
 # Exports Solver
 export solver, solve!, specialize, specialize!, Options, get_values, best_values
-export best_value
+export best_value, time_info
 
 # Include utils
 include("utils.jl")
