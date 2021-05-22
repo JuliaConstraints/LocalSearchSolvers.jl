@@ -181,6 +181,9 @@ end
 @forward AbstractSolver.strategies decrease_tabu!, delete_tabu!, decay_tabu!
 @forward AbstractSolver.strategies length_tabu, insert_tabu!, empty_tabu!, tabu_list
 
+# Forwards from TimeStamps
+@forward MainSolver.time_stamps add_time!
+
 """
     specialize!(s) = begin
 
@@ -556,16 +559,20 @@ solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
 function solve!(s)
+    add_time!(s, 1)
     time_start = time()
     iter = 0
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+    add_time!(s, 2)
     @threads for id in 1:min(nthreads(), _threads(s))
         if id == 1
+            add_time!(s, 3)
             for (w, ls) in s.remotes
                 remote_do(_solve!, w, fetch(ls))
             end
+            add_time!(s, 4)
             while iter < _iteration(s) && time() - time_start < _time_limit(s)
                 iter += 1
                 _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
@@ -583,6 +590,7 @@ function solve!(s)
             _solve!(s.subs[id - 1], stop)
         end
     end
+    add_time!(s, 5)
     isready(s.rc_stop) && take!(s.rc_stop)
     while isready(s.rc_report)
         wait(s.rc_sol)
@@ -590,7 +598,7 @@ function solve!(s)
         update_pool!(s, t)
         take!(s.rc_report)
     end
-    @info "Times" s.time_stamps
+    add_time!(s, 6)
     return status(s)
 end
 
