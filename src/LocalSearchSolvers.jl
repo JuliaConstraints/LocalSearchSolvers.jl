@@ -59,6 +59,7 @@ include("strategy.jl") # meta strategy methods and structures
 
 # Include solvers
 include("options.jl")
+include("time_stamps.jl")
 include("solver.jl")
 
 # Include usual objectives

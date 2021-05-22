@@ -38,6 +38,9 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: O
 
     # Best known bound
     best_bound::Union{Nothing,Float64}
+
+    # Time of construction (seconds) since epoch
+    time_stamp::Float64
 end
 
 """
@@ -62,7 +65,7 @@ function model(;
 
     specialized = Ref(false)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind, best_bound)
+    _Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind, best_bound, time())
 end
 
 """
@@ -170,6 +173,12 @@ Access the variables restricted by constraint `c`.
 get_vars_from_cons(m::_Model, c) = _get_vars(get_constraint(m, c))
 
 """
+    get_time_stamp(m::M) where M <: Union{Model, AbstractSolver}
+Access the time (since epoch) when the model was created. This time stamp is for internal performance measurement.
+"""
+get_time_stamp(m::_Model) = m.time_stamp
+
+"""
     length_var(m::M, x) where M <: Union{Model, AbstractSolver}
 Return the domain length of variable `x`.
 """
@@ -236,7 +245,10 @@ Add `x` to the constraint `c` list of restricted variables.
 """
 add_var_to_cons!(m::_Model, c, x) = _add!(get_constraint(m, c), x)
 
-"""
+"""    mts = - get_time_stamp(model)
+return TimeStamps(mts, mts, mts, mts, mts, mts, mts)
+end
+
     add!(m::M, x) where M <: Union{Model, AbstractSolver}
     add!(m::M, c) where M <: Union{Model, AbstractSolver}
     add!(m::M, o) where M <: Union{Model, AbstractSolver}
@@ -361,7 +373,7 @@ function specialize(m::_Model)
 
     specialized = Ref(true)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m), _best_bound(m))
+    _Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m), _best_bound(m), get_time_stamp(m))
 end
 
 """

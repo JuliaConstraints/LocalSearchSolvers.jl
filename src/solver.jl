@@ -72,6 +72,7 @@ mutable struct MainSolver <: MetaSolver
     state::State
     strategies::MetaStrategy
     subs::Vector{_SubSolver}
+    time_stamps::TimeStamps
 end
 
 make_id(::Int, id, ::Val{:lead}) = (id, 0)
@@ -138,7 +139,8 @@ function solver(model = model();
     rc_stop = RemoteChannel(() -> Channel{Nothing}(1))
     remotes = Dict{Int, Future}()
     subs = Vector{_SubSolver}()
-    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), strategies, subs)
+    ts = TimeStamps(model)
+    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), strategies, subs, ts)
 end
 
 # Forwards from model field
@@ -588,6 +590,7 @@ function solve!(s)
         update_pool!(s, t)
         take!(s.rc_report)
     end
+    @info "Times" s.time_stamps
     return status(s)
 end
 
