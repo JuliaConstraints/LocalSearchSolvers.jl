@@ -303,7 +303,6 @@ function _move!(s, x::Int, dim::Int=0)
     old_vars_costs = copy(_vars_costs(s))
     old_cons_costs = copy(_cons_costs(s))
     for v in _neighbours(s, x, dim)
-        @debug "debug neighbour" v
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
@@ -535,9 +534,7 @@ end
 function update_pool!(s, pool)
     is_empty(pool) && return nothing
     if is_sat(s) && !has_solution(s) && has_solution(pool)
-        @debug solution(s) best_value(s) best_value(pool)
         s.pool = pool
-        @debug solution(s)
     elseif best_value(s) > best_value(pool)
         s.pool = pool
     end
@@ -562,25 +559,17 @@ function solve!(s)
     sat = is_sat(s)
     stop = Atomic{Bool}(false)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
-    @debug "Mark 1"
-    @debug "Mark 2" nthreads() _threads(s)
     @threads for id in 1:min(nthreads(), _threads(s))
-        @debug "Mark 2.1"
         if id == 1
-            @debug "Mark 2.2" workers() s.remotes
             for (w, ls) in s.remotes
                 remote_do(_solve!, w, fetch(ls))
             end
             while iter < _iteration(s) && time() - time_start < _time_limit(s)
-                @debug "Mark 2.3.1"
                 iter += 1
                 _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-                @debug "Mark 2.3.2"
                 _step!(s) && sat && break
-                @debug "Mark 2.3.3"
                 _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
                 best_sub = _check_subs(s)
-                @debug "Mark 2.3.4"
                 if best_sub > 0
                     bs = s.subs[best_sub]
                     sat && (_values!(s, _values(bs)); break)
@@ -589,16 +578,12 @@ function solve!(s)
             end
             atomic_or!(stop, true)
         else
-            @debug "Mark 2.4"
             _solve!(s.subs[id - 1], stop)
         end
     end
-    @debug "Mark 3"
     isready(s.rc_stop) && take!(s.rc_stop)
     while isready(s.rc_report)
-        @debug "mark 4"
         wait(s.rc_sol)
-        @debug "mark 5"
         t = take!(s.rc_sol)
         update_pool!(s, t)
         take!(s.rc_report)
