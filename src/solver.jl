@@ -507,9 +507,6 @@ _check_subs(ss::_SubSolver) = 0 # Dummy method
 function _check_subs(s)
     if is_sat(s)
         for (id, ss) in enumerate(s.subs)
-            if has_solution(ss)
-                @warn "returning id" ss.meta_local_id id ss.pool
-            end
             has_solution(ss) && return id
         end
     else
@@ -529,14 +526,11 @@ end
     stop_while_loop()
 Check the stop conditions of the `solve!` while inner loop.
 """
-stop_while_loop(::_SubSolver, stop, ::Int) = !(stop[])
-stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int) = isready(s.rc_stop)
-function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter)
-    remote_condition = !isready(s.rc_stop) # Add ! when MainSolver is passive
-    if !remote_condition
-        @warn "Remote stop is ready"
-    end
-    local_condition = iter < _iteration(s) && time() - get_time(s, 1) < _time_limit(s)
+stop_while_loop(::_SubSolver, stop, ::Int, ::Float64) = !(stop[])
+stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int, ::Float64) = isready(s.rc_stop)
+function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
+    remote_condition = isready(s.rc_stop) # Add ! when MainSolver is passive
+    local_condition = iter < _iteration(s) && time() - start_time < _time_limit(s)
     return remote_condition && local_condition
 end
 
@@ -544,8 +538,8 @@ end
     solve_while_loop!(s, )
 Search the space of configurations.
 """
-function solve_while_loop!(s, stop, sat, iter)
-    while stop_while_loop(s, stop, iter)
+function solve_while_loop!(s, stop, sat, iter, st)
+    while stop_while_loop(s, stop, iter, st)
         iter += 1
         _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
         _step!(s) && sat && break
@@ -554,7 +548,6 @@ function solve_while_loop!(s, stop, sat, iter)
         if best_sub > 0
             bs = s.subs[best_sub]
             s.pool = deepcopy(bs.pool)
-            @info best_values(s) s.meta_local_id
             sat && break
         end
     end
@@ -576,14 +569,14 @@ end
     solve_for_loop!(solver, stop, sat, iter)
 First loop in the solving process that starts `LeadSolver`s from the `MainSolver`, and `_SubSolver`s from each `MetaSolver`.
 """
-solve_for_loop!(solver, stop, sat, iter) = solve_while_loop!(solver, stop, sat, iter)
-function solve_for_loop!(s::MetaSolver, stop, sat, iter)
+solve_for_loop!(solver, stop, sat, iter, st) = solve_while_loop!(solver, stop, sat, iter, st)
+function solve_for_loop!(s::MetaSolver, stop, sat, iter, st)
     @threads for id in 1:min(nthreads(), _threads(s))
         if id == 1
             add_time!(s, 3) # only used by MainSolver
             remote_dispatch!(s) # only used by MainSolver
             add_time!(s, 4) # only used by MainSolver
-            solve_while_loop!(s, stop, sat, iter)
+            solve_while_loop!(s, stop, sat, iter, st)
             atomic_or!(stop, true)
         else
             solve!(s.subs[id - 1], stop)
@@ -592,7 +585,6 @@ function solve_for_loop!(s::MetaSolver, stop, sat, iter)
 end
 
 function update_pool!(s, pool)
-    @warn "pool" pool
     is_empty(pool) && return nothing
     if is_sat(s) || best_value(s) > best_value(pool)
         s.pool = deepcopy(pool)
@@ -605,11 +597,6 @@ Fetch the pool of solutions from `LeadSolvers` and merge it into the `MainSolver
 """
 remote_stop!(::AbstractSolver) = nothing
 function remote_stop!(s::LeadSolver)
-    isready(s.rc_stop) && take!(s.rc_stop)
-    has_solution(s) ? put!(s.rc_sol, s.pool) : take!(s.rc_report)
-end
-function remote_stop!(s::MainSolver)
-    wait(s.rc_sol) # uncomment when MainSolver is passive
     isready(s.rc_stop) && take!(s.rc_stop)
     sat = is_sat(s)
     if !sat || !has_solution(s)
@@ -637,7 +624,7 @@ function post_process(s::MainSolver)
             :time => time_info(s),
             :type => sat ? "Satisfaction" : "Optimization",
         )
-        !sat && push!(info, :value => best_value(s))
+        !sat && has_solution(s) && push!(info, :value => best_value(s))
         write(path, JSON.json(info))
     end
 end
@@ -656,20 +643,15 @@ solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
 function solve!(s, stop = Atomic{Bool}(false))
+    start_time = time()
     add_time!(s, 1) # only used by MainSolver
     iter = 0 # only used by MainSolver
     sat = is_sat(s)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
     add_time!(s, 2) # only used by MainSolver
-    solve_for_loop!(s, stop, sat, iter)
+    solve_for_loop!(s, stop, sat, iter, start_time)
     add_time!(s, 5) # only used by MainSolver
-    if typeof(s) == MainSolver && has_solution(s)
-        @info best_values(s) s.meta_local_id
-    end
     remote_stop!(s)
-    if has_solution(s) # only used by MetaSolver
-        @warn best_values(s) s.meta_local_id
-    end
     add_time!(s, 6) # only used by MainSolver
     post_process(s) # only used by MainSolver
     return status(s)
