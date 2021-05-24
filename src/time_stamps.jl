@@ -19,6 +19,16 @@ add_time!(stamps, ts, ::Val{6}) = stamps.ts6 += ts
 
 add_time!(stamps, i) = add_time!(stamps, time(), Val(i))
 
+get_time(stamps, ::Val{1}) = stamps.ts1
+get_time(stamps, ::Val{2}) = stamps.ts2
+get_time(stamps, ::Val{3}) = stamps.ts3
+get_time(stamps, ::Val{4}) = stamps.ts4
+get_time(stamps, ::Val{5}) = stamps.ts5
+get_time(stamps, ::Val{6}) = stamps.ts6
+
+get_time(stamps, i) = get_time(stamps, Val(i))
+
+
 function time_info(stamps)
     info = Dict([
         :model => stamps.ts1,
