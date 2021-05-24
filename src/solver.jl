@@ -7,6 +7,8 @@ abstract type AbstractSolver end
 meta_id(s) = s.meta_local_id[1]
 # local_id(s) = s.meta_local_id[2]
 
+add_time!(::AbstractSolver, i) = nothing
+
 """
 Abstract type to encapsulate all solver types that manages other solvers.
 """
@@ -259,6 +261,7 @@ function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
     _compute_costs!(s, cons_lst=cons_lst)
     if get_error(s) == 0.0
         _optimizing(s) && _compute_objective!(s, o)
+        is_sat(s) && (s.pool = pool(s.state.configuration))
         return true
     end
     return false
@@ -524,8 +527,8 @@ function _solve!(s::LeadSolver)
                 best_sub = _check_subs(s)
                 if best_sub > 0
                     bs = s.subs[best_sub]
-                    sat && (_values!(s, _values(bs)); break)
                     s.pool = bs.pool
+                    sat && break
                 end
             end
             atomic_or!(stop, true)
@@ -535,6 +538,7 @@ function _solve!(s::LeadSolver)
     end
     isready(s.rc_stop) && take!(s.rc_stop)
     put!(s.rc_sol, s.pool)
+    @warn solution(s)
 end
 
 function update_pool!(s, pool)
@@ -548,7 +552,84 @@ end
 
 function post_process(s)
     path = _info_path(s)
-    !isempty(path) && write(path, JSON.json(time_info(s)))
+    if !isempty(path)
+        @warn (has_solution(s) ? solution(s) : nothing)
+        info = Dict(
+            :time => time_info(s),
+            :solution => has_solution(s) ? solution(s) : nothing,
+        )
+        write(path, JSON.json(info))
+    end
+end
+
+"""
+    solve_while_loop!(s, )
+Search the space of configurations.
+"""
+function solve_while_loop!(s, stop, sat, ::Int)
+    while !(stop[])
+        _step!(s) && sat && break
+    end
+end
+function solve_while_loop!(s::MetaSolver, stop, sat, iter)
+    while iter < _iteration(s) && time() - time_start < _time_limit(s)
+        iter += 1
+        _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+        _step!(s) && sat && break
+        _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+        best_sub = _check_subs(s)
+        if best_sub > 0
+            bs = s.subs[best_sub]
+            s.pool = bs.pool
+            sat && break
+        end
+    end
+    atomic_or!(stop, true)
+end
+
+
+"""
+    remote_dispatch!(solver)
+Starts the `LeadSolver`s attached to the `MainSolver`.
+"""
+remote_dispatch!(solver) = nothing
+function remote_dispatch!(s::MainSolver)
+    for (w, ls) in s.remotes
+        remote_do(solve!, w, fetch(ls))
+    end
+end
+
+"""
+    solve_for_loop!(solver, stop, sat, iter)
+First loop in the solving process that starts `LeadSolver`s from the `MainSolver`, and `_SubSolver`s from each `MetaSolver`.
+"""
+solve_for_loop!(solver, stop, sat, iter) = solve_while_loop!(solver, stop, sat, iter)
+function solve_for_loop!(s::MetaSolver, stop, sat, iter)
+    @threads for id in 1:min(nthreads(), _threads(s))
+        if id == 1
+            add_time!(s, 3) # only used by MainSolver
+            remote_dispatch!(s) # only used by MainSolver
+            add_time!(s, 4) # only used by MainSolver
+            solve_while_loop!(s, stop, sat, iter)
+        else
+            solve!(s.subs[id - 1], stop)
+        end
+    end
+end
+
+"""
+    fetch_leaders!(solver)
+Fetch the pool of solutions from `LeadSolvers` and merge it into the `MainSolver`.
+"""
+fetch_leaders!(::AbstractSolver) = nothing
+function fetch_leaders!(s::MainSolver)
+    isready(s.rc_stop) && take!(s.rc_stop)
+    while isready(s.rc_report)
+        wait(s.rc_sol)
+        t = take!(s.rc_sol)
+        update_pool!(s, t)
+        take!(s.rc_report)
+    end
 end
 
 """
@@ -564,50 +645,63 @@ solve!(s)
 solve!(s, max_iteration = Inf, verbose = true)
 ```
 """
-function solve!(s)
-    add_time!(s, 1)
-    time_start = time()
-    iter = 0
+function solve!(s, stop = Atomic{Bool}(false))
+    add_time!(s, 1) # only used by MainSolver
+    iter = 0 # only used by MainSolver
     sat = is_sat(s)
-    stop = Atomic{Bool}(false)
     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
-    add_time!(s, 2)
-    @threads for id in 1:min(nthreads(), _threads(s))
-        if id == 1
-            add_time!(s, 3)
-            for (w, ls) in s.remotes
-                remote_do(_solve!, w, fetch(ls))
-            end
-            add_time!(s, 4)
-            while iter < _iteration(s) && time() - time_start < _time_limit(s)
-                iter += 1
-                _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-                _step!(s) && sat && break
-                _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
-                best_sub = _check_subs(s)
-                if best_sub > 0
-                    bs = s.subs[best_sub]
-                    sat && (_values!(s, _values(bs)); break)
-                    s.pool = bs.pool
-                end
-            end
-            atomic_or!(stop, true)
-        else
-            _solve!(s.subs[id - 1], stop)
-        end
-    end
-    add_time!(s, 5)
-    isready(s.rc_stop) && take!(s.rc_stop)
-    while isready(s.rc_report)
-        wait(s.rc_sol)
-        t = take!(s.rc_sol)
-        update_pool!(s, t)
-        take!(s.rc_report)
-    end
-    add_time!(s, 6)
-    post_process(s)
-    return status(s)
+    add_time!(s, 2) # only used by MainSolver
+    solve_for_loop!(s, stop, sat, iter)
+    add_time!(s, 5) # only used by MainSolver
+    fetch_leaders!(s) # only used by MainSolver
+    add_time!(s, 6) # only used by MainSolver
+    post_process(s) # only used by MainSolver
+    return status
 end
+# function solve!(s)
+#     add_time!(s, 1) # act only for MainSolver
+#     time_start = time()
+#     iter = 0
+#     sat = is_sat(s)
+#     stop = Atomic{Bool}(false)
+#     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+#     add_time!(s, 2)
+#     @threads for id in 1:min(nthreads(), _threads(s))
+#         if id == 1
+#             add_time!(s, 3)
+#             for (w, ls) in s.remotes
+#                 remote_do(_solve!, w, fetch(ls))
+#             end
+#             add_time!(s, 4)
+#             while iter < _iteration(s) && time() - time_start < _time_limit(s)
+#                 iter += 1
+#                 _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+#                 _step!(s) && sat && break
+#                 _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+#                 best_sub = _check_subs(s)
+#                 if best_sub > 0
+#                     bs = s.subs[best_sub]
+#                     s.pool = bs.pool
+#                     sat && break
+#                 end
+#             end
+#             atomic_or!(stop, true)
+#         else
+#             _solve!(s.subs[id - 1], stop)
+#         end
+#     end
+#     add_time!(s, 5)
+#     isready(s.rc_stop) && take!(s.rc_stop)
+#     while isready(s.rc_report)
+#         wait(s.rc_sol)
+#         t = take!(s.rc_sol)
+#         update_pool!(s, t)
+#         take!(s.rc_report)
+#     end
+#     add_time!(s, 6)
+#     post_process(s)
+#     return status(s)
+# end
 
 """
     solution(s)
