@@ -1,7 +1,7 @@
 
 using Distributed
 # Add a process with two threads
-# addprocs(1; exeflags = "-t 2")
+addprocs(1; exeflags = "-t 5")
 # addprocs(1)
 
 import ConstraintDomains

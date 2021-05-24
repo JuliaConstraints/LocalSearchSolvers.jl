@@ -7,6 +7,7 @@ abstract type AbstractSolver end
 meta_id(s) = s.meta_local_id[1]
 # local_id(s) = s.meta_local_id[2]
 
+# Dummy method to (not) add a TimeStamps to a solver
 add_time!(::AbstractSolver, i) = nothing
 
 """
@@ -177,7 +178,7 @@ end
 @forward AbstractSolver.options _info_path, _info_path!
 
 # Forwards from pool (of solutions)
-@forward AbstractSolver.pool best_config, best_value, best_values
+@forward AbstractSolver.pool best_config, best_value, best_values, has_solution
 
 # Forwards from strategies
 @forward AbstractSolver.strategies check_restart!
@@ -188,15 +189,33 @@ end
 @forward MainSolver.time_stamps add_time!, time_info, get_time
 
 """
-    specialize!(s) = begin
+    empty!(s::Solver)
 
-DOCSTRING
+"""
+function Base.empty!(s::MainSolver)
+    empty!(s.model)
+    s.state = state()
+    empty!(s.subs)
+    # TODO: empty remote solvers
+end
+
+"""
+    specialize!(solver)
+Replace the model of `solver` by one with specialized types (variables, constraints, objectives).
 """
 specialize!(s) = s.model = specialize(s.model)
 
+function status(s)
+    e = get_error(s)
+    if e == 0.0 # make tolerance
+        return is_sat(s) ? :Solved : :LocalOptimum
+    else
+        return :Infeasible
+    end
+end
+
 """
     _draw!(s)
-
 Draw a random (re-)starting configuration.
 """
 function _draw!(s)
@@ -258,7 +277,7 @@ Compute the objective `o`'s value if `s` is satisfied and return the current `er
 - `cons_lst`: list of targeted constraints, if empty compute for the whole set
 """
 function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
-    _compute_costs!(s, cons_lst=cons_lst)
+    _compute_costs!(s; cons_lst)
     if get_error(s) == 0.0
         _optimizing(s) && _compute_objective!(s, o)
         is_sat(s) && (s.pool = pool(s.state.configuration))
@@ -293,53 +312,6 @@ function _neighbours(s, x, dim = 0)
         )
         return delete!(neighbours, x)
     end
-end
-
-"""
-    _move!(s, x::Int, dim::Int = 0)
-
-Perform an improving move in `x` neighbourhood if possible.
-
-# Arguments:
-- `s`: a solver of type S <: AbstractSolver
-- `x`: selected variable id
-- `dim`: describe the dimension of the considered neighbourhood
-"""
-function _move!(s, x::Int, dim::Int=0)
-    best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
-    tabu = true # unless proved otherwise, this variable is now tabu
-    best_cost = old_cost = get_error(s)
-    old_vars_costs = copy(_vars_costs(s))
-    old_cons_costs = copy(_cons_costs(s))
-    for v in _neighbours(s, x, dim)
-        dim == 0 && v == old_v && continue
-        dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
-
-        _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
-
-        cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
-        _compute!(s, cons_lst=cons_x_v)
-
-        cost = get_error(s)
-        if cost < best_cost
-            _verbose(s, "cost = $cost < $best_cost")
-            tabu = false
-            best_cost = cost
-            dim == 0 ? best_values = [v] : best_swap = [v]
-        elseif cost == best_cost
-            _verbose(s, "cost = best_cost = $cost")
-            push!(dim == 0 ? best_values : best_swap, v)
-        end
-
-        # _verbose(s, "")
-        _vars_costs!(s, copy(old_vars_costs))
-        _cons_costs!(s, copy(old_cons_costs))
-        set_error!(s, old_cost)
-
-        # swap/change back the value of x (and y/)
-        dim == 0 ? _value!(s, x, old_v) : _swap_value!(s, x, v)
-    end
-    return best_values, best_swap, tabu
 end
 
 state!(s) = s.state = state(s) # TODO: add Pool
@@ -418,6 +390,59 @@ function _select_worse(s)
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
+
+"""
+    _move!(s, x::Int, dim::Int = 0)
+
+Perform an improving move in `x` neighbourhood if possible.
+
+# Arguments:
+- `s`: a solver of type S <: AbstractSolver
+- `x`: selected variable id
+- `dim`: describe the dimension of the considered neighbourhood
+"""
+function _move!(s, x::Int, dim::Int=0)
+    best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
+    tabu = true # unless proved otherwise, this variable is now tabu
+    best_cost = old_cost = get_error(s)
+    old_vars_costs = copy(_vars_costs(s))
+    old_cons_costs = copy(_cons_costs(s))
+    for v in _neighbours(s, x, dim)
+        dim == 0 && v == old_v && continue
+        dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
+
+        _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
+
+        cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
+        _compute!(s, cons_lst=cons_x_v)
+
+        cost = get_error(s)
+        if cost < best_cost
+            _verbose(s, "cost = $cost < $best_cost")
+            tabu = false
+            best_cost = cost
+            dim == 0 ? best_values = [v] : best_swap = [v]
+        elseif cost == best_cost
+            _verbose(s, "cost = best_cost = $cost")
+            push!(dim == 0 ? best_values : best_swap, v)
+        end
+
+        if cost == 0 && is_sat(s)
+            s.pool == pool(s.state.configuration)
+            return best_values, best_swap, tabu
+        end
+
+        # _verbose(s, "")
+        _vars_costs!(s, copy(old_vars_costs))
+        _cons_costs!(s, copy(old_cons_costs))
+        set_error!(s, old_cost)
+
+        # swap/change back the value of x (and y/)
+        dim == 0 ? _value!(s, x, old_v) : _swap_value!(s, x, v)
+    end
+    return best_values, best_swap, tabu
+end
+
 """
     _step!(s)
 
@@ -478,10 +503,14 @@ Check if any subsolver of a main solver `s`, for
 - *Satisfaction*, has a solution, then return it, resume the run otherwise
 - *Optimization*, has a better solution, then assign it to its internal state
 """
+_check_subs(ss::_SubSolver) = 0 # Dummy method
 function _check_subs(s)
     if is_sat(s)
         for (id, ss) in enumerate(s.subs)
-            get_error(ss) == 0.0 && return id
+            if has_solution(ss)
+                @warn "returning id" ss.meta_local_id id ss.pool
+            end
+            has_solution(ss) && return id
         end
     else
         for (id, ss) in enumerate(s.subs)
@@ -494,38 +523,7 @@ function _check_subs(s)
     return 0
 end
 
-function status(s)
-    e = get_error(s)
-    if e == 0.0 # make tolerance
-        return is_sat(s) ? :Solved : :LocalOptimum
-    else
-        return :Infeasible
-    end
-end
 
-function update_pool!(s, pool)
-    is_empty(pool) && return nothing
-    if is_sat(s) && !has_solution(s) && has_solution(pool)
-        s.pool = pool
-    elseif best_value(s) > best_value(pool)
-        s.pool = pool
-    end
-end
-
-post_process(s) = nothing
-function post_process(s::MainSolver)
-    path = _info_path(s)
-    if !isempty(path)
-        @warn (has_solution(s) ? solution(s) : nothing)
-        info = Dict(
-            :time => time_info(s),
-            :solution => has_solution(s) ? solution(s) : nothing,
-        )
-        write(path, JSON.json(info))
-    end
-end
-
-_check_subs(ss::_SubSolver) = 0
 
 """
     stop_while_loop()
@@ -534,7 +532,12 @@ Check the stop conditions of the `solve!` while inner loop.
 stop_while_loop(::_SubSolver, stop, ::Int) = !(stop[])
 stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int) = isready(s.rc_stop)
 function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter)
-    return iter < _iteration(s) && time() - get_time(s, 1) < _time_limit(s)
+    remote_condition = !isready(s.rc_stop) # Add ! when MainSolver is passive
+    if !remote_condition
+        @warn "Remote stop is ready"
+    end
+    local_condition = iter < _iteration(s) && time() - get_time(s, 1) < _time_limit(s)
+    return remote_condition && local_condition
 end
 
 """
@@ -550,7 +553,8 @@ function solve_while_loop!(s, stop, sat, iter)
         best_sub = _check_subs(s)
         if best_sub > 0
             bs = s.subs[best_sub]
-            s.pool = bs.pool
+            s.pool = deepcopy(bs.pool)
+            @info best_values(s) s.meta_local_id
             sat && break
         end
     end
@@ -561,11 +565,7 @@ end
     remote_dispatch!(solver)
 Starts the `LeadSolver`s attached to the `MainSolver`.
 """
-remote_dispatch!(::AbstractSolver) = nothing
-function remote_dispatch!(s::LeadSolver)
-    isready(s.rc_stop) && take!(s.rc_stop)
-    put!(s.rc_sol, s.pool)
-end
+remote_dispatch!(::AbstractSolver) = nothing # dummy method
 function remote_dispatch!(s::MainSolver)
     for (w, ls) in s.remotes
         remote_do(solve!, w, fetch(ls))
@@ -591,18 +591,54 @@ function solve_for_loop!(s::MetaSolver, stop, sat, iter)
     end
 end
 
+function update_pool!(s, pool)
+    @warn "pool" pool
+    is_empty(pool) && return nothing
+    if is_sat(s) || best_value(s) > best_value(pool)
+        s.pool = deepcopy(pool)
+    end
+end
+
 """
     remote_stop!!(solver)
 Fetch the pool of solutions from `LeadSolvers` and merge it into the `MainSolver`.
 """
 remote_stop!(::AbstractSolver) = nothing
-function remote_stop!(s::MainSolver)
+function remote_stop!(s::LeadSolver)
     isready(s.rc_stop) && take!(s.rc_stop)
-    while isready(s.rc_report)
-        wait(s.rc_sol)
-        t = take!(s.rc_sol)
-        update_pool!(s, t)
-        take!(s.rc_report)
+    has_solution(s) ? put!(s.rc_sol, s.pool) : take!(s.rc_report)
+end
+function remote_stop!(s::MainSolver)
+    wait(s.rc_sol) # uncomment when MainSolver is passive
+    isready(s.rc_stop) && take!(s.rc_stop)
+    sat = is_sat(s)
+    if !sat || !has_solution(s)
+        while isready(s.rc_report)
+            wait(s.rc_sol)
+            t = take!(s.rc_sol)
+            update_pool!(s, t)
+            sat && has_solution(t) && break
+            take!(s.rc_report)
+        end
+    end
+end
+
+"""
+    post_process(s::MainSolver)
+Launch a serie of tasks to round-up a solving run, for instance, export a run's info.
+"""
+post_process(s) = nothing
+function post_process(s::MainSolver)
+    path = _info_path(s)
+    sat = is_sat(s)
+    if !isempty(path)
+        info = Dict(
+            :solution => has_solution(s) ? collect(best_values(s)) : nothing,
+            :time => time_info(s),
+            :type => sat ? "Satisfaction" : "Optimization",
+        )
+        !sat && push!(info, :value => best_value(s))
+        write(path, JSON.json(info))
     end
 end
 
@@ -627,10 +663,16 @@ function solve!(s, stop = Atomic{Bool}(false))
     add_time!(s, 2) # only used by MainSolver
     solve_for_loop!(s, stop, sat, iter)
     add_time!(s, 5) # only used by MainSolver
-    remote_stop!(s) # only used by MainSolver
+    if typeof(s) == MainSolver && has_solution(s)
+        @info best_values(s) s.meta_local_id
+    end
+    remote_stop!(s)
+    if has_solution(s) # only used by MetaSolver
+        @warn best_values(s) s.meta_local_id
+    end
     add_time!(s, 6) # only used by MainSolver
     post_process(s) # only used by MainSolver
-    return status
+    return status(s)
 end
 
 """
@@ -638,21 +680,3 @@ end
 Return the only/best known solution of a satisfaction/optimization model.
 """
 solution(s) = is_sat(s) ? _values(s) : _solution(s)
-
-"""
-    empty!(s::Solver)
-
-DOCSTRING
-"""
-function Base.empty!(s::MainSolver)
-    empty!(s.model)
-    s.state = state()
-    empty!(s.subs)
-end
-
-has_solution(s::AbstractSolver, ::Val{:state}) = has_solution(s.state)
-has_solution(s::AbstractSolver, ::Val{:pool}) = has_solution(s.pool)
-function has_solution(s::AbstractSolver, ::Val{:both})
-    return has_solution(s, Val(:pool)) || has_solution(s, Val(:state))
-end
-has_solution(s::AbstractSolver, place = :both) = has_solution(s, Val(place))
