@@ -40,7 +40,7 @@
             LocalSearchSolvers.tabu_value(s, x)
         end
         LocalSearchSolvers._values!(s, Dictionary{Int,Int}())
-        
+
         # display(solution(s))
         @info time_info(s)
         # rm("info.json")

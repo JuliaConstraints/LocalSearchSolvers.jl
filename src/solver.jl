@@ -185,7 +185,7 @@ end
 @forward AbstractSolver.strategies length_tabu, insert_tabu!, empty_tabu!, tabu_list
 
 # Forwards from TimeStamps
-@forward MainSolver.time_stamps add_time!, time_info
+@forward MainSolver.time_stamps add_time!, time_info, get_time
 
 """
     specialize!(s) = begin
@@ -494,19 +494,6 @@ function _check_subs(s)
     return 0
 end
 
-"""
-    _solve!(s, stop)
-
-Start a solving run of a subsolver with a shared `Atomic` boolean stop.
-"""
-function _solve!(s, stop)
-    sat = is_sat(s)
-    _init!(s)
-    while !(stop[])
-        _step!(s) && sat && break
-    end
-end
-
 function status(s)
     e = get_error(s)
     if e == 0.0 # make tolerance
@@ -514,31 +501,6 @@ function status(s)
     else
         return :Infeasible
     end
-end
-
-function _solve!(s::LeadSolver)
-    sat = is_sat(s)
-    stop = Atomic{Bool}(false)
-    _init!(s)
-    @threads for id in 1:min(nthreads(), _threads(s))
-        if id == 1
-            while isready(s.rc_stop)
-                _step!(s) && sat && break
-                best_sub = _check_subs(s)
-                if best_sub > 0
-                    bs = s.subs[best_sub]
-                    s.pool = bs.pool
-                    sat && break
-                end
-            end
-            atomic_or!(stop, true)
-        else
-            _solve!(s.subs[id - 1], stop)
-        end
-    end
-    isready(s.rc_stop) && take!(s.rc_stop)
-    put!(s.rc_sol, s.pool)
-    @warn solution(s)
 end
 
 function update_pool!(s, pool)
@@ -550,7 +512,8 @@ function update_pool!(s, pool)
     end
 end
 
-function post_process(s)
+post_process(s) = nothing
+function post_process(s::MainSolver)
     path = _info_path(s)
     if !isempty(path)
         @warn (has_solution(s) ? solution(s) : nothing)
@@ -562,17 +525,24 @@ function post_process(s)
     end
 end
 
+_check_subs(ss::_SubSolver) = 0
+
+"""
+    stop_while_loop()
+Check the stop conditions of the `solve!` while inner loop.
+"""
+stop_while_loop(::_SubSolver, stop, ::Int) = !(stop[])
+stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int) = isready(s.rc_stop)
+function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter)
+    return iter < _iteration(s) && time() - get_time(s, 1) < _time_limit(s)
+end
+
 """
     solve_while_loop!(s, )
 Search the space of configurations.
 """
-function solve_while_loop!(s, stop, sat, ::Int)
-    while !(stop[])
-        _step!(s) && sat && break
-    end
-end
-function solve_while_loop!(s::MetaSolver, stop, sat, iter)
-    while iter < _iteration(s) && time() - time_start < _time_limit(s)
+function solve_while_loop!(s, stop, sat, iter)
+    while stop_while_loop(s, stop, iter)
         iter += 1
         _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
         _step!(s) && sat && break
@@ -584,7 +554,6 @@ function solve_while_loop!(s::MetaSolver, stop, sat, iter)
             sat && break
         end
     end
-    atomic_or!(stop, true)
 end
 
 
@@ -592,7 +561,11 @@ end
     remote_dispatch!(solver)
 Starts the `LeadSolver`s attached to the `MainSolver`.
 """
-remote_dispatch!(solver) = nothing
+remote_dispatch!(::AbstractSolver) = nothing
+function remote_dispatch!(s::LeadSolver)
+    isready(s.rc_stop) && take!(s.rc_stop)
+    put!(s.rc_sol, s.pool)
+end
 function remote_dispatch!(s::MainSolver)
     for (w, ls) in s.remotes
         remote_do(solve!, w, fetch(ls))
@@ -611,6 +584,7 @@ function solve_for_loop!(s::MetaSolver, stop, sat, iter)
             remote_dispatch!(s) # only used by MainSolver
             add_time!(s, 4) # only used by MainSolver
             solve_while_loop!(s, stop, sat, iter)
+            atomic_or!(stop, true)
         else
             solve!(s.subs[id - 1], stop)
         end
@@ -618,11 +592,11 @@ function solve_for_loop!(s::MetaSolver, stop, sat, iter)
 end
 
 """
-    fetch_leaders!(solver)
+    remote_stop!!(solver)
 Fetch the pool of solutions from `LeadSolvers` and merge it into the `MainSolver`.
 """
-fetch_leaders!(::AbstractSolver) = nothing
-function fetch_leaders!(s::MainSolver)
+remote_stop!(::AbstractSolver) = nothing
+function remote_stop!(s::MainSolver)
     isready(s.rc_stop) && take!(s.rc_stop)
     while isready(s.rc_report)
         wait(s.rc_sol)
@@ -653,55 +627,11 @@ function solve!(s, stop = Atomic{Bool}(false))
     add_time!(s, 2) # only used by MainSolver
     solve_for_loop!(s, stop, sat, iter)
     add_time!(s, 5) # only used by MainSolver
-    fetch_leaders!(s) # only used by MainSolver
+    remote_stop!(s) # only used by MainSolver
     add_time!(s, 6) # only used by MainSolver
     post_process(s) # only used by MainSolver
     return status
 end
-# function solve!(s)
-#     add_time!(s, 1) # act only for MainSolver
-#     time_start = time()
-#     iter = 0
-#     sat = is_sat(s)
-#     stop = Atomic{Bool}(false)
-#     _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
-#     add_time!(s, 2)
-#     @threads for id in 1:min(nthreads(), _threads(s))
-#         if id == 1
-#             add_time!(s, 3)
-#             for (w, ls) in s.remotes
-#                 remote_do(_solve!, w, fetch(ls))
-#             end
-#             add_time!(s, 4)
-#             while iter < _iteration(s) && time() - time_start < _time_limit(s)
-#                 iter += 1
-#                 _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-#                 _step!(s) && sat && break
-#                 _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
-#                 best_sub = _check_subs(s)
-#                 if best_sub > 0
-#                     bs = s.subs[best_sub]
-#                     s.pool = bs.pool
-#                     sat && break
-#                 end
-#             end
-#             atomic_or!(stop, true)
-#         else
-#             _solve!(s.subs[id - 1], stop)
-#         end
-#     end
-#     add_time!(s, 5)
-#     isready(s.rc_stop) && take!(s.rc_stop)
-#     while isready(s.rc_report)
-#         wait(s.rc_sol)
-#         t = take!(s.rc_sol)
-#         update_pool!(s, t)
-#         take!(s.rc_report)
-#     end
-#     add_time!(s, 6)
-#     post_process(s)
-#     return status(s)
-# end
 
 """
     solution(s)
