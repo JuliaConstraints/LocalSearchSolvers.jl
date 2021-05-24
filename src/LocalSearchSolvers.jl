@@ -18,6 +18,7 @@ export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
 # export for CBLS.jl
 export _set_domain!, _iteration!, _time_limit!, _time_limit, is_sat, _iteration
+export _info_path, _info_path!
 export max_domains_size, get_value, update_domain!, has_solution
 
 # Exports Model
