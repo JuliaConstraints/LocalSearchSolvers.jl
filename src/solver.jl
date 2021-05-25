@@ -87,14 +87,14 @@ Internal structure used in multithreading and distributed version of the solvers
 """
 function solver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, strats, ::Val{:lead})
     l_options = deepcopy(options)
-    _print_level!(l_options, :silent)
+    set_option!(options, "print_level", :silent)
     ss = Vector{_SubSolver}()
     return LeadSolver(mlid, model, l_options, pool, rc_report, rc_sol, rc_stop, state(), strats, ss)
 end
 
 function solver(mlid, model, options, pool, ::RemoteChannel, ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
     sub_options = deepcopy(options)
-    _print_level!(sub_options, :silent)
+    set_option!(options, "print_level", :silent)
     return _SubSolver(mlid, model, sub_options, pool, state(), strats)
 end
 function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
@@ -321,8 +321,8 @@ _init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:
 function _init!(s, ::Val{:remote})
     for w in setdiff(workers(), [1])
         ls = remotecall(solver, w, s, w, :lead)
-        remote_do(_print_level!, w, fetch(ls), :silent)
-        remote_do(_threads!, w, fetch(ls), remotecall_fetch(Threads.nthreads, w))
+        remote_do(set_option!, w, fetch(ls), "print_level", :silent)
+        remote_do(set_option!, w, fetch(ls), "threads",remotecall_fetch(Threads.nthreads, w))
         push!(s.remotes, w => ls)
     end
 end
@@ -362,8 +362,8 @@ function _restart!(s, k=10)
     _verbose(s, "\n============== RESTART!!!!================\n")
     _draw!(s)
     empty_tabu!(s)
-    δ = ((k - 1) * _tabu_delta(s)) + _tabu_time(s) / k
-    _tabu_delta!(s, δ)
+    δ = ((k - 1) * get_option(s, "tabu_delta")) + get_option(s, "tabu_time") / k
+    set_option!(s, "tabu_delta", δ)
     _compute!(s) ? _optimizing!(s) : _satisfying!(s)
 end
 
@@ -611,7 +611,7 @@ Launch a serie of tasks to round-up a solving run, for instance, export a run's 
 """
 post_process(s) = nothing
 function post_process(s::MainSolver)
-    path = _info_path(s)
+    path = get_option(s, "info_path")
     sat = is_sat(s)
     if !isempty(path)
         info = Dict(
