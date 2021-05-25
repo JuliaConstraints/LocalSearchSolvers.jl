@@ -39,7 +39,7 @@
         for x in keys(LocalSearchSolvers.tabu_list(s))
             LocalSearchSolvers.tabu_value(s, x)
         end
-        LocalSearchSolvers._values!(s, Dictionary{Int,Int}())
+        # LocalSearchSolvers._values!(s, Dictionary{Int,Int}())
 
         # display(solution(s))
         @info time_info(s)
