@@ -18,7 +18,7 @@ export get_cons_from_var, get_vars_from_cons, get_domain, get_name, solution
 
 # export for CBLS.jl
 export _set_domain!, is_sat, max_domains_size, get_value, update_domain!, has_solution
-export set_option!, get_option
+export set_option!, get_option, sense, sense!
 
 # Exports Model
 export model

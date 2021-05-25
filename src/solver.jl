@@ -154,7 +154,7 @@ end
 @forward AbstractSolver.model delete_value!, delete_var_from_cons!
 @forward AbstractSolver.model draw, constriction, describe, is_sat, is_specialized
 @forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
-@forward AbstractSolver.model constraint!, objective!, variable!
+@forward AbstractSolver.model constraint!, objective!, variable!, sense, sense!
 @forward AbstractSolver.model get_name, _is_empty, _inc_cons!, _max_cons, _best_bound
 @forward AbstractSolver.model _set_domain!, domain_size, max_domains_size, update_domain!
 
@@ -253,7 +253,7 @@ end
 Compute the objective `o`'s value.
 """
 function _compute_objective!(s, o::Objective)
-    val = apply(o, _values(s).values)
+    val = sense(s) * apply(o, _values(s).values)
     set_value!(s, val)
     if is_empty(s.pool) || val < best_value(s)
         s.pool = pool(s.state.configuration)

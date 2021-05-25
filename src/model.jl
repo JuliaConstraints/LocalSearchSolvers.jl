@@ -30,6 +30,9 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: O
     max_cons::Ref{Int}
     max_objs::Ref{Int}
 
+    # Sense (min = 1, max = -1)
+    sense::Ref{Int}
+
     # Bool to indicate if the _Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
 
@@ -62,10 +65,11 @@ function model(;
     max_vars = Ref(zero(Int))
     max_cons = Ref(zero(Int))
     max_objs = Ref(zero(Int))
+    sense = Ref(one(Int)) # minimization
 
     specialized = Ref(false)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, kind, best_bound, time())
+    _Model(vars, cons, objs, max_vars, max_cons, max_objs, sense, specialized, kind, best_bound, time())
 end
 
 """
@@ -470,3 +474,7 @@ function update_domain!(m, x, d)
         _set_domain!(m, x, new_d)
     end
 end
+
+sense(m::_Model) = m.sense[]
+sense!(m::_Model, ::Val{:min}) = m.sense[] = 1
+sense!(m::_Model, ::Val{:max}) = m.sense[] = -1
