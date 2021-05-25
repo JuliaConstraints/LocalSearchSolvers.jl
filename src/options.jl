@@ -101,14 +101,14 @@ end
 
 DOCSTRING
 """
-# _dynamic(options) = options.dynamic
+_dynamic(options) = options.dynamic
 
 """
     _dynamic!(options, dynamic) = begin
 
 DOCSTRING
 """
-# _dynamic!(options, dynamic) = options.dynamic = dynamic
+_dynamic!(options, dynamic) = options.dynamic = dynamic
 
 """
     _info_path(options, path)
@@ -143,7 +143,7 @@ _iteration!(options, iterations) = options.iteration = iterations
 
 DOCSTRING
 """
-# _print_level(options) = options.print_level
+_print_level(options) = options.print_level
 
 """
     _print_level!(options, level) = begin
@@ -157,14 +157,14 @@ _print_level!(options, level) = options.print_level = level
 
 DOCSTRING
 """
-# _solutions(options) = options.solutions
+_solutions(options) = options.solutions
 
 """
     _solutions!(options, solutions) = begin
 
 DOCSTRING
 """
-# _solutions!(options, solutions) = options.solutions = solutions
+_solutions!(options, solutions) = options.solutions = solutions
 
 """
     _specialize(options) = begin
@@ -178,7 +178,7 @@ _specialize(options) = options.specialize
 
 DOCSTRING
 """
-# _specialize!(options, specialize) = options.specialize = specialize
+_specialize!(options, specialize) = options.specialize = specialize
 
 """
     _tabu_time(options) = begin
@@ -249,3 +249,12 @@ _time_limit(options) = options.time_limit
 DOCSTRING
 """
 _time_limit!(options, time) = options.time_limit = time
+
+
+function set_option!(options, name, value)
+    eval(Symbol("_" * name * "!"))(options, value)
+end
+
+function get_option(options, name)
+    eval(Symbol("_" * name))(options)
+end
