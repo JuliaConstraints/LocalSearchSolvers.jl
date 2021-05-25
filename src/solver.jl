@@ -170,12 +170,7 @@ end
 @forward AbstractSolver.state _reset_last_improvement!
 
 # Forward from options
-@forward AbstractSolver.options _verbose, _dynamic, dynamic!, _iteration, _iteration!
-@forward AbstractSolver.options _print_level, _print_level!, _solutions, _solutions!
-@forward AbstractSolver.options _specialize, _specialize!, _tabu_time, _tabu_time!
-@forward AbstractSolver.options _tabu_local, _tabu_local!, _tabu_delta, _tabu_delta!
-@forward AbstractSolver.options _threads, _threads!, _time_limit, _time_limit!
-@forward AbstractSolver.options _info_path, _info_path!
+@forward AbstractSolver.options _verbose, set_option!, get_option
 
 # Forwards from pool (of solutions)
 @forward AbstractSolver.pool best_config, best_value, best_values, has_solution
@@ -317,7 +312,7 @@ end
 state!(s) = s.state = state(s) # TODO: add Pool
 
 function _init!(s, ::Val{:global})
-    !is_specialized(s) && _specialize(s) && specialize!(s)
+    !is_specialized(s) && get_option(s, "specialize") && set_option!(s, "specialize", true)
     put!(s.rc_stop, nothing)
     foreach(i -> put!(s.rc_report, nothing), setdiff(workers(), [1]))
 end
@@ -333,9 +328,9 @@ function _init!(s, ::Val{:remote})
 end
 
 function _init!(s, ::Val{:local}; pool = pool())
-    _tabu_time(s) == 0 && _tabu_time!(s, length_vars(s) ÷ 2) # 10?
-    _tabu_local(s) == 0 && _tabu_local!(s, _tabu_time(s) ÷ 2)
-    _tabu_delta(s) == 0.0 && _tabu_delta!(s, _tabu_time(s) - _tabu_local(s))# 20-30
+    get_option(s, "tabu_time") == 0 && set_option!(s, "tabu_time", length_vars(s) ÷ 2) # 10?
+    get_option(s, "tabu_local") == 0 && set_option!(s, "tabu_local", get_option(s, "tabu_time") ÷ 2)
+    get_option(s, "tabu_delta") == 0 && set_option!(s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
     state!(s)
     return has_solution(s)
 end
@@ -530,7 +525,7 @@ stop_while_loop(::_SubSolver, stop, ::Int, ::Float64) = !(stop[])
 stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int, ::Float64) = isready(s.rc_stop)
 function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
     remote_condition = isready(s.rc_stop) # Add ! when MainSolver is passive
-    local_condition = iter < _iteration(s) && time() - start_time < _time_limit(s)
+    local_condition = iter < get_option(s, "iteration") && time() - start_time < get_option(s, "time_limit")
     return remote_condition && local_condition
 end
 
@@ -571,7 +566,7 @@ First loop in the solving process that starts `LeadSolver`s from the `MainSolver
 """
 solve_for_loop!(solver, stop, sat, iter, st) = solve_while_loop!(solver, stop, sat, iter, st)
 function solve_for_loop!(s::MetaSolver, stop, sat, iter, st)
-    @threads for id in 1:min(nthreads(), _threads(s))
+    @threads for id in 1:min(nthreads(), get_option(s, "threads"))
         if id == 1
             add_time!(s, 3) # only used by MainSolver
             remote_dispatch!(s) # only used by MainSolver
