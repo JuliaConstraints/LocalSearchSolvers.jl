@@ -73,6 +73,7 @@ mutable struct MainSolver <: MetaSolver
     rc_stop::RemoteChannel
     remotes::Dict{Int, Future}
     state::State
+    status::Symbol
     strategies::MetaStrategy
     subs::Vector{_SubSolver}
     time_stamps::TimeStamps
@@ -143,7 +144,7 @@ function solver(model = model();
     remotes = Dict{Int, Future}()
     subs = Vector{_SubSolver}()
     ts = TimeStamps(model)
-    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), strategies, subs, ts)
+    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), :not_called, strategies, subs, ts)
 end
 
 # Forwards from model field
@@ -195,19 +196,17 @@ function Base.empty!(s::MainSolver)
 end
 
 """
+    status(solver)
+Return the status of the solver.
+"""
+status(s::MainSolver) = s.status
+status(::AbstractSolver) = nothing
+
+"""
     specialize!(solver)
 Replace the model of `solver` by one with specialized types (variables, constraints, objectives).
 """
 specialize!(s) = s.model = specialize(s.model)
-
-function status(s)
-    e = get_error(s)
-    if e == 0.0 # make tolerance
-        return is_sat(s) ? :Solved : :LocalOptimum
-    else
-        return :Infeasible
-    end
-end
 
 """
     _draw!(s)
@@ -524,9 +523,22 @@ Check the stop conditions of the `solve!` while inner loop.
 stop_while_loop(::_SubSolver, stop, ::Int, ::Float64) = !(stop[])
 stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int, ::Float64) = isready(s.rc_stop)
 function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
-    remote_condition = isready(s.rc_stop) # Add ! when MainSolver is passive
-    local_condition = iter < get_option(s, "iteration") && time() - start_time < get_option(s, "time_limit")
-    return remote_condition && local_condition
+    remote_limit = isready(s.rc_stop) # Add ! when MainSolver is passive
+    iter_limit = iter < get_option(s, "iteration")
+    time_limit = time() - start_time < get_option(s, "time_limit")
+    if !remote_limit
+        s.status = :solution_limit
+        return false
+    end
+    if !iter_limit
+        s.status = :iteration_limit
+        return false
+    end
+    if !time_limit
+        s.status = :time_limit
+        return false
+    end
+    return true
 end
 
 """
@@ -609,10 +621,13 @@ end
     post_process(s::MainSolver)
 Launch a serie of tasks to round-up a solving run, for instance, export a run's info.
 """
-post_process(s) = nothing
+post_process(::AbstractSolver) = nothing
 function post_process(s::MainSolver)
     path = get_option(s, "info_path")
     sat = is_sat(s)
+    if s.status == :not_called
+        s.status = :solution_limit
+    end
     if !isempty(path)
         info = Dict(
             :solution => has_solution(s) ? collect(best_values(s)) : nothing,
@@ -656,4 +671,4 @@ end
     solution(s)
 Return the only/best known solution of a satisfaction/optimization model.
 """
-solution(s) = is_sat(s) ? _values(s) : _solution(s)
+solution(s) = has_solution(s) ? best_values(s) : _values(s)
