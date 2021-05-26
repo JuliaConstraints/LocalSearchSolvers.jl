@@ -28,7 +28,7 @@ export o_dist_extrema, o_mincut
 
 # Exports Solver
 export solver, solve!, specialize, specialize!, Options, get_values, best_values
-export best_value, time_info
+export best_value, time_info, status
 
 # Include utils
 include("utils.jl")
