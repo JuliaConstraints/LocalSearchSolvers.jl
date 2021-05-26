@@ -197,10 +197,9 @@ end
 
 """
     status(solver)
-Return the status of the solver.
+Return the status of a MainSolver.
 """
 status(s::MainSolver) = s.status
-status(::AbstractSolver) = nothing
 
 """
     specialize!(solver)
@@ -664,7 +663,6 @@ function solve!(s, stop = Atomic{Bool}(false))
     remote_stop!(s)
     add_time!(s, 6) # only used by MainSolver
     post_process(s) # only used by MainSolver
-    return status(s)
 end
 
 """
