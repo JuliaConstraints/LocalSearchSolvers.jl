@@ -371,7 +371,9 @@ end
 Check if a restart of `s` is necessary. If `s` has subsolvers, this check is independent for all of them.
 """
 function _check_restart(s)
-    return _last_improvement(s) > length_vars(s) || check_restart!(s)
+    a = _last_improvement(s) > length_vars(s)
+    b = check_restart!(s; tabu_length = length_tabu(s))
+    return a || b
 end
 
 """

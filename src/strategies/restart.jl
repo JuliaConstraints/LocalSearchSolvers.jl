@@ -1,14 +1,29 @@
 abstract type RestartStrategy end
 
 # Tabu restart
-struct TabuRestart <: RestartStrategy
-    reset_limit::Int
+mutable struct TabuRestart <: RestartStrategy
+    index::Int
+    tenure::Int
+    limit::Int
     reset_percentage::Float64
 end
 
-restart(strat,::Val{:tabu}) = TabuRestart(tenure(strat, :tabu) - tenure(strat, :pick), 1.0)
+function restart(tabu_strat,::Val{:tabu}; rp = 1.0, index = 1)
+    limit = tenure(tabu_strat, :tabu) - tenure(tabu_strat, :pick)
+    return TabuRestart(index, tenure(tabu_strat, :tabu), limit, rp)
+end
 
-check_restart!(rs::TabuRestart; tabu_length) = rs.reset_limit ≤ tabu
+function check_restart!(rs::TabuRestart; tabu_length)
+    a = rs.index * (tabu_length + rs.limit - rs.tenure)
+    b = (rs.index + 1) * rs.limit
+    # a = tabu_length + rs.limit - rs.tenure
+    # b = rs.limit
+    if rand() ≤ a / b
+        rs.index += 1
+        return true
+    end
+    return false
+end
 
 # Restart sequences
 mutable struct RestartSequence{F <: Function} <: RestartStrategy
@@ -45,7 +60,7 @@ function oeis(n, b, ::Val{:A082850})
 end
 oeis(n, b, ::Val{:A182105}) = b^(oeis(n, :A082850)-1)
 oeis(n, ref::Symbol, b = 2) = oeis(n, b, Val(ref))
-restart(::Val{:universal}) = RestartSequence(n -> oeis(n, :A182105))
+restart(::Any, ::Val{:universal}) = RestartSequence(n -> oeis(n, :A182105))
 
 # Generic restart constructor
-restart(strategy::Symbol) = restart(Val(strategy))
+restart(tabu, strategy::Symbol) = restart(tabu, Val(strategy))
