@@ -310,7 +310,10 @@ end
 state!(s) = s.state = state(s) # TODO: add Pool
 
 function _init!(s, ::Val{:global})
-    !is_specialized(s) && get_option(s, "specialize") && set_option!(s, "specialize", true)
+    if !is_specialized(s) && get_option(s, "specialize")
+        specialize!(s)
+        set_option!(s, "specialize", true)
+    end
     put!(s.rc_stop, nothing)
     foreach(i -> put!(s.rc_report, nothing), setdiff(workers(), [1]))
 end
