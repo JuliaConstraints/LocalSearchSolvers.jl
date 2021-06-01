@@ -377,7 +377,8 @@ function specialize(m::_Model)
 
     specialized = Ref(true)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs, specialized, get_kind(m), _best_bound(m), get_time_stamp(m))
+    _Model(vars, cons, objs, max_vars, max_cons, max_objs, m.sense, specialized,
+        get_kind(m), _best_bound(m), get_time_stamp(m))
 end
 
 """
