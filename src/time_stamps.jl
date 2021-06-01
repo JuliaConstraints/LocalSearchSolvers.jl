@@ -23,6 +23,7 @@ add_time!(stamps, ts, ::Val{6}) = stamps.ts6 = ts
 
 add_time!(stamps, i) = add_time!(stamps, time(), Val(i))
 
+get_time(stamps, ::Val{0}) = stamps.ts1
 get_time(stamps, ::Val{1}) = stamps.ts1
 get_time(stamps, ::Val{2}) = stamps.ts2
 get_time(stamps, ::Val{3}) = stamps.ts3
@@ -35,14 +36,14 @@ get_time(stamps, i) = get_time(stamps, Val(i))
 
 function time_info(stamps)
     info = Dict([
-        :model => stamps.ts1 - stamps.ts0,
-        :init => stamps.ts2 - stamps.ts1,
-        :threads_start => stamps.ts3 - stamps.ts2,
-        :remote_start => stamps.ts4 - stamps.ts3,
-        :local_run => stamps.ts5 - stamps.ts4,
-        :remote_stop => stamps.ts6 - stamps.ts5,
-        :total_run => stamps.ts6 - stamps.ts1,
-        :model_and_run => stamps.ts6 - stamps.ts0,
+        :model => get_time(stamps, 1) - get_time(stamps, 0),
+        :init => get_time(stamps, 2) - get_time(stamps, 1),
+        :threads_start => get_time(stamps, 3) - get_time(stamps, 2),
+        :remote_start => get_time(stamps, 4) - get_time(stamps, 3),
+        :local_run => get_time(stamps, 5) - get_time(stamps, 4),
+        :remote_stop => get_time(stamps, 6) - get_time(stamps, 5),
+        :total_run => get_time(stamps, 6) - get_time(stamps, 1),
+        :model_and_run => get_time(stamps, 6) - get_time(stamps, 0),
     ])
     return info
 end
