@@ -4,202 +4,104 @@ Abstract type to encapsulate the different solver types such as `Solver` or `_Su
 """
 abstract type AbstractSolver end
 
-meta_id(s) = s.meta_local_id[1]
-# local_id(s) = s.meta_local_id[2]
-
 # Dummy method to (not) add a TimeStamps to a solver
 add_time!(::AbstractSolver, i) = nothing
 
-"""
-Abstract type to encapsulate all solver types that manages other solvers.
-"""
-abstract type MetaSolver <: AbstractSolver end
-
-"""
-    _SubSolver <: AbstractSolver
-
-An internal solver type called by MetaSolver when multithreading is enabled.
-
-# Arguments:
-- `id::Int`: subsolver id for debugging
-- `model::Model`: a ref to the model of the main solver
-- `state::_State`: a `deepcopy` of the main solver that evolves independently
-- `options::Options`: a ref to the options of the main solver
-"""
-mutable struct _SubSolver <: AbstractSolver
-    meta_local_id::Tuple{Int, Int}
-    model::_Model
-    options::Options
-    pool::Pool
-    state::State
-    strategies::MetaStrategy
-end
-
-"""
-    LeadSolver <: MetaSolver
-Solver managed remotely by a MainSolver. Can manage its own set of local sub solvers.
-"""
-mutable struct LeadSolver <: MetaSolver
-    meta_local_id::Tuple{Int, Int}
-    model::_Model
-    options::Options
-    pool::Pool
-    rc_report::RemoteChannel
-    rc_sol::RemoteChannel
-    rc_stop::RemoteChannel
-    state::State
-    strategies::MetaStrategy
-    subs::Vector{_SubSolver}
-end
-
-"""
-    MainSolver <: AbstractSolver
-
-Main solver. Handle the solving of a model, and optional multithreaded and/or distributed subsolvers.
-
-# Arguments:
-- `model::Model`: A formal description of the targeted problem
-- `state::_State`: An internal state to store the info necessary to a solving run
-- `options::Options`: User options for this solver
-- `subs::Vector{_SubSolver}`: Optional subsolvers
-"""
-mutable struct MainSolver <: MetaSolver
-    meta_local_id::Tuple{Int, Int}
-    model::_Model
-    options::Options
-    pool::Pool
-    rc_report::RemoteChannel
-    rc_sol::RemoteChannel
-    rc_stop::RemoteChannel
-    remotes::Dict{Int, Future}
-    state::State
-    status::Symbol
-    strategies::MetaStrategy
-    subs::Vector{_SubSolver}
-    time_stamps::TimeStamps
-end
-
-make_id(::Int, id, ::Val{:lead}) = (id, 0)
-make_id(meta, id, ::Val{:sub}) = (meta, id)
-
-"""
-    _SubSolver(ms::Solver, id)
-Internal structure used in multithreading and distributed version of the solvers. It is only created at the start of a `solve!` run. Its behaviour regarding to sharing information is determined by the main `Solver`.
-"""
-function solver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, strats, ::Val{:lead})
-    l_options = deepcopy(options)
-    set_option!(options, "print_level", :silent)
-    ss = Vector{_SubSolver}()
-    return LeadSolver(mlid, model, l_options, pool, rc_report, rc_sol, rc_stop, state(), strats, ss)
-end
-
-function solver(mlid, model, options, pool, ::RemoteChannel, ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
-    sub_options = deepcopy(options)
-    set_option!(options, "print_level", :silent)
-    return _SubSolver(mlid, model, sub_options, pool, state(), strats)
-end
 function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
     mlid = make_id(meta_id(ms), id, Val(role))
     return solver(mlid, ms.model, ms.options, pool, ms.rc_report, ms.rc_sol, ms.rc_stop, strats, Val(role))
 end
 
-"""
-    Solver{T}(m::Model; values::Dictionary{Int,T}=Dictionary{Int,T}()) where T <: Number
-    Solver{T}(;
-        variables::Dictionary{Int,Variable}=Dictionary{Int,Variable}(),
-        constraints::Dictionary{Int,Constraint}=Dictionary{Int,Constraint}(),
-        objectives::Dictionary{Int,Objective}=Dictionary{Int,Objective}(),
-        values::Dictionary{Int,T}=Dictionary{Int,T}(),
-    ) where T <: Number
-
-Constructor for a solver. Optional starting values can be provided.
-
-```julia
-# Model a sudoku model of size 4×4
-m = sudoku(2)
-
-# Create a solver instance with variables taking integral values
-s = Solver{Int}(m)
-
-# Solver with an empty model to be filled later and expected Float64 values
-s = Solver{Float64}()
-
-# Construct a solver from a sets of constraints, objectives, and variables.
-s = Solver{Int}(
-    variables = get_constraints(m),
-    constraints = get_constraints(m),
-    objectives = get_objectives(m)
-)
-```
-"""
-function solver(model = model();
-    options = Options(),
-    pool = pool(),
-    strategies = MetaStrategy(model),
-)
-    mlid = (1, 0)
-    rc_report = RemoteChannel(() -> Channel{Nothing}(length(workers())))
-    rc_sol = RemoteChannel(() -> Channel{Pool}(length(workers())))
-    rc_stop = RemoteChannel(() -> Channel{Nothing}(1))
-    remotes = Dict{Int, Future}()
-    subs = Vector{_SubSolver}()
-    ts = TimeStamps(model)
-    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), :not_called, strategies, subs, ts)
-end
-
 # Forwards from model field
-@forward AbstractSolver.model get_constraints, get_objectives, get_variables
-@forward AbstractSolver.model get_constraint, get_objective, get_variable, get_domain
-@forward AbstractSolver.model get_cons_from_var, get_vars_from_cons, state
-@forward AbstractSolver.model add!, add_value!, add_var_to_cons!
-@forward AbstractSolver.model delete_value!, delete_var_from_cons!
-@forward AbstractSolver.model draw, constriction, describe, is_sat, is_specialized
-@forward AbstractSolver.model length_var, length_cons, length_vars, length_objs
-@forward AbstractSolver.model constraint!, objective!, variable!, sense, sense!
-@forward AbstractSolver.model get_name, _is_empty, _inc_cons!, _max_cons, _best_bound
-@forward AbstractSolver.model _set_domain!, domain_size, max_domains_size, update_domain!
+@forward AbstractSolver.model add!
+@forward AbstractSolver.model add_value!
+@forward AbstractSolver.model add_var_to_cons!
+@forward AbstractSolver.model constraint!
+@forward AbstractSolver.model constriction
+@forward AbstractSolver.model delete_value!
+@forward AbstractSolver.model delete_var_from_cons!
+@forward AbstractSolver.model describe
+@forward AbstractSolver.model domain_size
+@forward AbstractSolver.model draw
+@forward AbstractSolver.model get_cons_from_var
+@forward AbstractSolver.model get_constraint
+@forward AbstractSolver.model get_constraints
+@forward AbstractSolver.model get_domain
+@forward AbstractSolver.model get_name
+@forward AbstractSolver.model get_objective
+@forward AbstractSolver.model get_objectives
+@forward AbstractSolver.model get_variable
+@forward AbstractSolver.model get_variables
+@forward AbstractSolver.model get_vars_from_cons
+@forward AbstractSolver.model is_sat
+@forward AbstractSolver.model is_specialized
+@forward AbstractSolver.model length_cons
+@forward AbstractSolver.model length_objs
+@forward AbstractSolver.model length_var
+@forward AbstractSolver.model length_vars
+@forward AbstractSolver.model max_domains_size
+@forward AbstractSolver.model objective!
+@forward AbstractSolver.model sense
+@forward AbstractSolver.model sense!
+@forward AbstractSolver.model state
+@forward AbstractSolver.model update_domain!
+@forward AbstractSolver.model variable!
+@forward AbstractSolver.model _best_bound
+@forward AbstractSolver.model _inc_cons!
+@forward AbstractSolver.model _is_empty
+@forward AbstractSolver.model _max_cons
+@forward AbstractSolver.model _set_domain!
 
 # Forwards from state field
-@forward AbstractSolver.state _cons_costs, _vars_costs, _values
-@forward AbstractSolver.state _cons_costs!, _vars_costs!, _values!
-@forward AbstractSolver.state _cons_cost, _var_cost, _value, set_error!
-@forward AbstractSolver.state _cons_cost!, _var_cost!, _value!, get_value, get_values
-@forward AbstractSolver.state _set!, _swap_value!, set_value!
-@forward AbstractSolver.state _optimizing, _optimizing!, _satisfying!
-@forward AbstractSolver.state _best!, _best, _solution, get_error
-@forward AbstractSolver.state _last_improvement, _inc_last_improvement!
+@forward AbstractSolver.state get_error
+@forward AbstractSolver.state get_value
+@forward AbstractSolver.state get_values
+@forward AbstractSolver.state set_error!
+@forward AbstractSolver.state set_value!
+@forward AbstractSolver.state _best
+@forward AbstractSolver.state _best!
+@forward AbstractSolver.state _cons_cost
+@forward AbstractSolver.state _cons_cost!
+@forward AbstractSolver.state _cons_costs
+@forward AbstractSolver.state _cons_costs!
+@forward AbstractSolver.state _inc_last_improvement!
+@forward AbstractSolver.state _last_improvement
+@forward AbstractSolver.state _optimizing
+@forward AbstractSolver.state _optimizing!
+@forward AbstractSolver.state _satisfying!
+@forward AbstractSolver.state _set!
+@forward AbstractSolver.state _solution
+@forward AbstractSolver.state _swap_value!
 @forward AbstractSolver.state _reset_last_improvement!
+@forward AbstractSolver.state _value
+@forward AbstractSolver.state _value!
+@forward AbstractSolver.state _values
+@forward AbstractSolver.state _values!
+@forward AbstractSolver.state _var_cost
+@forward AbstractSolver.state _var_cost!
+@forward AbstractSolver.state _vars_costs
+@forward AbstractSolver.state _vars_costs!
 
 # Forward from options
-@forward AbstractSolver.options _verbose, set_option!, get_option
+@forward AbstractSolver.options get_option
+@forward AbstractSolver.options set_option!
+@forward AbstractSolver.options _verbose
 
 # Forwards from pool (of solutions)
-@forward AbstractSolver.pool best_config, best_value, best_values, has_solution
+@forward AbstractSolver.pool best_config
+@forward AbstractSolver.pool best_value
+@forward AbstractSolver.pool best_values
+@forward AbstractSolver.pool has_solution
 
 # Forwards from strategies
 @forward AbstractSolver.strategies check_restart!
-@forward AbstractSolver.strategies decrease_tabu!, delete_tabu!, decay_tabu!
-@forward AbstractSolver.strategies length_tabu, insert_tabu!, empty_tabu!, tabu_list
-
-# Forwards from TimeStamps
-@forward MainSolver.time_stamps add_time!, time_info, get_time
-
-"""
-    empty!(s::Solver)
-
-"""
-function Base.empty!(s::MainSolver)
-    empty!(s.model)
-    s.state = state()
-    empty!(s.subs)
-    # TODO: empty remote solvers
-end
-
-"""
-    status(solver)
-Return the status of a MainSolver.
-"""
-status(s::MainSolver) = s.status
+@forward AbstractSolver.strategies decay_tabu!
+@forward AbstractSolver.strategies decrease_tabu!
+@forward AbstractSolver.strategies delete_tabu!
+@forward AbstractSolver.strategies empty_tabu!
+@forward AbstractSolver.strategies insert_tabu!
+@forward AbstractSolver.strategies length_tabu
+@forward AbstractSolver.strategies tabu_list
 
 """
     specialize!(solver)
@@ -307,7 +209,7 @@ function _neighbours(s, x, dim = 0)
     end
 end
 
-state!(s) = s.state = state(s) # TODO: add Pool
+state!(s) = s.state = state(s)
 
 function _init!(s, ::Val{:global})
     if !is_specialized(s) && get_option(s, "specialize")
@@ -336,23 +238,7 @@ function _init!(s, ::Val{:local}; pool = pool())
     return has_solution(s)
 end
 
-# Dispatchers: _init!
-
 _init!(s, role::Symbol) = _init!(s, Val(role))
-
-function _init!(s::MainSolver)
-    _init!(s, :global)
-    _init!(s, :remote)
-    _init!(s, :meta)
-    _init!(s, :local)
-end
-
-function _init!(s::LeadSolver)
-    _init!(s, :meta)
-    _init!(s, :local)
-end
-
-_init!(s) = _init!(s, :local)
 
 """
     _restart!(s, k = 10)
@@ -501,49 +387,13 @@ Check if any subsolver of a main solver `s`, for
 - *Satisfaction*, has a solution, then return it, resume the run otherwise
 - *Optimization*, has a better solution, then assign it to its internal state
 """
-_check_subs(ss::_SubSolver) = 0 # Dummy method
-function _check_subs(s)
-    if is_sat(s)
-        for (id, ss) in enumerate(s.subs)
-            has_solution(ss) && return id
-        end
-    else
-        for (id, ss) in enumerate(s.subs)
-            bs = is_empty(s.pool) ? nothing : best_value(s)
-            bss = is_empty(ss.pool) ? nothing : best_value(ss)
-            isnothing(bs) && (isnothing(bss) ? continue : return id)
-            isnothing(bss) ? continue : (bss < bs && return id)
-        end
-    end
-    return 0
-end
-
-
+_check_subs(::AbstractSolver) = 0 # Dummy method
 
 """
     stop_while_loop()
 Check the stop conditions of the `solve!` while inner loop.
 """
-stop_while_loop(::_SubSolver, stop, ::Int, ::Float64) = !(stop[])
-stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int, ::Float64) = isready(s.rc_stop)
-function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
-    remote_limit = isready(s.rc_stop) # Add ! when MainSolver is passive
-    iter_limit = iter < get_option(s, "iteration")
-    time_limit = time() - start_time < get_option(s, "time_limit")
-    if !remote_limit
-        s.status = :solution_limit
-        return false
-    end
-    if !iter_limit
-        s.status = :iteration_limit
-        return false
-    end
-    if !time_limit
-        s.status = :time_limit
-        return false
-    end
-    return true
-end
+stop_while_loop(::AbstractSolver) = nothing
 
 """
     solve_while_loop!(s, )
@@ -570,30 +420,12 @@ end
 Starts the `LeadSolver`s attached to the `MainSolver`.
 """
 remote_dispatch!(::AbstractSolver) = nothing # dummy method
-function remote_dispatch!(s::MainSolver)
-    for (w, ls) in s.remotes
-        remote_do(solve!, w, fetch(ls))
-    end
-end
 
 """
     solve_for_loop!(solver, stop, sat, iter)
 First loop in the solving process that starts `LeadSolver`s from the `MainSolver`, and `_SubSolver`s from each `MetaSolver`.
 """
-solve_for_loop!(solver, stop, sat, iter, st) = solve_while_loop!(solver, stop, sat, iter, st)
-function solve_for_loop!(s::MetaSolver, stop, sat, iter, st)
-    @threads for id in 1:min(nthreads(), get_option(s, "threads"))
-        if id == 1
-            add_time!(s, 3) # only used by MainSolver
-            remote_dispatch!(s) # only used by MainSolver
-            add_time!(s, 4) # only used by MainSolver
-            solve_while_loop!(s, stop, sat, iter, st)
-            atomic_or!(stop, true)
-        else
-            solve!(s.subs[id - 1], stop)
-        end
-    end
-end
+solve_for_loop!(s, stop, sat, iter, st) = solve_while_loop!(s, stop, sat, iter, st)
 
 function update_pool!(s, pool)
     is_empty(pool) && return nothing
@@ -607,55 +439,13 @@ end
 Fetch the pool of solutions from `LeadSolvers` and merge it into the `MainSolver`.
 """
 remote_stop!(::AbstractSolver) = nothing
-function remote_stop!(s::LeadSolver)
-    isready(s.rc_stop) && take!(s.rc_stop)
-    sat = is_sat(s)
-    if !sat || !has_solution(s)
-        while isready(s.rc_report)
-            wait(s.rc_sol)
-            t = take!(s.rc_sol)
-            update_pool!(s, t)
-            sat && has_solution(t) && break
-            take!(s.rc_report)
-        end
-    end
-end
 
 """
     post_process(s::MainSolver)
 Launch a serie of tasks to round-up a solving run, for instance, export a run's info.
 """
 post_process(::AbstractSolver) = nothing
-function post_process(s::MainSolver)
-    path = get_option(s, "info_path")
-    sat = is_sat(s)
-    if s.status == :not_called
-        s.status = :solution_limit
-    end
-    if !isempty(path)
-        info = Dict(
-            :solution => has_solution(s) ? collect(best_values(s)) : nothing,
-            :time => time_info(s),
-            :type => sat ? "Satisfaction" : "Optimization",
-        )
-        !sat && has_solution(s) && push!(info, :value => best_value(s))
-        write(path, JSON.json(info))
-    end
-end
 
-"""
-    solve!(s; max_iteration=1000, verbose::Bool=false)
-Run the solver until a solution is found or `max_iteration` is reached.
-`verbose=true` will print out details of the run.
-
-```julia
-# Simply run the solver with default max_iteration
-solve!(s)
-
-# Run indefinitely the solver with verbose behavior.
-solve!(s, max_iteration = Inf, verbose = true)
-```
-"""
 function solve!(s, stop = Atomic{Bool}(false))
     start_time = time()
     add_time!(s, 1) # only used by MainSolver
