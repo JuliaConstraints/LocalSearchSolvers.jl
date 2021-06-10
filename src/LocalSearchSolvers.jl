@@ -1,5 +1,8 @@
 module LocalSearchSolvers
 
+using Dictionaries: include
+using CompositionalNetworks: include
+using Constraints: include
 using Base.Threads
 using CompositionalNetworks
 using ConstraintDomains
@@ -62,6 +65,10 @@ include("strategy.jl") # meta strategy methods and structures
 include("options.jl")
 include("time_stamps.jl")
 include("solver.jl")
+include("solvers/sub.jl")
+include("solvers/meta.jl")
+include("solvers/lead.jl")
+include("solvers/main.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
