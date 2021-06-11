@@ -45,6 +45,7 @@ include("model.jl")
 # Include solver state and pool of configurations related files
 include("configuration.jl")
 include("pool.jl")
+include("fluct.jl")
 include("state.jl")
 
 # Include strategies

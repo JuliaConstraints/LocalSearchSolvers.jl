@@ -18,6 +18,7 @@ end
 mutable struct _State{T} <: AbstractState
     configuration::Configuration{T}
     cons_costs::Dictionary{Int, Float64}
+    fluct::Fluct
     optimizing::Bool
     last_improvement::Int
     vars_costs::Dictionary{Int, Float64}
@@ -35,7 +36,8 @@ function state(m::_Model, pool = pool(); opt = false)
     cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
     vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
-    return _State(config, cons, opt, last_improvement, vars)
+    fluct = Fluct(cons, vars)
+    return _State(config, cons, fluct, opt, last_improvement, vars)
 end
 
 """
