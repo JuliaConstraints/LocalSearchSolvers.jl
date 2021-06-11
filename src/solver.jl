@@ -289,7 +289,7 @@ function _move!(s, x::Int, dim::Int=0)
     best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
     best_cost = old_cost = get_error(s)
-    copy_to!(s.state.fluct, _vars_costs(s), _cons_costs(s))
+    copy_to!(s.state.fluct, _cons_costs(s), _vars_costs(s))
     for v in _neighbours(s, x, dim)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
@@ -315,7 +315,7 @@ function _move!(s, x::Int, dim::Int=0)
             return best_values, best_swap, tabu
         end
 
-        copy_from!(s.state.fluct, _vars_costs(s), _cons_costs(s))
+        copy_from!(s.state.fluct, _cons_costs(s), _vars_costs(s))
         set_error!(s, old_cost)
 
         # swap/change back the value of x (and y/)
