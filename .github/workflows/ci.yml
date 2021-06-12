@@ -50,6 +50,7 @@ jobs:
       - uses: codecov/codecov-action@v1
         with:
           file: lcov.info
+          threshold': 5%
   docs:
     name: Documentation
     runs-on: ubuntu-latest
