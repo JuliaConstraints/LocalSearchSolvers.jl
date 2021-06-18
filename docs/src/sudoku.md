@@ -6,12 +6,14 @@ From Wikipedia's English page.
 Each column, row, and region of the sudoku grid can only have a number from each of 1 to 9.
 
 For instance, given this initial grid:
-
+```@raw html
 <img src="https://upload.wikimedia.org/wikipedia/commons/f/ff/Sudoku-by-L2G-20050714.svg" width="256" height="256">
+```
 
 The final state (i.e. solution) must be:
-
+```@raw html
 <img src="https://upload.wikimedia.org/wikipedia/commons/c/ce/Sudoku_solution_1.svg" width="256" height="256">
+```
 
 ## Constructing a sudoku model
 
