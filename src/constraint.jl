@@ -51,6 +51,8 @@ Base.in(var::Int, c::Constraint) = var ∈ c.vars
 DOCSTRING
 """
 function constraint(f, vars)
+    # @info "debug 1" hasmethod(f, NTuple{1, Any}, (:X,))
+    err = (x, X; kws...) -> (hasmethod(f, NTuple{1, Any}, (:X,)) ? f(x; X, kws...) : f(x; kws...))
     # TODO: fix in clean way the x86 compatibility
-    return Constraint(f, collect(Int == Int32 ? map(Int,vars) : vars))
+    return Constraint(err, collect(Int == Int32 ? map(Int,vars) : vars))
 end

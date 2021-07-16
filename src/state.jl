@@ -19,6 +19,7 @@ mutable struct _State{T} <: AbstractState
     configuration::Configuration{T}
     cons_costs::Dictionary{Int, Float64}
     fluct::Fluct
+    icn_computations::Matrix{Float64}
     optimizing::Bool
     last_improvement::Int
     vars_costs::Dictionary{Int, Float64}
@@ -31,13 +32,14 @@ const State = Union{EmptyState, _State}
 
 state() = EmptyState()
 function state(m::_Model, pool = pool(); opt = false)
+    X = Matrix{Float64}(undef, m.max_vars[], CompositionalNetworks.max_icn_length())
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
-    config = Configuration(m)
+    config = Configuration(m, X)
     cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
     last_improvement = 0
     vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
     fluct = Fluct(cons, vars)
-    return _State(config, cons, fluct, opt, last_improvement, vars)
+    return _State(config, cons, fluct, X, opt, last_improvement, vars)
 end
 
 """
