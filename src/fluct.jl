@@ -4,8 +4,6 @@ struct Fluct
     Fluct(cons, vars) = new(zeros(cons), zeros(vars))
 end
 
-
-
 function reset!(fluct)
     zeros! = d -> foreach(k -> set!(d, k, 0.0), keys(d))
     zeros!(fluct.cons)

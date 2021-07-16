@@ -58,7 +58,7 @@ cons = Dictionary(1:2, [c1, c2])
         LS._delete!(c, 3)
         @test 3 ∉ c
         @test LS._length(c) == 2
-        c.f(values; dom_size=3)
+        c.f(values, Matrix{Float64}(undef, 3, CompositionalNetworks.max_icn_length()); dom_size=3)
     end
 end
 

@@ -5,6 +5,7 @@ addprocs(1; exeflags = "-t 2")
 # addprocs(1)
 
 import ConstraintDomains
+import CompositionalNetworks
 using ConstraintModels
 using Constraints
 using Dictionaries

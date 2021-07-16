@@ -124,7 +124,7 @@ Compute the cost of constraint `c` with index `ind`.
 """
 function _compute_cost!(s, ind, c)
     old_cost = _cons_cost(s, ind)
-    new_cost = compute_cost(c, _values(s))
+    new_cost = compute_cost(c, _values(s), s.state.icn_computations)
     _cons_cost!(s, ind, new_cost)
     foreach(x -> _var_cost!(s, x, _var_cost(s, x) + new_cost - old_cost), c.vars)
 end
