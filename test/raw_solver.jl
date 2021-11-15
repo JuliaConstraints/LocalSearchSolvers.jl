@@ -1,10 +1,108 @@
+function mincut(graph; source, sink, interdiction =0)
+    m = model(; kind=:cut)
+    n = size(graph, 1)
+
+    d = domain(0:n)
+
+    separator = n + 1 # value that separate the two sides of the cut
+
+    # Add variables:
+    foreach(_ -> variable!(m, d), 0:n)
+
+    # Extract error function from usual_constraint
+    e1 = (x; param=nothing, dom_size=n + 1) -> error_f(
+        usual_constraints[:ordered])(x; param, dom_size
+    )
+    e2 = (x; param=nothing, dom_size=n + 1) -> error_f(
+        usual_constraints[:all_different])(x; param, dom_size
+    )
+
+    # Add constraint
+    constraint!(m, e1, [source, separator, sink])
+    constraint!(m, e2, 1:(n + 1))
+
+    # Add objective
+    objective!(m, (x...) -> o_mincut(graph, x...; interdiction))
+
+    return m
+end
+
+function golomb(n, L = n^2)
+    m = model(; kind=:golomb)
+
+    # Add variables
+    d = domain(0:L)
+    foreach(_ -> variable!(m, d), 1:n)
+
+    # Extract error function from usual_constraint
+    e1 = (x; param=nothing, dom_size=n) -> error_f(
+        usual_constraints[:all_different])(x; param, dom_size
+    )
+    e2 = (x; param=nothing, dom_size=n) -> error_f(
+        usual_constraints[:all_equal_param])(x; param, dom_size
+    )
+    e3 = (x; param=nothing, dom_size=n) -> error_f(
+        usual_constraints[:dist_different])(x; param, dom_size
+    )
+
+    # # Add constraints
+    constraint!(m, e1, 1:n)
+    constraint!(m, x -> e2(x; param=0), 1:1)
+    for i in 1:(n - 1), j in (i + 1):n, k in i:(n - 1), l in (k + 1):n
+        (i, j) < (k, l) || continue
+        constraint!(m, e3, [i, j, k, l])
+    end
+
+    # Add objective
+    objective!(m, o_dist_extrema)
+
+    return m
+end
+
+function sudoku(n; start=nothing)
+    N = n^2
+    d = domain(1:N)
+
+    m = model(;kind=:sudoku)
+
+    # Add variables
+    if isnothing(start)
+        foreach(_ -> variable!(m, d), 1:(N^2))
+    else
+        foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v) : d), pairs(start))
+    end
+
+
+    e = (x; param=nothing, dom_size=N) -> error_f(
+        usual_constraints[:all_different])(x; param=param, dom_size=dom_size
+    )
+
+    # Add constraints: line, columns; blocks
+    foreach(i -> constraint!(m, e, (i * N + 1):((i + 1) * N)), 0:(N - 1))
+    foreach(i -> constraint!(m, e, [j * N + i for j in 0:(N - 1)]), 1:N)
+
+    for i in 0:(n - 1)
+        for j in 0:(n - 1)
+            vars = Vector{Int}()
+            for k in 1:n
+                for l in 0:(n - 1)
+                    push!(vars, (j * n + l) * N + i * n + k)
+                end
+            end
+            constraint!(m, e, vars)
+        end
+    end
+
+    return m
+end
+
 @testset "Raw solver: internals" begin
     models = [
-        sudoku(2; modeler=:raw),
+        sudoku(2),
     ]
 
     for m in models
-        @info describe(m)
+        # @info describe(m)
         s = solver(m; options=Options(print_level=:verbose, time_limit = Inf, iteration=Inf, info_path="info.json"))
         for x in keys(get_variables(s))
             @test get_name(s, x) == "x$x"
@@ -60,14 +158,14 @@ end
         0  7  0  0  0  0  0  5  3
     ]))
 
-    s = solver(sudoku(3; start = sudoku_instance, modeler = :raw); options = Options(print_level = :minimal, iteration = Inf, time_limit = 10))
+    s = solver(sudoku(3; start = sudoku_instance); options = Options(print_level = :minimal, iteration = Inf, time_limit = 10))
     display(Dictionary(1:length(sudoku_instance), sudoku_instance))
     solve!(s)
     display(solution(s))
 end
 
 @testset "Raw solver: golomb" begin
-    s = solver(golomb(5, modeler = :raw); options = Options(print_level = :minimal, iteration = 1000))
+    s = solver(golomb(5); options = Options(print_level = :minimal, iteration = 1000))
     solve!(s)
 
     @info "Results golomb!"
@@ -99,7 +197,7 @@ end
     @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
 
     s = solver(mincut(graph, source=1, sink=5, interdiction=2); options = Options(print_level=:minimal, time_limit = 15, iteration=Inf))
-    @info describe(s)
+    # @info describe(s)
     solve!(s)
     @info "Results 2-mincut!"
     @info "Values: $(get_values(s))"

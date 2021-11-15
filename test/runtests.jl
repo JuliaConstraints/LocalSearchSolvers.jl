@@ -1,13 +1,12 @@
 
 using Distributed
 # Add a process with two threads
-addprocs(1; exeflags = "-t 2")
+# addprocs(1; exeflags = ["-t 2", "--project"])
 # addprocs(1)
 
 import ConstraintDomains
 import CompositionalNetworks
-using ConstraintModels
-using Constraints
+@everywhere using Constraints
 using Dictionaries
 @everywhere using LocalSearchSolvers
 using Test

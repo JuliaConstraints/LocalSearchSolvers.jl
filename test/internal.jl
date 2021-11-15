@@ -73,7 +73,7 @@ end
 
 
 m = model()
-describe(m)
+# LocalSearchSolvers.describe(m)
 
 x1 = variable([4,3,2,1])
 x2 = variable(d2)
@@ -116,7 +116,7 @@ objs = Dictionary(1:2, [o1, o2])
     add_value!(m, 1, 1)
     delete_var_from_cons!(m, 1, 1)
     add_var_to_cons!(m, 1, 1)
-    describe(m)
+    # describe(m)
 end
 
 ## Test Solver

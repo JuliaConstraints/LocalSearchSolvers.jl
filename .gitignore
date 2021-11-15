@@ -1,6 +1,6 @@
 *.jl.*.cov
 *.jl.cov
-*.jl.mem
+*.mem
 /docs/build/
 .gitignore
 _git2_*
