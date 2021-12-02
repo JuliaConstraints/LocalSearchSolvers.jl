@@ -1,0 +1,11 @@
+[deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+CompositionalNetworks = "4b67e4b5-442d-4ef5-b760-3f5df3a57537"
+ConstraintDomains = "5800fd60-8556-4464-8d61-84ebf7a0bedb"
+Constraints = "30f324ab-b02d-43f0-b619-e131c61659f7"
+LocalSearchSolvers = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
+PGFPlotsX = "8314cec4-20b6-5062-9cdb-752b83310925"
+PatternFolds = "c18a7f1d-76ad-4ce4-950d-5419b888513b"
+PerfChecker = "6309bf6b-a531-4b08-891e-8ee981e5c424"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
