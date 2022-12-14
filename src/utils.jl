@@ -24,5 +24,5 @@ end
 
 abstract type FunctionContainer end
 apply(fc::FC) where {FC <: FunctionContainer} = fc.f
-apply(fc::FC, x, X) where {FC <: FunctionContainer} = convert(Float64, apply(fc)(x, X))
+apply(fc::FC, x, X) where {FC <: FunctionContainer} = convert(Float64, apply(fc)(x; X))
 apply(fc::FC, x) where {FC <: FunctionContainer} = convert(Float64, apply(fc)(x))

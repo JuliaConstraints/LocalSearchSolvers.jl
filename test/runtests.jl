@@ -22,5 +22,5 @@ const LS = LocalSearchSolvers
 
 @testset "LocalSearchSolvers.jl" begin
     include("internal.jl")
-    # include("raw_solver.jl")
+    include("raw_solver.jl")
 end
