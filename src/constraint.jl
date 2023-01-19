@@ -50,4 +50,13 @@ Base.in(var::Int, c::Constraint) = var ∈ c.vars
 
 DOCSTRING
 """
-constraint(f, vars) = Constraint(f, collect(Int == Int32 ? map(Int,vars) : vars))
+function constraint(f, vars)
+    b1 = hasmethod(f, NTuple{1, Any}, (:X,))
+    b2 = hasmethod(f, NTuple{1, Any}, (:do_not_use_this_kwarg_name,))
+
+    g = f
+    if !b1 || b2
+        g = (x; X=nothing) -> f(x)
+    end
+    return Constraint(g, collect(Int == Int32 ? map(Int,vars) : vars))
+end

@@ -1,8 +1,5 @@
 module LocalSearchSolvers
 
-using Dictionaries: include
-using CompositionalNetworks: include
-using Constraints: include
 using Base.Threads
 using CompositionalNetworks
 using ConstraintDomains
