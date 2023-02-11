@@ -1,7 +1,7 @@
 name = "LocalSearchSolvers"
 uuid = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
 authors = ["Jean-Francois Baffier"]
-version = "0.4.0"
+version = "0.4.1"
 
 [deps]
 CompositionalNetworks = "4b67e4b5-442d-4ef5-b760-3f5df3a57537"
@@ -17,7 +17,7 @@ OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
 [compat]
 CompositionalNetworks = "0.5"
 ConstraintDomains = "0.3"
-Constraints = "0.4"
+Constraints = "0.5"
 Dictionaries = "0.3"
 JSON = "0.21"
 Lazy = "0.15"
