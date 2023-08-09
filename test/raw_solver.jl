@@ -10,8 +10,8 @@ function mincut(graph; source, sink, interdiction =0)
     foreach(_ -> variable!(m, d), 0:n)
 
     # Extract error function from usual_constraint
-    e1 = (x; X) -> error_f(usual_constraints[:ordered])(x)
-    e2 = (x; X) -> error_f(usual_constraints[:all_different])(x)
+    e1 = (x; X) -> error_f(USUAL_CONSTRAINTS[:ordered])(x)
+    e2 = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
 
     # Add constraint
     constraint!(m, e1, [source, separator, sink])
@@ -31,9 +31,9 @@ function golomb(n, L = n^2)
     foreach(_ -> variable!(m, d), 1:n)
 
     # Extract error function from usual_constraint
-    e1 = (x; X) -> error_f(usual_constraints[:all_different])(x)
-    e2 = (x; X) -> error_f(usual_constraints[:all_equal])(x; val=0)
-    e3 = (x; X) -> error_f(usual_constraints[:dist_different])(x)
+    e1 = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
+    e2 = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_equal])(x; val=0)
+    e3 = (x; X) -> error_f(USUAL_CONSTRAINTS[:dist_different])(x)
 
     # # Add constraints
     constraint!(m, e1, 1:n)
@@ -63,7 +63,7 @@ function sudoku(n; start=nothing)
     end
 
 
-    e = (x; X) -> error_f(usual_constraints[:all_different])(x)
+    e = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
 
     # Add constraints: line, columns; blocks
     foreach(i -> constraint!(m, e, (i * N + 1):((i + 1) * N)), 0:(N - 1))

@@ -47,7 +47,7 @@ end
 
 values = [1, 2, 3]
 inds = [1, 2]
-err = (x; X) -> error_f(usual_constraints[:all_different])(x)
+err = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
 c1 = constraint(err, inds)
 c2 = constraint(err, inds)
 cons = Dictionary(1:2, [c1, c2])
