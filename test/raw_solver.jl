@@ -1,4 +1,4 @@
-function mincut(graph; source, sink, interdiction =0)
+function mincut(graph; source, sink, interdiction=0)
     m = model(; kind=:cut)
     n = size(graph, 1)
 
@@ -15,7 +15,7 @@ function mincut(graph; source, sink, interdiction =0)
 
     # Add constraint
     constraint!(m, e1, [source, separator, sink])
-    constraint!(m, e2, 1:(n + 1))
+    constraint!(m, e2, 1:(n+1))
 
     # Add objective
     objective!(m, (x...) -> o_mincut(graph, x...; interdiction))
@@ -23,7 +23,7 @@ function mincut(graph; source, sink, interdiction =0)
     return m
 end
 
-function golomb(n, L = n^2)
+function golomb(n, L=n^2)
     m = model(; kind=:golomb)
 
     # Add variables
@@ -38,7 +38,7 @@ function golomb(n, L = n^2)
     # # Add constraints
     constraint!(m, e1, 1:n)
     constraint!(m, e2, 1:1)
-    for i in 1:(n - 1), j in (i + 1):n, k in i:(n - 1), l in (k + 1):n
+    for i in 1:(n-1), j in (i+1):n, k in i:(n-1), l in (k+1):n
         (i, j) < (k, l) || continue
         constraint!(m, e3, [i, j, k, l])
     end
@@ -53,7 +53,7 @@ function sudoku(n; start=nothing)
     N = n^2
     d = domain(1:N)
 
-    m = model(;kind=:sudoku)
+    m = model(; kind=:sudoku)
 
     # Add variables
     if isnothing(start)
@@ -66,14 +66,14 @@ function sudoku(n; start=nothing)
     e = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
 
     # Add constraints: line, columns; blocks
-    foreach(i -> constraint!(m, e, (i * N + 1):((i + 1) * N)), 0:(N - 1))
-    foreach(i -> constraint!(m, e, [j * N + i for j in 0:(N - 1)]), 1:N)
+    foreach(i -> constraint!(m, e, (i*N+1):((i+1)*N)), 0:(N-1))
+    foreach(i -> constraint!(m, e, [j * N + i for j in 0:(N-1)]), 1:N)
 
-    for i in 0:(n - 1)
-        for j in 0:(n - 1)
+    for i in 0:(n-1)
+        for j in 0:(n-1)
             vars = Vector{Int}()
             for k in 1:n
-                for l in 0:(n - 1)
+                for l in 0:(n-1)
                     push!(vars, (j * n + l) * N + i * n + k)
                 end
             end
@@ -91,7 +91,7 @@ end
 
     for m in models
         # @info describe(m)
-        s = solver(m; options=Options(print_level=:verbose, time_limit = Inf, iteration=Inf, info_path="info.json"))
+        s = solver(m; options=Options(print_level=:verbose, time_limit=Inf, iteration=Inf, info_path="info.json"))
         for x in keys(get_variables(s))
             @test get_name(s, x) == "x$x"
             for c in get_cons_from_var(s, x)
@@ -135,25 +135,26 @@ end
 
 @testset "Raw solver: sudoku" begin
     sudoku_instance = collect(Iterators.flatten([
-        9  3  0  0  0  0  0  4  0
-        0  0  0  0  4  2  0  9  0
-        8  0  0  1  9  6  7  0  0
-        0  0  0  4  7  0  0  0  0
-        0  2  0  0  0  0  0  6  0
-        0  0  0  0  2  3  0  0  0
-        0  0  8  5  3  1  0  0  2
-        0  9  0  2  8  0  0  0  0
-        0  7  0  0  0  0  0  5  3
+        9 3 0 0 0 0 0 4 0
+        0 0 0 0 4 2 0 9 0
+        8 0 0 1 9 6 7 0 0
+        0 0 0 4 7 0 0 0 0
+        0 2 0 0 0 0 0 6 0
+        0 0 0 0 2 3 0 0 0
+        0 0 8 5 3 1 0 0 2
+        0 9 0 2 8 0 0 0 0
+        0 7 0 0 0 0 0 5 3
     ]))
 
-    s = solver(sudoku(3; start = sudoku_instance); options = Options(print_level = :minimal, iteration = Inf, time_limit = 10))
+    s = solver(sudoku(3; start=sudoku_instance); options=Options(print_level=:minimal, iteration=Inf, time_limit=10))
     display(Dictionary(1:length(sudoku_instance), sudoku_instance))
     solve!(s)
     display(solution(s))
+    display(s.time_stamps)
 end
 
 @testset "Raw solver: golomb" begin
-    s = solver(golomb(5); options = Options(print_level = :minimal, iteration = 1000))
+    s = solver(golomb(5); options=Options(print_level=:minimal, iteration=1000))
     solve!(s)
 
     @info "Results golomb!"
@@ -164,27 +165,27 @@ end
 
 @testset "Raw solver: mincut" begin
     graph = zeros(5, 5)
-    graph[1,2] = 1.0
-    graph[1,3] = 2.0
-    graph[1,4] = 3.0
-    graph[2,5] = 1.0
-    graph[3,5] = 2.0
-    graph[4,5] = 3.0
-    s = solver(mincut(graph, source=1, sink=5), options =  Options(print_level = :minimal))
+    graph[1, 2] = 1.0
+    graph[1, 3] = 2.0
+    graph[1, 4] = 3.0
+    graph[2, 5] = 1.0
+    graph[3, 5] = 2.0
+    graph[4, 5] = 3.0
+    s = solver(mincut(graph, source=1, sink=5), options=Options(print_level=:minimal))
     solve!(s)
     @info "Results mincut!"
     @info "Values: $(get_values(s))"
     @info "Sol (val): $(best_value(s))"
     @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
 
-    s = solver(mincut(graph, source=1, sink=5, interdiction=1), options =  Options(print_level = :minimal))
+    s = solver(mincut(graph, source=1, sink=5, interdiction=1), options=Options(print_level=:minimal))
     solve!(s)
     @info "Results 1-mincut!"
     @info "Values: $(get_values(s))"
     @info "Sol (val): $(best_value(s))"
     @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
 
-    s = solver(mincut(graph, source=1, sink=5, interdiction=2); options = Options(print_level=:minimal, time_limit = 15, iteration=Inf))
+    s = solver(mincut(graph, source=1, sink=5, interdiction=2); options=Options(print_level=:minimal, time_limit=15, iteration=Inf))
     # @info describe(s)
     solve!(s)
     @info "Results 2-mincut!"

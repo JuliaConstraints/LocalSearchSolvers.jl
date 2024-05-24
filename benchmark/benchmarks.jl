@@ -30,4 +30,4 @@ end
 ## syntax is loadparams!(group, paramsgroup, fields...)
 # loadparams!(suite, BenchmarkTools.load("benchmark/params.json")[1], :evals, :samples);
 
-results = run(suite, verbose = true, seconds = 1)
+results = run(suite, verbose=true, seconds=1)
