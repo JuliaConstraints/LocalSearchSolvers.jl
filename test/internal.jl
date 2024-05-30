@@ -1,10 +1,10 @@
-d1 = domain([4,3,2,1])
+d1 = domain([4, 3, 2, 1])
 d2 = domain(1:4)
 domains = Dictionary(1:2, [d1, d2])
 @testset "Internals: Domains" begin
     for d in domains
         # constructors and ∈
-        for x in [1,2,3,4]
+        for x in [1, 2, 3, 4]
             @test x ∈ d
         end
         # length
@@ -20,7 +20,7 @@ domains = Dictionary(1:2, [d1, d2])
     @test 5 ∉ d1
 end
 
-x1 = variable([4,3,2,1])
+x1 = variable([4, 3, 2, 1])
 x2 = variable(d2)
 x3 = variable() # TODO: tailored test for free variable
 vars = Dictionary(1:2, [x1, x2])
@@ -34,7 +34,7 @@ vars = Dictionary(1:2, [x1, x2])
         @test x ∉ 2
         @test LS._constriction(x) == 1
         @test length(x) == 4
-        for y in [1,2,3,4]
+        for y in [1, 2, 3, 4]
             @test y ∈ x
         end
         @test rand(x) ∈ x
@@ -71,11 +71,10 @@ objs = Dictionary(1:2, [o1, o2])
     end
 end
 
-
 m = model()
 # LocalSearchSolvers.describe(m)
 
-x1 = variable([4,3,2,1])
+x1 = variable([4, 3, 2, 1])
 x2 = variable(d2)
 vars = Dictionary(1:2, [x1, x2])
 
@@ -95,12 +94,10 @@ objs = Dictionary(1:2, [o1, o2])
     end
     variable!(m, d1)
 
-
     for c in cons
         add!(m, c)
     end
-    constraint!(m, err, [1,2])
-
+    constraint!(m, err, [1, 2])
 
     for o in objs
         add!(m, o)

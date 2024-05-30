@@ -2,13 +2,13 @@ const print_levels = Dict(
     :silent => 0,
     :minimal => 1,
     :partial => 2,
-    :verbose => 3,
+    :verbose => 3
 )
 
-    # # Tabu times
-    # get!(s, :tabu_time, length_vars(s) ÷ 2) # 10?
-    # get!(s, :local_tabu, setting(s, :tabu_time) ÷ 2)
-    # get!(s, :δ_tabu, setting(s, :tabu_time) - setting(s, :local_tabu))# 20-30
+# # Tabu times
+# get!(s, :tabu_time, length_vars(s) ÷ 2) # 10?
+# get!(s, :local_tabu, setting(s, :tabu_time) ÷ 2)
+# get!(s, :δ_tabu, setting(s, :tabu_time) - setting(s, :local_tabu))# 20-30
 
 """
     Options()
@@ -36,7 +36,7 @@ set_time_limit_sec(model, 5.0)
 mutable struct Options
     dynamic::Bool
     info_path::String
-    iteration::Union{Int,Float64}
+    iteration::Union{Int, Float64}
     print_level::Symbol
     solutions::Int
     specialize::Bool
@@ -47,28 +47,28 @@ mutable struct Options
     time_limit::Float64 # seconds
 
     function Options(;
-        dynamic=false,
-        info_path="",
-        iteration=10000,
-        print_level=:minimal,
-        solutions=1,
-        specialize=!dynamic,
-        tabu_time=0,
-        tabu_local=0,
-        tabu_delta=0.0,
-        threads=typemax(0),
-        time_limit= 60, # seconds
+            dynamic = false,
+            info_path = "",
+            iteration = 10000,
+            print_level = :minimal,
+            solutions = 1,
+            specialize = !dynamic,
+            tabu_time = 0,
+            tabu_local = 0,
+            tabu_delta = 0.0,
+            threads = typemax(0),
+            time_limit = 60 # seconds
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
-        " and objectives types. Dynamic elements that add a new type will raise an error!"
+                 " and objectives types. Dynamic elements that add a new type will raise an error!"
         dynamic && specialize && @warn ds_str
 
         notds_str = "The solver types are not specialized in a static model context," *
-        " which is sub-optimal."
+                    " which is sub-optimal."
         !dynamic && !specialize && @info notds_str
 
         itertime_str = "Both iteration and time limits are disabled. " *
-        "Optimization runs will run infinitely."
+                       "Optimization runs will run infinitely."
         iteration == Inf && time_limit == Inf && @warn itertime_str
 
         new(
@@ -82,7 +82,7 @@ mutable struct Options
             tabu_local,
             tabu_delta,
             threads,
-            time_limit,
+            time_limit
         )
     end
 end
@@ -249,7 +249,6 @@ _time_limit(options) = options.time_limit
 DOCSTRING
 """
 _time_limit!(options, time) = options.time_limit = time
-
 
 function set_option!(options, name, value)
     eval(Symbol("_" * name * "!"))(options, value)
