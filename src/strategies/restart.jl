@@ -21,9 +21,9 @@ mutable struct TabuRestart <: RestartStrategy
     reset_percentage::Float64
 end
 
-function restart(tabu_strat, ::Val{:tabu}; rp = 1.0, index = 1)
-    limit = tenure(tabu_strat, :tabu) - tenure(tabu_strat, :pick)
-    return TabuRestart(index, tenure(tabu_strat, :tabu), limit, rp)
+function restart(strategy, ::Val{:tabu}; rp = 1.0, index = 1)
+    limit = tenure(strategy, :tabu) - tenure(strategy, :pick)
+    return TabuRestart(index, tenure(strategy, :tabu), limit, rp)
 end
 
 function check_restart!(rs::TabuRestart; tabu_length)

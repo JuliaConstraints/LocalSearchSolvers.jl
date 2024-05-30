@@ -51,7 +51,7 @@ end
     model()
 Construct a _Model, empty by default. It is recommended to add the constraints, variables, and objectives from an empty _Model. The following keyword arguments are available,
 - `vars=Dictionary{Int,Variable}()`: collection of variables
-- `cons=Dictionary{Int,Constraint}()`: collection of cosntraints
+- `cons=Dictionary{Int,Constraint}()`: collection of constraints
 - `objs=Dictionary{Int,Objective}()`: collection of objectives
 - `kind=:generic`: the kind of problem modeled (useful for specialized methods such as pretty printing)
 """

@@ -33,13 +33,13 @@ _get_constraints(x::Variable) = x.constraints
 
 """
     _add_to_constraint!(x::Variable, id)
-Add a constraint `id` to the list of contraints of `x`.
+Add a constraint `id` to the list of constraints of `x`.
 """
 _add_to_constraint!(x::Variable, id) = set!(_get_constraints(x), id)
 
 """
     _delete_from_constraint!(x::Variable, id)
-Delete a constraint `id` from the list of contraints of `x`.
+Delete a constraint `id` from the list of constraints of `x`.
 """
 _delete_from_constraint!(x::Variable, id) = delete!(x.constraints, id)
 

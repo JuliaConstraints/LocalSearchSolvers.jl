@@ -449,7 +449,7 @@ remote_stop!(::AbstractSolver) = nothing
 
 """
     post_process(s::MainSolver)
-Launch a serie of tasks to round-up a solving run, for instance, export a run's info.
+Launch a series of tasks to round-up a solving run, for instance, export a run's info.
 """
 post_process(::AbstractSolver) = nothing
 
