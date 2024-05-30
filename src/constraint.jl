@@ -56,7 +56,7 @@ function constraint(f, vars)
 
     g = f
     if !b1 || b2
-        g = (x; X=nothing) -> f(x)
+        g = (x; X = nothing) -> f(x)
     end
-    return Constraint(g, collect(Int == Int32 ? map(Int,vars) : vars))
+    return Constraint(g, collect(Int == Int32 ? map(Int, vars) : vars))
 end

@@ -1,5 +1,5 @@
-function mincut(graph; source, sink, interdiction =0)
-    m = model(; kind=:cut)
+function mincut(graph; source, sink, interdiction = 0)
+    m = model(; kind = :cut)
     n = size(graph, 1)
 
     d = domain(0:n)
@@ -24,7 +24,7 @@ function mincut(graph; source, sink, interdiction =0)
 end
 
 function golomb(n, L = n^2)
-    m = model(; kind=:golomb)
+    m = model(; kind = :golomb)
 
     # Add variables
     d = domain(0:L)
@@ -32,7 +32,7 @@ function golomb(n, L = n^2)
 
     # Extract error function from usual_constraint
     e1 = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
-    e2 = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_equal])(x; val=0)
+    e2 = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_equal])(x; val = 0)
     e3 = (x; X) -> error_f(USUAL_CONSTRAINTS[:dist_different])(x)
 
     # # Add constraints
@@ -49,11 +49,11 @@ function golomb(n, L = n^2)
     return m
 end
 
-function sudoku(n; start=nothing)
+function sudoku(n; start = nothing)
     N = n^2
     d = domain(1:N)
 
-    m = model(;kind=:sudoku)
+    m = model(; kind = :sudoku)
 
     # Add variables
     if isnothing(start)
@@ -61,7 +61,6 @@ function sudoku(n; start=nothing)
     else
         foreach(((x, v),) -> variable!(m, 1 ≤ v ≤ N ? domain(v) : d), pairs(start))
     end
-
 
     e = (x; X) -> error_f(USUAL_CONSTRAINTS[:all_different])(x)
 
@@ -86,12 +85,14 @@ end
 
 @testset "Raw solver: internals" begin
     models = [
-        sudoku(2),
+        sudoku(2)
     ]
 
     for m in models
         # @info describe(m)
-        s = solver(m; options=Options(print_level=:verbose, time_limit = Inf, iteration=Inf, info_path="info.json"))
+        s = solver(m;
+            options = Options(print_level = :verbose, time_limit = Inf,
+                iteration = Inf, info_path = "info.json"))
         for x in keys(get_variables(s))
             @test get_name(s, x) == "x$x"
             for c in get_cons_from_var(s, x)
@@ -134,22 +135,22 @@ end
 end
 
 @testset "Raw solver: sudoku" begin
-    sudoku_instance = collect(Iterators.flatten([
-        9  3  0  0  0  0  0  4  0
-        0  0  0  0  4  2  0  9  0
-        8  0  0  1  9  6  7  0  0
-        0  0  0  4  7  0  0  0  0
-        0  2  0  0  0  0  0  6  0
-        0  0  0  0  2  3  0  0  0
-        0  0  8  5  3  1  0  0  2
-        0  9  0  2  8  0  0  0  0
-        0  7  0  0  0  0  0  5  3
-    ]))
+    sudoku_instance = collect(Iterators.flatten([9 3 0 0 0 0 0 4 0
+                                                 0 0 0 0 4 2 0 9 0
+                                                 8 0 0 1 9 6 7 0 0
+                                                 0 0 0 4 7 0 0 0 0
+                                                 0 2 0 0 0 0 0 6 0
+                                                 0 0 0 0 2 3 0 0 0
+                                                 0 0 8 5 3 1 0 0 2
+                                                 0 9 0 2 8 0 0 0 0
+                                                 0 7 0 0 0 0 0 5 3]))
 
-    s = solver(sudoku(3; start = sudoku_instance); options = Options(print_level = :minimal, iteration = Inf, time_limit = 10))
+    s = solver(sudoku(3; start = sudoku_instance);
+        options = Options(print_level = :minimal, iteration = Inf, time_limit = 10))
     display(Dictionary(1:length(sudoku_instance), sudoku_instance))
     solve!(s)
     display(solution(s))
+    display(s.time_stamps)
 end
 
 @testset "Raw solver: golomb" begin
@@ -164,27 +165,30 @@ end
 
 @testset "Raw solver: mincut" begin
     graph = zeros(5, 5)
-    graph[1,2] = 1.0
-    graph[1,3] = 2.0
-    graph[1,4] = 3.0
-    graph[2,5] = 1.0
-    graph[3,5] = 2.0
-    graph[4,5] = 3.0
-    s = solver(mincut(graph, source=1, sink=5), options =  Options(print_level = :minimal))
+    graph[1, 2] = 1.0
+    graph[1, 3] = 2.0
+    graph[1, 4] = 3.0
+    graph[2, 5] = 1.0
+    graph[3, 5] = 2.0
+    graph[4, 5] = 3.0
+    s = solver(
+        mincut(graph, source = 1, sink = 5), options = Options(print_level = :minimal))
     solve!(s)
     @info "Results mincut!"
     @info "Values: $(get_values(s))"
     @info "Sol (val): $(best_value(s))"
     @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
 
-    s = solver(mincut(graph, source=1, sink=5, interdiction=1), options =  Options(print_level = :minimal))
+    s = solver(mincut(graph, source = 1, sink = 5, interdiction = 1),
+        options = Options(print_level = :minimal))
     solve!(s)
     @info "Results 1-mincut!"
     @info "Values: $(get_values(s))"
     @info "Sol (val): $(best_value(s))"
     @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
 
-    s = solver(mincut(graph, source=1, sink=5, interdiction=2); options = Options(print_level=:minimal, time_limit = 15, iteration=Inf))
+    s = solver(mincut(graph, source = 1, sink = 5, interdiction = 2);
+        options = Options(print_level = :minimal, time_limit = 15, iteration = Inf))
     # @info describe(s)
     solve!(s)
     @info "Results 2-mincut!"

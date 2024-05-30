@@ -35,9 +35,9 @@ function state(m::_Model, pool = pool(); opt = false)
     X = Matrix{Float64}(undef, m.max_vars[], CompositionalNetworks.max_icn_length())
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
     config = Configuration(m, X)
-    cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int,Float64}()
+    cons = lc ? zeros(Float64, get_constraints(m)) : Dictionary{Int, Float64}()
     last_improvement = 0
-    vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int,Float64}()
+    vars = lv ? zeros(Float64, get_variables(m)) : Dictionary{Int, Float64}()
     fluct = Fluct(cons, vars)
     return _State(config, cons, fluct, X, opt, last_improvement, vars)
 end
@@ -82,7 +82,7 @@ _vars_costs!(s::_State, costs) = s.vars_costs = costs
     _values!(s::S, values) where S <: Union{_State, AbstractSolver}
 Set the variables values.
 """
-_values!(s::_State{T}, values) where T <: Number = set_values!(s, values)
+_values!(s::_State{T}, values) where {T <: Number} = set_values!(s, values)
 
 """
     _optimizing!(s::S) where S <: Union{_State, AbstractSolver}

@@ -33,7 +33,6 @@ get_time(stamps, ::Val{6}) = stamps.ts6
 
 get_time(stamps, i) = get_time(stamps, Val(i))
 
-
 function time_info(stamps)
     info = Dict([
         :model => get_time(stamps, 1) - get_time(stamps, 0),
@@ -43,7 +42,7 @@ function time_info(stamps)
         :local_run => get_time(stamps, 5) - get_time(stamps, 4),
         :remote_stop => get_time(stamps, 6) - get_time(stamps, 5),
         :total_run => get_time(stamps, 6) - get_time(stamps, 1),
-        :model_and_run => get_time(stamps, 6) - get_time(stamps, 0),
+        :model_and_run => get_time(stamps, 6) - get_time(stamps, 0)
     ])
     return info
 end

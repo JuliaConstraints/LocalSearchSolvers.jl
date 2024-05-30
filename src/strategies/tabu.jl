@@ -4,13 +4,13 @@ struct NoTabu <: TabuStrategy end
 
 struct KeenTabu <: TabuStrategy
     tabu_tenure::Int
-    tabu_list::Dictionary{Int,Int}
+    tabu_list::Dictionary{Int, Int}
 end
 
 struct WeakTabu <: TabuStrategy
     tabu_tenure::Int
     pick_tenure::Int
-    tabu_list::Dictionary{Int,Int}
+    tabu_list::Dictionary{Int, Int}
 end
 
 tabu() = NoTabu()
@@ -73,7 +73,6 @@ insert_tabu!(ts, x, ::Val{:tabu}) = insert!(tabu_list(ts), x, max(1, tenure(ts, 
 insert_tabu!(ts::KeenTabu, x, kind::Symbol) = insert_tabu!(ts, x, Val(kind))
 insert_tabu!(ts::WeakTabu, x, kind) = insert!(tabu_list(ts), x, max(1, tenure(ts, kind)))
 insert_tabu!(ts, x, kind) = nothing
-
 
 """
     _decay_tabu!(s::S) where S <: Union{_State, AbstractSolver}

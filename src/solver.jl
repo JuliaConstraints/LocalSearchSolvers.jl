@@ -9,7 +9,8 @@ add_time!(::AbstractSolver, i) = nothing
 
 function solver(ms, id, role; pool = pool(), strats = MetaStrategy(ms))
     mlid = make_id(meta_id(ms), id, Val(role))
-    return solver(mlid, ms.model, ms.options, pool, ms.rc_report, ms.rc_sol, ms.rc_stop, strats, Val(role))
+    return solver(mlid, ms.model, ms.options, pool, ms.rc_report,
+        ms.rc_sol, ms.rc_stop, strats, Val(role))
 end
 
 # Forwards from model field
@@ -134,7 +135,7 @@ end
 
 Compute the cost of constraints `c` in `cons_lst`. If `cons_lst` is empty, compute the cost for all the constraints in `s`.
 """
-function _compute_costs!(s; cons_lst=Indices{Int}())
+function _compute_costs!(s; cons_lst = Indices{Int}())
     if isempty(cons_lst)
         foreach(((id, c),) -> _compute_cost!(s, id, c), pairs(get_constraints(s)))
     else
@@ -159,7 +160,7 @@ function _compute_objective!(s, o::Objective)
         s.pool = pool(s.state.configuration)
     end
 end
-_compute_objective!(s, o=1) = _compute_objective!(s, get_objective(s, o))
+_compute_objective!(s, o = 1) = _compute_objective!(s, get_objective(s, o))
 
 """
     _compute!(s; o::Int = 1, cons_lst = Indices{Int}())
@@ -171,7 +172,7 @@ Compute the objective `o`'s value if `s` is satisfied and return the current `er
 - `o`: targeted objective
 - `cons_lst`: list of targeted constraints, if empty compute for the whole set
 """
-function _compute!(s; o::Int=1, cons_lst=Indices{Int}())
+function _compute!(s; o::Int = 1, cons_lst = Indices{Int}())
     _compute_costs!(s; cons_lst)
     if get_error(s) == 0.0
         _optimizing(s) && _compute_objective!(s, o)
@@ -194,15 +195,17 @@ DOCSTRING
 function _neighbours(s, x, dim = 0)
     if dim == 0
         is_discrete = typeof(get_variable(s, x).domain) <: ContinuousDomain
-        return is_discrete ? map(_ -> draw(s, x), 1:(length_vars(s)*length_cons(s))) : get_domain(s, x)
+        return is_discrete ? map(_ -> draw(s, x), 1:(length_vars(s) * length_cons(s))) :
+               get_domain(s, x)
     else
         neighbours = Set{Int}()
         foreach(
-            c -> foreach(y ->
-                begin
+            c -> foreach(
+                y -> begin
                     b = _value(s, x) ∈ get_variable(s, y) && _value(s, y) ∈ get_variable(s, x)
                     b && push!(neighbours, y)
-                end, get_vars_from_cons(s, c)),
+                end,
+                get_vars_from_cons(s, c)),
             get_cons_from_var(s, x)
         )
         return delete!(neighbours, x)
@@ -219,21 +222,26 @@ function _init!(s, ::Val{:global})
     put!(s.rc_stop, nothing)
     foreach(i -> put!(s.rc_report, nothing), setdiff(workers(), [1]))
 end
-_init!(s, ::Val{:meta}) = foreach(id -> push!(s.subs, solver(s, id-1, :sub)), 2:nthreads())
+function _init!(s, ::Val{:meta})
+    foreach(id -> push!(s.subs, solver(s, id - 1, :sub)), 2:nthreads())
+end
 
 function _init!(s, ::Val{:remote})
     for w in setdiff(workers(), [1])
         ls = remotecall(solver, w, s, w, :lead)
         remote_do(set_option!, w, fetch(ls), "print_level", :silent)
-        remote_do(set_option!, w, fetch(ls), "threads",remotecall_fetch(Threads.nthreads, w))
+        remote_do(
+            set_option!, w, fetch(ls), "threads", remotecall_fetch(Threads.nthreads, w))
         push!(s.remotes, w => ls)
     end
 end
 
 function _init!(s, ::Val{:local}; pool = pool())
     get_option(s, "tabu_time") == 0 && set_option!(s, "tabu_time", length_vars(s) ÷ 2) # 10?
-    get_option(s, "tabu_local") == 0 && set_option!(s, "tabu_local", get_option(s, "tabu_time") ÷ 2)
-    get_option(s, "tabu_delta") == 0 && set_option!(s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
+    get_option(s, "tabu_local") == 0 &&
+        set_option!(s, "tabu_local", get_option(s, "tabu_time") ÷ 2)
+    get_option(s, "tabu_delta") == 0 && set_option!(
+        s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
     state!(s)
     return has_solution(s)
 end
@@ -245,7 +253,7 @@ _init!(s, role::Symbol) = _init!(s, Val(role))
 
 Restart a solver.
 """
-function _restart!(s, k=10)
+function _restart!(s, k = 10)
     _verbose(s, "\n============== RESTART!!!!================\n")
     _draw!(s)
     empty_tabu!(s)
@@ -274,7 +282,6 @@ function _select_worse(s)
     return _find_rand_argmax(view(_vars_costs(s), nontabu))
 end
 
-
 """
     _move!(s, x::Int, dim::Int = 0)
 
@@ -285,8 +292,11 @@ Perform an improving move in `x` neighbourhood if possible.
 - `x`: selected variable id
 - `dim`: describe the dimension of the considered neighbourhood
 """
-function _move!(s, x::Int, dim::Int=0)
-    best_values = [begin old_v = _value(s, x) end]; best_swap = [x]
+function _move!(s, x::Int, dim::Int = 0)
+    best_values = [begin
+        old_v = _value(s, x)
+    end]
+    best_swap = [x]
     tabu = true # unless proved otherwise, this variable is now tabu
     best_cost = old_cost = get_error(s)
     copy_to!(s.state.fluct, _cons_costs(s), _vars_costs(s))
@@ -297,7 +307,7 @@ function _move!(s, x::Int, dim::Int=0)
         _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
 
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
-        _compute!(s, cons_lst=cons_x_v)
+        _compute!(s, cons_lst = cons_x_v)
 
         cost = get_error(s)
         if cost < best_cost
@@ -343,7 +353,7 @@ function _step!(s)
         _, best_swap, tabu = _move!(s, x, 1)
         _compute!(s)
     else # compute the costs changes from best local move
-        _compute!(s; cons_lst=get_cons_from_var(s, x))
+        _compute!(s; cons_lst = get_cons_from_var(s, x))
     end
 
     # decay tabu list
@@ -399,7 +409,8 @@ Search the space of configurations.
 function solve_while_loop!(s, stop, sat, iter, st)
     while stop_while_loop(s, stop, iter, st)
         iter += 1
-        _verbose(s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+        _verbose(
+            s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
         _step!(s) && sat && break
         _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
         best_sub = _check_subs(s)
@@ -410,7 +421,6 @@ function solve_while_loop!(s, stop, sat, iter, st)
         end
     end
 end
-
 
 """
     remote_dispatch!(solver)
@@ -439,7 +449,7 @@ remote_stop!(::AbstractSolver) = nothing
 
 """
     post_process(s::MainSolver)
-Launch a serie of tasks to round-up a solving run, for instance, export a run's info.
+Launch a series of tasks to round-up a solving run, for instance, export a run's info.
 """
 post_process(::AbstractSolver) = nothing
 

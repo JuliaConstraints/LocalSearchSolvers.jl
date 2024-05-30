@@ -18,7 +18,8 @@ mutable struct _SubSolver <: AbstractSolver
     strategies::MetaStrategy
 end
 
-function solver(mlid, model, options, pool, ::RemoteChannel, ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
+function solver(mlid, model, options, pool, ::RemoteChannel,
+        ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
     sub_options = deepcopy(options)
     set_option!(options, "print_level", :silent)
     return _SubSolver(mlid, model, sub_options, pool, state(), strats)

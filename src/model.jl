@@ -20,10 +20,11 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: O
 end
 ```
 """
-struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}# <: MOI.ModelLike
-    variables::Dictionary{Int,V}
-    constraints::Dictionary{Int,C}
-    objectives::Dictionary{Int,O}
+struct _Model{V <: Variable{<:AbstractDomain},
+    C <: Constraint{<:Function}, O <: Objective{<:Function}}# <: MOI.ModelLike
+    variables::Dictionary{Int, V}
+    constraints::Dictionary{Int, C}
+    objectives::Dictionary{Int, O}
 
     # counter to add new variables: vars, cons, objs
     max_vars::Ref{Int} # TODO: UInt ?
@@ -40,7 +41,7 @@ struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: O
     kind::Symbol
 
     # Best known bound
-    best_bound::Union{Nothing,Float64}
+    best_bound::Union{Nothing, Float64}
 
     # Time of construction (seconds) since epoch
     time_stamp::Float64
@@ -50,18 +51,17 @@ end
     model()
 Construct a _Model, empty by default. It is recommended to add the constraints, variables, and objectives from an empty _Model. The following keyword arguments are available,
 - `vars=Dictionary{Int,Variable}()`: collection of variables
-- `cons=Dictionary{Int,Constraint}()`: collection of cosntraints
+- `cons=Dictionary{Int,Constraint}()`: collection of constraints
 - `objs=Dictionary{Int,Objective}()`: collection of objectives
 - `kind=:generic`: the kind of problem modeled (useful for specialized methods such as pretty printing)
 """
 function model(;
-    vars=Dictionary{Int,Variable}(),
-    cons=Dictionary{Int,Constraint}(),
-    objs=Dictionary{Int,Objective}(),
-    kind=:generic,
-    best_bound=nothing,
+        vars = Dictionary{Int, Variable}(),
+        cons = Dictionary{Int, Constraint}(),
+        objs = Dictionary{Int, Objective}(),
+        kind = :generic,
+        best_bound = nothing
 )
-
     max_vars = Ref(zero(Int))
     max_cons = Ref(zero(Int))
     max_objs = Ref(zero(Int))
@@ -69,7 +69,8 @@ function model(;
 
     specialized = Ref(false)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs, sense, specialized, kind, best_bound, time())
+    _Model(vars, cons, objs, max_vars, max_cons, max_objs,
+        sense, specialized, kind, best_bound, time())
 end
 
 """
@@ -278,7 +279,7 @@ end
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::_Model, d=domain())
+function variable!(m::_Model, d = domain())
     add!(m, variable(d))
     return _max_vars(m)
 end
@@ -310,24 +311,24 @@ function describe(m::_Model) # TODO: rewrite _describe
         objectives = "Constraint Satisfaction Program (CSP)"
     else
         objectives = "Constraint Optimization Program (COP) with Objective(s)\n"
-        objectives *=
-            mapreduce(o -> "\t\t" * o.name * "\n", *, get_objectives(m); init="")[1:end - 1]
+        objectives *= mapreduce(
+            o -> "\t\t" * o.name * "\n", *, get_objectives(m); init = "")[1:(end - 1)]
     end
     variables = mapreduce(
         x -> "\t\tx$(x[1]): " * string(get_domain(x[2])) * "\n",
-        *, pairs(m.variables); init=""
-    )[1:end - 1]
-    constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n", *, pairs(m.constraints); init="")[1:end - 1]
+        *, pairs(m.variables); init = ""
+    )[1:(end - 1)]
+    constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n",
+        *, pairs(m.constraints); init = "")[1:(end - 1)]
 
-    str =
-    """
-    _Model description
-        $objectives
-        Variables: $(length(m.variables))
-    $variables
-        Constraints: $(length(m.constraints))
-    $constraints
-    """
+    str = """
+          _Model description
+              $objectives
+              Variables: $(length(m.variables))
+          $variables
+              Constraints: $(length(m.constraints))
+          $constraints
+          """
 
     return str
 end
@@ -457,13 +458,13 @@ function compute_costs(m, values, X)
     return sum(c -> compute_cost(c, values, X), get_constraints(m); init = 0.0)
 end
 function compute_costs(m, values, cons, X)
-    return  sum(c -> compute_cost(c, values, X), view(get_constraints(m), cons); init = 0.0)
+    return sum(c -> compute_cost(c, values, X), view(get_constraints(m), cons); init = 0.0)
 end
 
 compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
 
 function update_domain!(m, x, d)
-    if isempty(get_variable(m,x))
+    if isempty(get_variable(m, x))
         old_d = get_variable(m, x).domain
         _set_domain!(m, x, d.domain)
     else
@@ -472,7 +473,7 @@ function update_domain!(m, x, d)
         new_d = if are_continuous
             intersect_domains(old_d, d)
         else
-            intersect_domains(convert(RangeDomain,old_d), convert(RangeDomain, d))
+            intersect_domains(convert(RangeDomain, old_d), convert(RangeDomain, d))
         end
         _set_domain!(m, x, new_d)
     end
