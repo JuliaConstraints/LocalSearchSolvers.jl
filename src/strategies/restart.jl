@@ -1,5 +1,18 @@
 abstract type RestartStrategy end
 
+# Random restart
+struct RandomRestart <: RestartStrategy
+    reset_percentage::Float64
+end
+
+function restart(::Any, ::Val{:random}; rp = 0.05)
+    return RandomRestart(rp)
+end
+
+function check_restart!(rs::RandomRestart; tabu_length = nothing)
+    return rand() ≤ rs.reset_percentage
+end
+
 # Tabu restart
 mutable struct TabuRestart <: RestartStrategy
     index::Int
@@ -8,9 +21,9 @@ mutable struct TabuRestart <: RestartStrategy
     reset_percentage::Float64
 end
 
-function restart(tabu_strat,::Val{:tabu}; rp = 1.0, index = 1)
-    limit = tenure(tabu_strat, :tabu) - tenure(tabu_strat, :pick)
-    return TabuRestart(index, tenure(tabu_strat, :tabu), limit, rp)
+function restart(strategy, ::Val{:tabu}; rp = 1.0, index = 1)
+    limit = tenure(strategy, :tabu) - tenure(strategy, :pick)
+    return TabuRestart(index, tenure(strategy, :tabu), limit, rp)
 end
 
 function check_restart!(rs::TabuRestart; tabu_length)
@@ -55,10 +68,10 @@ end
 ## Universal restart sequence
 
 function oeis(n, b, ::Val{:A082850})
-    m = log(b,n+1)
+    m = log(b, n + 1)
     return isinteger(m) ? Int(m) : oeis(n - (b^floor(m) - 1), :A082850)
 end
-oeis(n, b, ::Val{:A182105}) = b^(oeis(n, :A082850)-1)
+oeis(n, b, ::Val{:A182105}) = b^(oeis(n, :A082850) - 1)
 oeis(n, ref::Symbol, b = 2) = oeis(n, b, Val(ref))
 restart(::Any, ::Val{:universal}) = RestartSequence(n -> oeis(n, :A182105))
 

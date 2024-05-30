@@ -28,9 +28,9 @@ end
 make_id(::Int, id, ::Val{:lead}) = (id, 0)
 
 function solver(model = model();
-    options = Options(),
-    pool = pool(),
-    strategies = MetaStrategy(model),
+        options = Options(),
+        pool = pool(),
+        strategies = MetaStrategy(model)
 )
     mlid = (1, 0)
     rc_report = RemoteChannel(() -> Channel{Nothing}(length(workers())))
@@ -39,7 +39,8 @@ function solver(model = model();
     remotes = Dict{Int, Future}()
     subs = Vector{_SubSolver}()
     ts = TimeStamps(model)
-    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, remotes, state(), :not_called, strategies, subs, ts)
+    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop,
+        remotes, state(), :not_called, strategies, subs, ts)
 end
 
 # Forwards from TimeStamps
@@ -104,7 +105,7 @@ function post_process(s::MainSolver)
         info = Dict(
             :solution => has_solution(s) ? collect(best_values(s)) : nothing,
             :time => time_info(s),
-            :type => sat ? "Satisfaction" : "Optimization",
+            :type => sat ? "Satisfaction" : "Optimization"
         )
         !sat && has_solution(s) && push!(info, :value => best_value(s))
         write(path, JSON.json(info))

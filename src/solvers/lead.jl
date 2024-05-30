@@ -15,11 +15,13 @@ mutable struct LeadSolver <: MetaSolver
     subs::Vector{_SubSolver}
 end
 
-function solver(mlid, model, options, pool, rc_report, rc_sol, rc_stop, strats, ::Val{:lead})
+function solver(
+        mlid, model, options, pool, rc_report, rc_sol, rc_stop, strats, ::Val{:lead})
     l_options = deepcopy(options)
     set_option!(options, "print_level", :silent)
     ss = Vector{_SubSolver}()
-    return LeadSolver(mlid, model, l_options, pool, rc_report, rc_sol, rc_stop, state(), strats, ss)
+    return LeadSolver(
+        mlid, model, l_options, pool, rc_report, rc_sol, rc_stop, state(), strats, ss)
 end
 
 function _init!(s::LeadSolver)
