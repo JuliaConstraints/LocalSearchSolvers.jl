@@ -259,7 +259,7 @@ function _restart!(s, k = 10)
     empty_tabu!(s)
     δ = ((k - 1) * get_option(s, "tabu_delta")) + get_option(s, "tabu_time") / k
     set_option!(s, "tabu_delta", δ)
-    _compute!(s) ? _optimizing!(s) : _satisfying!(s)
+    (_compute!(s) && !is_sat(s)) ? _optimizing!(s) : _satisfying!(s)
 end
 
 """
