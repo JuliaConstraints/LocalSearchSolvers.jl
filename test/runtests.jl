@@ -14,6 +14,6 @@ const LS = LocalSearchSolvers
 @testset "LocalSearchSolvers.jl" begin
     include("Aqua.jl")
     include("TestItemRunner.jl")
-    # include("internal.jl")
-    # include("raw_solver.jl")
+    include("internal.jl")
+    include("raw_solver.jl")
 end
