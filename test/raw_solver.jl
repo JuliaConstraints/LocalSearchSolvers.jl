@@ -90,9 +90,15 @@ end
 
     for m in models
         # @info describe(m)
-        s = solver(m;
-            options = Options(print_level = :verbose, time_limit = Inf,
-                iteration = Inf, info_path = "info.json"))
+        options = Options(
+            print_level = :verbose,
+            time_limit = Inf,
+            iteration = Inf,
+            info_path = "info.json",
+            process_threads_map = Dict{Int, Int}(
+                [2 => 2, 3 => 1]
+            ))
+        s = solver(m; options)
         for x in keys(get_variables(s))
             @test get_name(s, x) == "x$x"
             for c in get_cons_from_var(s, x)

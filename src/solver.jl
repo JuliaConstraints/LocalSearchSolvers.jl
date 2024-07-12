@@ -223,15 +223,17 @@ function _init!(s, ::Val{:global})
     foreach(i -> put!(s.rc_report, nothing), setdiff(workers(), [1]))
 end
 function _init!(s, ::Val{:meta})
-    foreach(id -> push!(s.subs, solver(s, id - 1, :sub)), 2:nthreads())
+    t = min(get_option(s, "threads"), Threads.nthreads())
+    foreach(id -> push!(s.subs, solver(s, id - 1, :sub)), 2:t)
+    return nothing
 end
 
 function _init!(s, ::Val{:remote})
     for w in setdiff(workers(), [1])
         ls = remotecall(solver, w, s, w, :lead)
         remote_do(set_option!, w, fetch(ls), "print_level", :silent)
-        remote_do(
-            set_option!, w, fetch(ls), "threads", remotecall_fetch(Threads.nthreads, w))
+        t = min(get_option(s, "threads", w), remotecall_fetch(Threads.nthreads, w))
+        remote_do(set_option!, w, fetch(ls), "threads", t)
         push!(s.remotes, w => ls)
     end
 end
