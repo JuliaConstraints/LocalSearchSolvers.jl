@@ -38,12 +38,12 @@ mutable struct Options
     info_path::String
     iteration::Union{Int, Float64}
     print_level::Symbol
+    process_threads_map::Dict{Int, Int}
     solutions::Int
     specialize::Bool
     tabu_time::Int
     tabu_local::Int
     tabu_delta::Float64
-    threads::Int
     time_limit::Float64 # seconds
 
     function Options(;
@@ -51,12 +51,12 @@ mutable struct Options
             info_path = "",
             iteration = 10000,
             print_level = :minimal,
+            process_threads_map = Dict{Int, Int}(1 => typemax(0)),
             solutions = 1,
             specialize = !dynamic,
             tabu_time = 0,
             tabu_local = 0,
             tabu_delta = 0.0,
-            threads = typemax(0),
             time_limit = 60 # seconds
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
@@ -76,12 +76,12 @@ mutable struct Options
             info_path,
             iteration,
             print_level,
+            process_threads_map,
             solutions,
             specialize,
             tabu_time,
             tabu_local,
             tabu_delta,
-            threads,
             time_limit
         )
     end
@@ -151,6 +151,24 @@ _print_level(options) = options.print_level
 DOCSTRING
 """
 _print_level!(options, level) = options.print_level = level
+
+"""
+    _process_threads_map(options)
+
+TBW
+"""
+_process_threads_map(options) = options.process_threads_map
+
+"""
+    _process_threads_map!(options, ptm)
+
+TBW
+"""
+_process_threads_map!(options, ptm::AbstractDict) = options.process_threads_map = ptm
+
+function _process_threads_map!(options, ptm::AbstractVector)
+    return _process_threads_map!(options, Dict(enumerate(ptm)))
+end
 
 """
     _solutions(options) = begin
@@ -227,17 +245,17 @@ _tabu_delta!(options, time) = options.tabu_delta = time
 
 DOCSTRING
 """
-_threads(options) = options.threads
+_threads(options, p = 1) = get!(options.process_threads_map, p, typemax(0))
 
 """
     _threads!(options, threads) = begin
 
 DOCSTRING
 """
-_threads!(options, threads) = options.threads = threads
+_threads!(options, threads, p = 1) = push!(options.process_threads_map, p => threads)
 
 """
-    _time_limit(options) = begin
+    _time_limit(options)
 
 DOCSTRING
 """
@@ -254,6 +272,6 @@ function set_option!(options, name, value)
     eval(Symbol("_" * name * "!"))(options, value)
 end
 
-function get_option(options, name)
-    eval(Symbol("_" * name))(options)
+function get_option(options, name, args...)
+    eval(Symbol("_" * name))(options, args...)
 end
