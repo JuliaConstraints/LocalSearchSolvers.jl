@@ -337,6 +337,56 @@ function _move!(s, x::Int, dim::Int = 0)
 end
 
 """
+    armijo_line_search(f, x, d, fx; α0 = 1.0, β = 0.5, c = 1e-4)
+
+Determines the optimal step size of a line search algorithm via the Armijo condition.
+# Arguments:
+- `f`: a function to minimize
+- `x`: selected variable id
+- `d`: descent direction (e.g., negative gradient)
+- `fx`: value of f at `x`
+- `α0`: initial step size
+- `β`: step size reduction factor
+- `c`: Armijo condition constant
+"""
+function armijo_line_search(f, x, d, fx; α0 = 1.0, β = 0.5, c = 1e-4)
+    α = α0
+    while f(x + α*d) > fx + c*α*d*fx
+        α *= β
+    end
+    return α
+end
+
+"""
+    _coordinate_descent!(s, x)
+
+Runs an iteration of coordinate descent over axis "x".
+The derivative is (temporarily?) computed via finite difference.
+The step size is determined via the Armijo condition for line search. 
+"""
+function _coordinate_descent_move!(s, x)
+    domain = get_variable(s, x).domain
+    current_value = _value(s, x)
+
+    function f(val)
+        _value!(s, x, val)
+        _compute!(s)
+        return get_error(s)
+    end
+
+    current_error = f(current_value)
+    grad = (f(current_value + 1e-6) - f(current_value - 1e-6)) / (2e-6)
+    
+    α = armijo_line_search(f, current_value, -grad, current_error)
+    new_value = clamp(current_value - α * grad, domain.lb, domain.ub)
+    new_error = f(new_value)
+    
+    if new_error < current_error
+        current_value = new_value
+    end
+end
+
+"""
     _step!(s)
 
 Iterate a step of the solver run.
@@ -345,10 +395,15 @@ function _step!(s)
     # select worst variables
     x = _select_worse(s)
     _verbose(s, "Selected x = $x")
-
-    # Local move (change the value of the selected variable)
-    best_values, best_swap, tabu = _move!(s, x)
-    # _compute!(s)
+    
+    if _value(s, x) isa Int
+        # Local move (change the value of the selected variable)
+        best_values, best_swap, tabu = _move!(s, x)
+        # _compute!(s)
+    else
+        # We perform coordinate descent over the variable axis
+        _coordinate_descent_move!(s, x)
+    end
 
     # If local move is bad (tabu), then try permutation
     if tabu
