@@ -349,7 +349,7 @@ Determines the optimal step size of a line search algorithm via the Armijo condi
 - `β`: step size reduction factor
 - `c`: Armijo condition constant
 """
-function armijo_line_search(f, x, d, fx, xmin, xmax; α0 = 1.0, β = 0.9, c = 1e-4)
+function armijo_line_search(f, x, d, fx, xmin, xmax; α0 = 1.0, β = 0.5, c = 1e-4)
     α = α0
     while true
         new_x = x + α * d
@@ -378,8 +378,6 @@ function _coordinate_descent_move!(s, x)
     current_value = _value(s, x)
     xmin = minimum(first, get_domain(s, x))
     xmax = maximum(last, get_domain(s, x))
-    best_values = [current_value]
-    tabu = true
 
     function f(val)
         _value!(s, x, val)
@@ -395,13 +393,13 @@ function _coordinate_descent_move!(s, x)
     new_value = clamp(current_value - α * grad,
         minimum(first, get_domain(s, x)), maximum(last, get_domain(s, x)))
 
-    new_error = f(new_value)
-    if new_error < current_error
-        best_values = [new_value]
-        tabu = false
-    end
+    best_values = [new_value]
 
-    return best_values, [x], tabu
+    # revert to the original state
+    _value!(s, x, current_value)
+    _compute!(s)
+
+    return best_values, [x], false
 end
 
 """
