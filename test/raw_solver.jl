@@ -1,3 +1,5 @@
+using Intervals
+
 function mincut(graph; source, sink, interdiction = 0)
     m = model(; kind = :cut)
     n = size(graph, 1)
@@ -89,20 +91,19 @@ function chemical_equilibrium(A, B, C)
     N = length(C)
     M = length(B)
 
-    d = domain(0..maximum(B))
-    
+    d = domain(0 .. maximum(B))
+
     # Add variables, number of moles per compound
 
     foreach(_ -> variable!(m, d), 1:N)
 
     # mass_conservation function
-    conserve = i -> (x ->
-        begin
-            δ = abs(sum(A[:, i] .* x) - B[i])
-            return δ ≤ 1.e-6 ? 0. : δ
-        end
+    conserve = i -> (x -> begin
+        δ = abs(sum(A[:, i] .* x) - B[i])
+        return δ ≤ 1.e-6 ? 0.0 : δ
+    end
     )
-    
+
     # Add constraints
     for i in 1:M
         constraint!(m, conserve(i), 1:N)
@@ -238,7 +239,7 @@ end
 end
 
 @testset "Raw solver: chemical equilibrium" begin
-    A = [2.0 1.0 0.0; 6.0 2.0 1.0; 1.0 2.0 4.0]
+    A = [2.0 1.0 3.0; 6.0 2.0 1.0; 1.0 2.0 4.0]
     B = [20.0, 30.0, 25.0]
     C = [-10.0, -8.0, -6.0]
     m = chemical_equilibrium(A, B, C)
