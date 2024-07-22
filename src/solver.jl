@@ -372,7 +372,7 @@ end
 
 Runs an iteration of coordinate descent over axis "x".
 The derivative is (temporarily?) computed via finite difference.
-The step size is determined via the Armijo condition for line search. 
+The step size is determined via the Armijo condition for line search.
 """
 function _coordinate_descent_move!(s, x)
     current_value = _value(s, x)
@@ -412,13 +412,12 @@ function _step!(s)
     x = _select_worse(s)
     _verbose(s, "Selected x = $x")
 
-    if _value(s, x) isa Int
-        # Local move (change the value of the selected variable)
-        best_values, best_swap, tabu = _move!(s, x)
-        # _compute!(s)
-    else
+    if get_domain(s, x) isa ContinuousDomain
         # We perform coordinate descent over the variable axis
         best_values, best_swap, tabu = _coordinate_descent_move!(s, x)
+    else
+        # Local move (change the value of the selected variable)
+        best_values, best_swap, tabu = _move!(s, x)
     end
 
     # If local move is bad (tabu), then try permutation
