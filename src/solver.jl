@@ -368,7 +368,7 @@ function armijo_line_search(f, x, d, fx, xmin, xmax; α0 = 1.0, β = 0.5, c = 1e
 end
 
 """
-    _coordinate_descent!(s, x)
+    _coordinate_descent_move!(s, x)
 
 Runs an iteration of coordinate descent over axis "x".
 The derivative is (temporarily?) computed via finite difference.
@@ -412,6 +412,7 @@ function _step!(s)
     x = _select_worse(s)
     _verbose(s, "Selected x = $x")
 
+    # TODO: this if statement is currently not working, every variable is treated as integer 
     if get_domain(s, x) isa ContinuousDomain
         # We perform coordinate descent over the variable axis
         best_values, best_swap, tabu = _coordinate_descent_move!(s, x)

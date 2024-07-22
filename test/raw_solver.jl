@@ -1,5 +1,3 @@
-using Intervals
-
 function mincut(graph; source, sink, interdiction = 0)
     m = model(; kind = :cut)
     n = size(graph, 1)
@@ -113,6 +111,20 @@ function chemical_equilibrium(A, B, C)
     free_energy = x -> sum(j -> x[j] * (C[j] + log(x[j] / sum(x))))
 
     objective!(m, free_energy)
+
+    return m
+end
+
+function sum_squares(n)
+    m = model(; kind = :sum_squares)
+
+    d = domain(-10.0 .. 10.0)
+
+    foreach(_ -> variable!(m, d), 1:n)
+
+    ss = x -> sum(j -> j * x[j] * x[j], 1:n)
+
+    objective!(m, ss)
 
     return m
 end
@@ -243,6 +255,16 @@ end
     B = [20.0, 30.0, 25.0]
     C = [-10.0, -8.0, -6.0]
     m = chemical_equilibrium(A, B, C)
+    s = solver(m; options = Options(print_level = :minimal))
+    solve!(s)
+    display(solution(s))
+    display(s.time_stamps)
+end
+
+@testset "Raw solver: sum squares" begin
+    # Sanity check: simple quadratic function with a trivial minimum at 0
+    n = 10
+    m = sum_squares(n)
     s = solver(m; options = Options(print_level = :minimal))
     solve!(s)
     display(solution(s))
