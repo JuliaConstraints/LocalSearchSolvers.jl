@@ -412,8 +412,7 @@ function _step!(s)
     x = _select_worse(s)
     _verbose(s, "Selected x = $x")
 
-    # TODO: this if statement is currently not working, every variable is treated as integer 
-    if get_domain(s, x) isa ContinuousDomain
+    if typeof(get_variable(s, x).domain) <: ContinuousDomain
         # We perform coordinate descent over the variable axis
         best_values, best_swap, tabu = _coordinate_descent_move!(s, x)
     else
