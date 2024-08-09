@@ -72,8 +72,10 @@ end
 
 function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
     remote_limit = isready(s.rc_stop) # Add ! when MainSolver is passive
-    iter_limit = iter < get_option(s, "iteration")
-    time_limit = time() - start_time < get_option(s, "time_limit")
+    iter_sat = get_option(s, "iteration")[1]
+    iter_limit = iter_sat || iter < get_option(s, "iteration")[2]
+    time_limit_sat = get_option(s, "time_limit")[1]
+    time_limit = time_limit_sat && time() - start_time < get_option(s, "time_limit")[2]
     if !remote_limit
         s.status = :solution_limit
         return false
