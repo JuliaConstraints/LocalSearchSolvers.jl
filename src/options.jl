@@ -5,11 +5,6 @@ const print_levels = Dict(
     :verbose => 3
 )
 
-# # Tabu times
-# get!(s, :tabu_time, length_vars(s) ÷ 2) # 10?
-# get!(s, :local_tabu, setting(s, :tabu_time) ÷ 2)
-# get!(s, :δ_tabu, setting(s, :tabu_time) - setting(s, :local_tabu))# 20-30
-
 """
     Options()
 # Arguments:
@@ -36,7 +31,7 @@ set_time_limit_sec(model, 5.0)
 mutable struct Options
     dynamic::Bool
     info_path::String
-    iteration::Union{Int, Float64}
+    iteration::Tuple{Bool, Union{Int, Float64}}
     print_level::Symbol
     process_threads_map::Dict{Int, Int}
     solutions::Int
@@ -44,12 +39,12 @@ mutable struct Options
     tabu_time::Int
     tabu_local::Int
     tabu_delta::Float64
-    time_limit::Float64 # seconds
+    time_limit::Tuple{Bool, Float64} # seconds
 
     function Options(;
             dynamic = false,
             info_path = "",
-            iteration = 10000,
+            iteration = (false, 100),
             print_level = :minimal,
             process_threads_map = Dict{Int, Int}(1 => typemax(0)),
             solutions = 1,
@@ -57,7 +52,7 @@ mutable struct Options
             tabu_time = 0,
             tabu_local = 0,
             tabu_delta = 0.0,
-            time_limit = 60 # seconds
+            time_limit = (false, 1.0) # seconds
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
                  " and objectives types. Dynamic elements that add a new type will raise an error!"
@@ -69,12 +64,25 @@ mutable struct Options
 
         itertime_str = "Both iteration and time limits are disabled. " *
                        "Optimization runs will run infinitely."
-        iteration == Inf && time_limit == Inf && @warn itertime_str
+
+        new_iteration = if iteration isa Tuple{Bool, Union{Int, Float64}}
+            iteration
+        else
+            iteration = (false, iteration)
+        end
+
+        new_time_limit = if time_limit isa Tuple{Bool, Float64}
+            time_limit
+        else
+            time_limit = (false, time_limit)
+        end
+
+        new_iteration[2] == Inf && new_time_limit[2] == Inf && @warn itertime_str
 
         new(
             dynamic,
             info_path,
-            iteration,
+            new_iteration,
             print_level,
             process_threads_map,
             solutions,
@@ -82,7 +90,7 @@ mutable struct Options
             tabu_time,
             tabu_local,
             tabu_delta,
-            time_limit
+            new_time_limit
         )
     end
 end
@@ -137,6 +145,9 @@ _iteration(options) = options.iteration
 DOCSTRING
 """
 _iteration!(options, iterations) = options.iteration = iterations
+function _iteration!(options, iterations::Union{Int, Float64})
+    options.iteration = (false, iterations)
+end
 
 """
     _print_level(options) = begin
@@ -266,7 +277,8 @@ _time_limit(options) = options.time_limit
 
 DOCSTRING
 """
-_time_limit!(options, time) = options.time_limit = time
+_time_limit!(options, time::Tuple{Bool, Float64}) = options.time_limit = time
+_time_limit!(options, time::Float64) = options.time_limit = (false, time)
 
 function set_option!(options, name, value)
     eval(Symbol("_" * name * "!"))(options, value)
