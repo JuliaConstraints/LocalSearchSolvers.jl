@@ -21,7 +21,7 @@ end
 function solver(mlid, model, options, pool, ::RemoteChannel,
         ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
     sub_options = deepcopy(options)
-    set_option!(sud_options, "print_level", :silent)
+    set_option!(sub_options, "print_level", :silent)
     return _SubSolver(mlid, model, sub_options, pool, state(), strats)
 end
 
