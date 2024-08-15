@@ -238,13 +238,15 @@ function _init!(s, ::Val{:remote})
     end
 end
 
-function _init!(s, ::Val{:local}; pool = pool())
+function _init!(s, ::Val{:local})
     get_option(s, "tabu_time") == 0 && set_option!(s, "tabu_time", length_vars(s) ÷ 2) # 10?
     get_option(s, "tabu_local") == 0 &&
         set_option!(s, "tabu_local", get_option(s, "tabu_time") ÷ 2)
     get_option(s, "tabu_delta") == 0 && set_option!(
         s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
     state!(s)
+    @warn "Debug" typeof(s) s
+    pool!(s)
     return has_solution(s)
 end
 

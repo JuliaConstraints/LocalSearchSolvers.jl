@@ -12,7 +12,6 @@ get_values(c) = c.values
 get_value(c, x) = get_values(c)[x]
 
 set_value!(c, val) = c.value = val
-# set_value!(c, x, val) = get_values(c)[x] = val
 set_values!(c, values) = c.values = values
 set_sat!(c, b) = c.solution = b
 
