@@ -21,6 +21,10 @@ function pool(config::Configuration)
     value = get_value(config)
     return _Pool(best, configs, status, value)
 end
+function pool!(s)
+    has_solution(s) || _draw!(s)
+    s.pool = pool(s.state.configuration)
+end
 
 is_empty(::EmptyPool) = true
 is_empty(pool) = isempty(pool.configurations)

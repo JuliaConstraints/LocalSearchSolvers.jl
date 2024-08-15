@@ -116,3 +116,26 @@ function post_process(s::MainSolver)
         write(path, JSON.json(info))
     end
 end
+
+function remote_stop!(s::MainSolver)
+    isready(s.rc_stop) && take!(s.rc_stop)
+    sat = is_sat(s)
+    @info "Remote stop: report main pool" best_values(s.pool) has_solution(s) s.rc_report s.rc_sol s.rc_stop length(s.remotes)
+    if !sat || !has_solution(s)
+        @warn "debugging remote stop" nworkers() length(s.remotes)
+        while isready(s.rc_report) || isready(s.rc_sol)
+            wait(s.rc_sol)
+            t = take!(s.rc_sol)
+            @info "Remote stop: report remote pool" best_values(t) length(s.remotes)
+            update_pool!(s, t)
+            if sat && has_solution(t)
+                empty!(s.rc_report)
+                break
+            end
+            @info "mark 1"
+            isready(s.rc_report) && take!(s.rc_report)
+            @info "mark 2"
+        end
+    end
+    @info "Remote stop: report best pool" best_values(s.pool) length(s.remotes)
+end
