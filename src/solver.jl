@@ -245,7 +245,6 @@ function _init!(s, ::Val{:local})
     get_option(s, "tabu_delta") == 0 && set_option!(
         s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
     state!(s)
-    @warn "Debug" typeof(s) s
     pool!(s)
     return has_solution(s)
 end

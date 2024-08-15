@@ -33,14 +33,6 @@ stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int, ::Float64) = isready(s.rc_
 
 function remote_stop!(s::LeadSolver)
     isready(s.rc_stop) && take!(s.rc_stop)
-    sat = is_sat(s)
-    if !sat || !has_solution(s)
-        while isready(s.rc_report)
-            wait(s.rc_sol)
-            t = take!(s.rc_sol)
-            update_pool!(s, t)
-            sat && has_solution(t) && break
-            take!(s.rc_report)
-        end
-    end
+    put!(s.rc_sol, s.pool)
+    take!(s.rc_report)
 end
