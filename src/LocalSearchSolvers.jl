@@ -8,6 +8,7 @@ using Dictionaries
 using Distributed
 using JSON
 using Lazy
+using TestItems
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
