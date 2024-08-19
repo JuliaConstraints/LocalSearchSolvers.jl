@@ -18,7 +18,7 @@ function mincut(graph; source, sink, interdiction = 0)
     constraint!(m, e2, 1:(n + 1))
 
     # Add objective
-    objective!(m, (x...) -> o_mincut(graph, x...; interdiction))
+    objective!(m, (x...) -> LS.o_mincut(graph, x...; interdiction))
 
     return m
 end
@@ -44,7 +44,7 @@ function golomb(n, L = n^2)
     end
 
     # Add objective
-    objective!(m, o_dist_extrema)
+    objective!(m, LS.o_dist_extrema)
 
     return m
 end
@@ -99,38 +99,38 @@ end
                 [2 => 2, 3 => 1]
             ))
         s = solver(m; options)
-        for x in keys(get_variables(s))
-            @test get_name(s, x) == "x$x"
-            for c in get_cons_from_var(s, x)
-                @test x ∈ get_vars_from_cons(s, c)
+        for x in keys(LS.get_variables(s))
+            @test LS.get_name(s, x) == "x$x"
+            for c in LS.get_cons_from_var(s, x)
+                @test x ∈ LS.get_vars_from_cons(s, c)
             end
-            @test constriction(s, x) == 3
-            @test draw(s, x) ∈ get_domain(s, x)
+            @test LS.constriction(s, x) == 3
+            @test LS.draw(s, x) ∈ LS.get_domain(s, x)
         end
 
-        for c in keys(get_constraints(s))
-            @test length_cons(s, c) == 4
+        for c in keys(LS.get_constraints(s))
+            @test LS.length_cons(s, c) == 4
         end
 
-        for x in keys(get_variables(s))
-            add_var_to_cons!(s, 3, x)
-            delete_var_from_cons!(s, 3, x)
-            @test length_var(s, x) == 4
+        for x in keys(LS.get_variables(s))
+            LS.add_var_to_cons!(s, 3, x)
+            LS.delete_var_from_cons!(s, 3, x)
+            @test LS.length_var(s, x) == 4
         end
 
-        for c in keys(get_constraints(s))
-            add_var_to_cons!(s, c, 17)
-            @test length_cons(s, c) == 5
-            @test 17 ∈ get_constraint(s, c)
-            delete_var_from_cons!(s, c, 17)
-            @test length_cons(s, c) == 4
+        for c in keys(LS.get_constraints(s))
+            LS.add_var_to_cons!(s, c, 17)
+            @test LS.length_cons(s, c) == 5
+            @test 17 ∈ LS.get_constraint(s, c)
+            LS.delete_var_from_cons!(s, c, 17)
+            @test LS.length_cons(s, c) == 4
         end
         solve!(s)
         solution(s)
 
         # TODO: temp patch for coverage, make it nice
-        for x in keys(LocalSearchSolvers.tabu_list(s))
-            LocalSearchSolvers.tabu_value(s, x)
+        for x in keys(LS.tabu_list(s))
+            LS.tabu_value(s, x)
         end
         # LocalSearchSolvers._values!(s, Dictionary{Int,Int}())
 

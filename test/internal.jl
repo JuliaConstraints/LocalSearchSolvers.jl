@@ -72,7 +72,7 @@ objs = Dictionary(1:2, [o1, o2])
 end
 
 m = model()
-# LocalSearchSolvers.describe(m)
+# LS.describe(m)
 
 x1 = variable([4, 3, 2, 1])
 x2 = variable(d2)
@@ -104,15 +104,15 @@ objs = Dictionary(1:2, [o1, o2])
     end
 
     objective!(m, max)
-    length_var(m, 1)
-    length_cons(m, 1)
-    constriction(m, 1)
-    draw(m, 1)
-    get_objective(m, 1)
-    delete_value!(m, 1, 1)
-    add_value!(m, 1, 1)
-    delete_var_from_cons!(m, 1, 1)
-    add_var_to_cons!(m, 1, 1)
+    LS.length_var(m, 1)
+    LS.length_cons(m, 1)
+    LS.constriction(m, 1)
+    LS.draw(m, 1)
+    LS.get_objective(m, 1)
+    LS.delete_value!(m, 1, 1)
+    LS.add_value!(m, 1, 1)
+    LS.delete_var_from_cons!(m, 1, 1)
+    LS.add_var_to_cons!(m, 1, 1)
     # describe(m)
 end
 
