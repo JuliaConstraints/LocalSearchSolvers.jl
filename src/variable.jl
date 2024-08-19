@@ -191,7 +191,7 @@ variable(vals) = isempty(vals) ? variable() : variable(domain(vals))
     @test 6 ∉ x
     add!(x, 6)
     @test 6 ∈ x
-    delete!(x, 6)
+    LS.delete!(x, 6)
     @test 6 ∉ x
     @test LS.domain_size(x) == 4
 

@@ -53,11 +53,11 @@ c2 = constraint(err, inds)
 cons = Dictionary(1:2, [c1, c2])
 @testset "Internals: constraints" begin
     for c in cons
-        LS._add!(c, 3)
+        LS.add!(c, 3)
         @test 3 ∈ c
-        LS._delete!(c, 3)
+        delete!(c, 3)
         @test 3 ∉ c
-        @test LS._length(c) == 2
+        @test length(c) == 2
         c.f(values; X = Matrix{Float64}(undef, 3, CompositionalNetworks.max_icn_length()))
     end
 end

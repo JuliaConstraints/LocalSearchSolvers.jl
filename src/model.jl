@@ -175,7 +175,7 @@ get_cons_from_var(m::_Model, x) = get_constraints(get_variable(m, x))
     get_vars_from_cons(m::M, c) where M <: Union{Model, AbstractSolver}
 Access the variables restricted by constraint `c`.
 """
-get_vars_from_cons(m::_Model, c) = _get_vars(get_constraint(m, c))
+get_vars_from_cons(m::_Model, c) = get_vars(get_constraint(m, c))
 
 """
     get_time_stamp(m::M) where M <: Union{Model, AbstractSolver}
@@ -193,7 +193,7 @@ length_var(m::_Model, x) = length(get_variable(m, x))
     length_cons(m::M, c) where M <: Union{Model, AbstractSolver}
 Return the length of constraint `c`.
 """
-length_cons(m::_Model, c) = _length(get_constraint(m, c))
+length_cons(m::_Model, c) = length(get_constraint(m, c))
 
 """
     length_objs(m::M) where M <: Union{Model, AbstractSolver}
@@ -236,7 +236,7 @@ delete_value!(m::_Model, x, val) = delete!(get_variable(m, x), val)
     delete_var_from_cons(m::M, c, x) where M <: Union{Model, AbstractSolver}
 Delete `x` from the constraint `c` list of restricted variables.
 """
-delete_var_from_cons!(m::_Model, c, x) = _delete!(get_constraint(m, c), x)
+delete_var_from_cons!(m::_Model, c, x) = delete!(get_constraint(m, c), x)
 
 """
     add_value!(m::M, x, val) where M <: Union{Model, AbstractSolver}
@@ -248,7 +248,7 @@ add_value!(m::_Model, x, val) = add!(get_variable(m, x), val)
     add_var_to_cons!(m::M, c, x) where M <: Union{Model, AbstractSolver}
 Add `x` to the constraint `c` list of restricted variables.
 """
-add_var_to_cons!(m::_Model, c, x) = _add!(get_constraint(m, c), x)
+add_var_to_cons!(m::_Model, c, x) = add!(get_constraint(m, c), x)
 
 """
     add!(m::M, x) where M <: Union{Model, AbstractSolver}
