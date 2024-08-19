@@ -117,7 +117,7 @@ Add a constraint `id` to the list of constraints associated with the variable `x
 
 The constraint `id` is added to the `constraints` field of the variable using the `set!` function.
 """
-add_to_constraint!(x::Variable, id) = set!(_get_constraints(x), id)
+add_to_constraint!(x::Variable, id) = set!(get_constraints(x), id)
 
 """
     delete_from_constraint!(x::Variable, id)
@@ -129,13 +129,13 @@ The constraint `id` is removed from the `constraints` field of the variable usin
 delete_from_constraint!(x::Variable, id) = delete!(x.constraints, id)
 
 """
-    _constriction(x::Variable)
+    constriction(x::Variable)
 
 Calculate the constriction of the variable `x`.
 
 Returns the number of constraints restricting the variable, which is the length of the `constraints` field.
 """
-_constriction(x::Variable) = length(x.constraints)
+constriction(x::Variable) = length(x.constraints)
 
 """
     x::Variable ∈ constraint
@@ -172,3 +172,35 @@ A `Variable` instance with the specified domain and an empty set of constraints 
 variable() = Variable(domain(), Indices{Int}())
 variable(domain::D) where {D <: AbstractDomain} = Variable(domain, Indices{Int}())
 variable(vals) = isempty(vals) ? variable() : variable(domain(vals))
+
+@testitem "Variable" tags=[:variable, :model] begin
+    import LocalSearchSolvers as LS
+    import Dictionaries
+
+    x_empty = LS.variable()
+    @test isempty(x_empty) == true
+    x_vals = LS.variable(1:3)
+    @test LS.get_domain(x_vals) == 1:3
+
+    x = variable([1, 2, 3, 4, 5])
+    @test LS.get_domain(x) == Set([1, 2, 3, 4, 5])
+    @test isempty(x) == false
+    @test length(x) == 5
+    @test rand(x) ∈ x
+    @test 3 ∈ x
+    @test 6 ∉ x
+    add!(x, 6)
+    @test 6 ∈ x
+    delete!(x, 6)
+    @test 6 ∉ x
+    @test LS.domain_size(x) == 4
+
+    @test LS.get_constraints(x) == Dictionaries.Indices{Int}()
+    @test LS.constriction(x) == 0
+    LS.add_to_constraint!(x, 1)
+    @test LS.get_constraints(x) == Dictionaries.Indices{Int}([1])
+    @test LS.constriction(x) == 1
+    LS.delete_from_constraint!(x, 1)
+    @test LS.get_constraints(x) == Dictionaries.Indices{Int}()
+    @test LS.constriction(x) == 0
+end

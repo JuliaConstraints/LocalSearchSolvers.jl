@@ -169,7 +169,7 @@ get_name(::_Model, x) = "x$x"
     get_cons_from_var(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the constraints restricting variable `x`.
 """
-get_cons_from_var(m::_Model, x) = _get_constraints(get_variable(m, x))
+get_cons_from_var(m::_Model, x) = get_constraints(get_variable(m, x))
 
 """
     get_vars_from_cons(m::M, c) where M <: Union{Model, AbstractSolver}
@@ -224,7 +224,7 @@ draw(m::_Model, x, n) = rand(get_variable(m, x), n)
     constriction(m::M, x) where M <: Union{Model, AbstractSolver}
 Return the constriction of variable `x`.
 """
-constriction(m::_Model, x) = _constriction(get_variable(m, x))
+constriction(m::_Model, x) = constriction(get_variable(m, x))
 
 """
     delete_value(m::M, x, val) where M <: Union{Model, AbstractSolver}
@@ -265,7 +265,7 @@ end
 function add!(m::_Model, c::Constraint)
     _inc_cons!(m)
     insert!(get_constraints(m), _max_cons(m), c)
-    foreach(x -> _add_to_constraint!(m.variables[x], _max_cons(m)), c.vars)
+    foreach(x -> add_to_constraint!(m.variables[x], _max_cons(m)), c.vars)
 end
 
 function add!(m::_Model, o::Objective)

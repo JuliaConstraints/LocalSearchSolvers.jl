@@ -27,12 +27,12 @@ vars = Dictionary(1:2, [x1, x2])
 @testset "Internals: variables" begin
     for x in vars
         # add and delete from constraint
-        LS._add_to_constraint!(x, 1)
-        LS._add_to_constraint!(x, 2)
-        LS._delete_from_constraint!(x, 2)
+        LS.add_to_constraint!(x, 1)
+        LS.add_to_constraint!(x, 2)
+        LS.delete_from_constraint!(x, 2)
         @test x ∈ 1
         @test x ∉ 2
-        @test LS._constriction(x) == 1
+        @test LS.constriction(x) == 1
         @test length(x) == 4
         for y in [1, 2, 3, 4]
             @test y ∈ x
