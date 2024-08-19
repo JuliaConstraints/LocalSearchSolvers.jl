@@ -18,6 +18,7 @@ function pool(config::Configuration)
     best = 1
     configs = [deepcopy(config)]
     status = full_pool
+    # @error "Debug config" config
     value = get_value(config)
     return _Pool(best, configs, status, value)
 end

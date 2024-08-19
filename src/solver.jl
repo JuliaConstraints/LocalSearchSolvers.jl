@@ -58,6 +58,7 @@ end
 @forward AbstractSolver.state get_value
 @forward AbstractSolver.state get_values
 @forward AbstractSolver.state set_error!
+@forward AbstractSolver.state set_sat!
 @forward AbstractSolver.state set_value!
 @forward AbstractSolver.state _best
 @forward AbstractSolver.state _best!
@@ -157,7 +158,7 @@ function _compute_objective!(s, o::Objective)
     val = sense(s) * apply(o, _values(s).values)
     set_value!(s, val)
     if is_empty(s.pool) || val < best_value(s)
-        s.pool = pool(s.state.configuration)
+        pool!(s)
     end
 end
 _compute_objective!(s, o = 1) = _compute_objective!(s, get_objective(s, o))
@@ -176,7 +177,6 @@ function _compute!(s; o::Int = 1, cons_lst = Indices{Int}())
     _compute_costs!(s; cons_lst)
     if get_error(s) == 0.0
         _optimizing(s) && _compute_objective!(s, o)
-        is_sat(s) && (s.pool = pool(s.state.configuration))
         return true
     end
     return false
@@ -324,7 +324,7 @@ function _move!(s, x::Int, dim::Int = 0)
         end
 
         if cost == 0 && is_sat(s)
-            s.pool == pool(s.state.configuration)
+            # pool!(s)
             return best_values, best_swap, tabu
         end
 
@@ -381,7 +381,16 @@ function _step!(s)
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
     if _compute!(s)
-        !is_sat(s) ? _optimizing!(s) : return true
+        set_sat!(s, true)
+        if is_sat(s)
+            pool!(s)
+            return true
+        else
+            _optimizing!(s)
+            if get_value(s) < best_value(s)
+                pool!(s)
+            end
+        end
     end
 
     # Restart if necessary
@@ -405,6 +414,13 @@ Check the stop conditions of the `solve!` while inner loop.
 """
 stop_while_loop(::AbstractSolver) = nothing
 
+function update_pool!(s, pool)
+    is_empty(pool) && return nothing
+    if is_sat(s) || best_value(s) > best_value(pool)
+        s.pool = deepcopy(pool)
+    end
+end
+
 """
     solve_while_loop!(s, )
 Search the space of configurations.
@@ -419,7 +435,7 @@ function solve_while_loop!(s, stop, sat, iter, st)
         best_sub = _check_subs(s)
         if best_sub > 0
             bs = s.subs[best_sub]
-            s.pool = deepcopy(bs.pool)
+            update_pool!(s, deepcopy(bs.pool))
             sat && break
         end
     end
@@ -436,13 +452,6 @@ remote_dispatch!(::AbstractSolver) = nothing # dummy method
 First loop in the solving process that starts `LeadSolver`s from the `MainSolver`, and `_SubSolver`s from each `MetaSolver`.
 """
 solve_for_loop!(s, stop, sat, iter, st) = solve_while_loop!(s, stop, sat, iter, st)
-
-function update_pool!(s, pool)
-    is_empty(pool) && return nothing
-    if is_sat(s) || best_value(s) > best_value(pool)
-        s.pool = deepcopy(pool)
-    end
-end
 
 """
     remote_stop!!(solver)
