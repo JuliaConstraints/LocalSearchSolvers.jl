@@ -4,7 +4,7 @@ Solver managed remotely by a MainSolver. Can manage its own set of local sub sol
 """
 mutable struct LeadSolver <: MetaSolver
     meta_local_id::Tuple{Int, Int}
-    model::_Model
+    model::Model
     options::Options
     pool::Pool
     rc_report::RemoteChannel

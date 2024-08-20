@@ -11,7 +11,7 @@ Main solver. Handle the solving of a model, and optional multithreaded and/or di
 """
 mutable struct MainSolver <: MetaSolver
     meta_local_id::Tuple{Int, Int}
-    model::_Model
+    model::Model
     options::Options
     pool::Pool
     rc_report::RemoteChannel

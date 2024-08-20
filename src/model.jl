@@ -1,26 +1,21 @@
 """
-    _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
+    Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
+
 A struct to model a problem as a set of variables, domains, constraints, and objectives.
-```
-struct _Model{V <: Variable{<:AbstractDomain},C <: Constraint{<:Function},O <: Objective{<:Function}}
-    variables::Dictionary{Int,V}
-    constraints::Dictionary{Int,C}
-    objectives::Dictionary{Int,O}
 
-    # counter to add new variables: vars, cons, objs
-    max_vars::Ref{Int}
-    max_cons::Ref{Int}
-    max_objs::Ref{Int}
-
-    # Bool to indicate if the _Model instance has been specialized (relatively to types)
-    specialized::Ref{Bool}
-
-    # Symbol to indicate the kind of model for specialized methods such as pretty printing
-    kind::Symbol
-end
-```
+# Fields
+- `variables::Dictionary{Int,V}`: collection of variables
+- `constraints::Dictionary{Int,C}`: collection of constraints
+- `objectives::Dictionary{Int,O}`: collection of objectives
+- `max_vars::Ref{Int}`: counter to add new variables: vars, cons, objs
+- `max_cons::Ref{Int}`: counter to add new variables: vars, cons, objs
+- `max_objs::Ref{Int}`: counter to add new variables: vars, cons, objs
+- `specialized::Ref{Bool}`: Bool to indicate if the Model instance has been specialized (relatively to types). This is useful for performance optimization of models with static types.
+- `kind::Symbol`: Symbol to indicate the kind of model for specialized methods such as pretty printing
+- `best_bound::Union{Nothing, Float64}`: Best known bound (in the case of optimization problems)
+- `time_stamp::Float64`: Time of construction (seconds) since epoch
 """
-struct _Model{V <: Variable{<:AbstractDomain},
+struct Model{V <: Variable{<:AbstractDomain},
     C <: Constraint{<:Function}, O <: Objective{<:Function}}# <: MOI.ModelLike
     variables::Dictionary{Int, V}
     constraints::Dictionary{Int, C}
@@ -34,7 +29,7 @@ struct _Model{V <: Variable{<:AbstractDomain},
     # Sense (min = 1, max = -1)
     sense::Ref{Int}
 
-    # Bool to indicate if the _Model instance has been specialized (relatively to types)
+    # Bool to indicate if the Model instance has been specialized (relatively to types)
     specialized::Ref{Bool}
 
     # Symbol to indicate the kind of model for specialized methods such as pretty printing
@@ -48,12 +43,14 @@ struct _Model{V <: Variable{<:AbstractDomain},
 end
 
 """
-    model()
-Construct a _Model, empty by default. It is recommended to add the constraints, variables, and objectives from an empty _Model. The following keyword arguments are available,
+    model(; keyargs...)
+
+Construct a Model, empty by default. It is recommended to add the constraints, variables, and objectives from an empty Model. The following keyword arguments are available,
 - `vars=Dictionary{Int,Variable}()`: collection of variables
 - `cons=Dictionary{Int,Constraint}()`: collection of constraints
 - `objs=Dictionary{Int,Objective}()`: collection of objectives
 - `kind=:generic`: the kind of problem modeled (useful for specialized methods such as pretty printing)
+- `best_bound=nothing`: best known bound (in the case of optimization problems)
 """
 function model(;
         vars = Dictionary{Int, Variable}(),
@@ -69,186 +66,194 @@ function model(;
 
     specialized = Ref(false)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs,
+    Model(vars, cons, objs, max_vars, max_cons, max_objs,
         sense, specialized, kind, best_bound, time())
 end
 
 """
-    _max_vars(m::M) where M <: Union{Model, AbstractSolver}
+    max_vars(m::M) where M <: Union{Model, AbstractSolver}
+
 Access the maximum variable id that has been attributed to `m`.
 """
-_max_vars(m::_Model) = m.max_vars.x
+max_vars(m::Model) = m.max_vars.x
 
 """
-    _max_cons(m::M) where M <: Union{Model, AbstractSolver}
+    max_cons(m::M) where M <: Union{Model, AbstractSolver}
+
 Access the maximum constraint id that has been attributed to `m`.
 """
-_max_cons(m::_Model) = m.max_cons.x
+max_cons(m::Model) = m.max_cons.x
 
 """
-    _max_objs(m::M) where M <: Union{Model, AbstractSolver}
+    max_objs(m::M) where M <: Union{Model, AbstractSolver}
+
 Access the maximum objective id that has been attributed to `m`.
 """
-_max_objs(m::_Model) = m.max_objs.x
-
-_best_bound(m::_Model) = m.best_bound
+max_objs(m::Model) = m.max_objs.x
 
 """
-    _inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
+    best_bound(m::M) where M <: Union{Model, AbstractSolver}
+
+Access the best known bound of `m`.
+"""
+best_bound(m::Model) = m.best_bound
+
+"""
+    inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
 Increment the maximum variable id that has been attributed to `m`.
 """
-_inc_vars!(m::_Model) = m.max_vars.x += 1
+inc_vars!(m::Model) = m.max_vars.x += 1
 
 """
-    _inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
+    inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
 Increment the maximum constraint id that has been attributed to `m`.
 """
-_inc_cons!(m::_Model) = m.max_cons.x += 1
+inc_cons!(m::Model) = m.max_cons.x += 1
 
 """
-    _inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
+    inc_vars!(m::M) where M <: Union{Model, AbstractSolver}
 Increment the maximum objective id that has been attributed to `m`.
 """
-_inc_objs!(m::_Model) = m.max_objs.x += 1
+inc_objs!(m::Model) = m.max_objs.x += 1
 
 """
     get_variables(m::M) where M <: Union{Model, AbstractSolver}
 Access the variables of `m`.
 """
-get_variables(m::_Model) = m.variables
+get_variables(m::Model) = m.variables
 
 """
     get_constraints(m::M) where M <: Union{Model, AbstractSolver}
 Access the constraints of `m`.
 """
-get_constraints(m::_Model) = m.constraints
+get_constraints(m::Model) = m.constraints
 
 """
     get_objectives(m::M) where M <: Union{Model, AbstractSolver}
 Access the objectives of `m`.
 """
-get_objectives(m::_Model) = m.objectives
+get_objectives(m::Model) = m.objectives
 
 """
     get_kind(m::M) where M <: Union{Model, AbstractSolver}
 Access the kind of `m`, such as `:sudoku` or `:generic` (default).
 """
-get_kind(m::_Model) = m.kind
+get_kind(m::Model) = m.kind
 
 """
     get_variable(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the variable `x`.
 """
-get_variable(m::_Model, x) = get_variables(m)[x]
+get_variable(m::Model, x) = get_variables(m)[x]
 
 """
     get_constraint(m::M, c) where M <: Union{Model, AbstractSolver}
 Access the constraint `c`.
 """
-get_constraint(m::_Model, c) = get_constraints(m)[c]
+get_constraint(m::Model, c) = get_constraints(m)[c]
 
 """
     get_objective(m::M, o) where M <: Union{Model, AbstractSolver}
 Access the objective `o`.
 """
-get_objective(m::_Model, o) = get_objectives(m)[o]
+get_objective(m::Model, o) = get_objectives(m)[o]
 
 """
     get_domain(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the domain of variable `x`.
 """
-get_domain(m::_Model, x) = get_domain(get_variable(m, x))
+get_domain(m::Model, x) = get_domain(get_variable(m, x))
 
 """
     get_name(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the name of variable `x`.
 """
-get_name(::_Model, x) = "x$x"
+get_name(::Model, x) = "x$x"
 
 """
     get_cons_from_var(m::M, x) where M <: Union{Model, AbstractSolver}
 Access the constraints restricting variable `x`.
 """
-get_cons_from_var(m::_Model, x) = get_constraints(get_variable(m, x))
+get_cons_from_var(m::Model, x) = get_constraints(get_variable(m, x))
 
 """
     get_vars_from_cons(m::M, c) where M <: Union{Model, AbstractSolver}
 Access the variables restricted by constraint `c`.
 """
-get_vars_from_cons(m::_Model, c) = get_vars(get_constraint(m, c))
+get_vars_from_cons(m::Model, c) = get_vars(get_constraint(m, c))
 
 """
     get_time_stamp(m::M) where M <: Union{Model, AbstractSolver}
 Access the time (since epoch) when the model was created. This time stamp is for internal performance measurement.
 """
-get_time_stamp(m::_Model) = m.time_stamp
+get_time_stamp(m::Model) = m.time_stamp
 
 """
     length_var(m::M, x) where M <: Union{Model, AbstractSolver}
 Return the domain length of variable `x`.
 """
-length_var(m::_Model, x) = length(get_variable(m, x))
+length_var(m::Model, x) = length(get_variable(m, x))
 
 """
     length_cons(m::M, c) where M <: Union{Model, AbstractSolver}
 Return the length of constraint `c`.
 """
-length_cons(m::_Model, c) = length(get_constraint(m, c))
+length_cons(m::Model, c) = length(get_constraint(m, c))
 
 """
     length_objs(m::M) where M <: Union{Model, AbstractSolver}
 Return the number of objectives in `m`.
 """
-length_objs(m::_Model) = length(get_objectives(m))
+length_objs(m::Model) = length(get_objectives(m))
 
 """
     length_vars(m::M) where M <: Union{Model, AbstractSolver}
 Return the number of variables in `m`.
 """
-length_vars(m::_Model) = length(get_variables(m))
+length_vars(m::Model) = length(get_variables(m))
 
 """
     length_cons(m::M) where M <: Union{Model, AbstractSolver}
 Return the number of constraints in `m`.
 """
-length_cons(m::_Model) = length(get_constraints(m))
+length_cons(m::Model) = length(get_constraints(m))
 
 """
     draw(m::M, x) where M <: Union{Model, AbstractSolver}
-Draw a random value of `x` domain.
+Draw a random value from a model `m` of `x` domain.
 """
-draw(m::_Model, x) = rand(get_variable(m, x))
-draw(m::_Model, x, n) = rand(get_variable(m, x), n)
+draw(m::Model, x) = rand(get_variable(m, x))
+draw(m::Model, x, n) = rand(get_variable(m, x), n)
 
 """
     constriction(m::M, x) where M <: Union{Model, AbstractSolver}
 Return the constriction of variable `x`.
 """
-constriction(m::_Model, x) = constriction(get_variable(m, x))
+constriction(m::Model, x) = constriction(get_variable(m, x))
 
 """
     delete_value(m::M, x, val) where M <: Union{Model, AbstractSolver}
 Delete `val` from `x` domain.
 """
-delete_value!(m::_Model, x, val) = delete!(get_variable(m, x), val)
+delete_value!(m::Model, x, val) = delete!(get_variable(m, x), val)
 
 """
     delete_var_from_cons(m::M, c, x) where M <: Union{Model, AbstractSolver}
 Delete `x` from the constraint `c` list of restricted variables.
 """
-delete_var_from_cons!(m::_Model, c, x) = delete!(get_constraint(m, c), x)
+delete_var_from_cons!(m::Model, c, x) = delete!(get_constraint(m, c), x)
 
 """
     add_value!(m::M, x, val) where M <: Union{Model, AbstractSolver}
 Add `val` to `x` domain.
 """
-add_value!(m::_Model, x, val) = add!(get_variable(m, x), val)
+add_value!(m::Model, x, val) = add!(get_variable(m, x), val)
 
 """
     add_var_to_cons!(m::M, c, x) where M <: Union{Model, AbstractSolver}
 Add `x` to the constraint `c` list of restricted variables.
 """
-add_var_to_cons!(m::_Model, c, x) = add!(get_constraint(m, c), x)
+add_var_to_cons!(m::Model, c, x) = add!(get_constraint(m, c), x)
 
 """
     add!(m::M, x) where M <: Union{Model, AbstractSolver}
@@ -257,99 +262,65 @@ add_var_to_cons!(m::_Model, c, x) = add!(get_constraint(m, c), x)
 
 Add a variable `x`, a constraint `c`, or an objective `o` to `m`.
 """
-function add!(m::_Model, x::Variable)
-    _inc_vars!(m)
-    insert!(get_variables(m), _max_vars(m), x)
+function add!(m::Model, x::Variable)
+    inc_vars!(m)
+    insert!(get_variables(m), max_vars(m), x)
 end
 
-function add!(m::_Model, c::Constraint)
-    _inc_cons!(m)
-    insert!(get_constraints(m), _max_cons(m), c)
-    foreach(x -> add_to_constraint!(m.variables[x], _max_cons(m)), c.vars)
+function add!(m::Model, c::Constraint)
+    inc_cons!(m)
+    insert!(get_constraints(m), max_cons(m), c)
+    foreach(x -> add_to_constraint!(m.variables[x], max_cons(m)), c.vars)
 end
 
-function add!(m::_Model, o::Objective)
-    _inc_objs!(m)
-    insert!(get_objectives(m), _max_objs(m), o)
+function add!(m::Model, o::Objective)
+    inc_objs!(m)
+    insert!(get_objectives(m), max_objs(m), o)
 end
 
 """
     variable!(m::M, d) where M <: Union{Model, AbstractSolver}
 Add a variable with domain `d` to `m`.
 """
-function variable!(m::_Model, d = domain())
+function variable!(m::Model, d = domain())
     add!(m, variable(d))
-    return _max_vars(m)
+    return max_vars(m)
 end
 
 """
     constraint!(m::M, func, vars) where M <: Union{Model, AbstractSolver}
 Add a constraint with an error function `func` defined over variables `vars`.
 """
-function constraint!(m::_Model, func, vars::V) where {V <: AbstractVector{<:Number}}
+function constraint!(m::Model, func, vars::V) where {V <: AbstractVector{<:Number}}
     add!(m, constraint(func, vars))
-    return _max_cons(m)
+    return max_cons(m)
 end
 
 """
     objective!(m::M, func) where M <: Union{Model, AbstractSolver}
 Add an objective evaluated by `func`.
 """
-function objective!(m::_Model, func)
-    add!(m, objective(func, "o" * string(_max_objs(m) + 1)))
-end
-
-"""
-    describe(m::M) where M <: Union{Model, AbstractSolver}
-Describe the model.
-"""
-function describe(m::_Model) # TODO: rewrite _describe
-    objectives = ""
-    if Dictionaries.length(m.objectives) == 0
-        objectives = "Constraint Satisfaction Program (CSP)"
-    else
-        objectives = "Constraint Optimization Program (COP) with Objective(s)\n"
-        objectives *= mapreduce(
-            o -> "\t\t" * o.name * "\n", *, get_objectives(m); init = "")[1:(end - 1)]
-    end
-    variables = mapreduce(
-        x -> "\t\tx$(x[1]): " * string(get_domain(x[2])) * "\n",
-        *, pairs(m.variables); init = ""
-    )[1:(end - 1)]
-    constraints = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n",
-        *, pairs(m.constraints); init = "")[1:(end - 1)]
-
-    str = """
-          _Model description
-              $objectives
-              Variables: $(length(m.variables))
-          $variables
-              Constraints: $(length(m.constraints))
-          $constraints
-          """
-
-    return str
+function objective!(m::Model, func)
+    add!(m, objective(func, "o" * string(max_objs(m) + 1)))
 end
 
 """
     is_sat(m::M) where M <: Union{Model, AbstractSolver}
 Return `true` if `m` is a satisfaction model.
 """
-is_sat(m::_Model) = length_objs(m) == 0
+is_sat(m::Model) = length_objs(m) == 0
 
 """
     is_specialized(m::M) where M <: Union{Model, AbstractSolver}
 Return `true` if the model is already specialized.
 """
-function is_specialized(m::_Model)
-    return m.specialized.x
-end
+is_specialized(m::Model) = m.specialized[]
 
 """
     specialize(m::M) where M <: Union{Model, AbstractSolver}
 Specialize the structure of a model to avoid dynamic type attribution at runtime.
 """
-function specialize(m::_Model)
+function specialize(m::Model)
     vars_types = Set{Type}()
     cons_types = Set{Type}()
     objs_types = Set{Type}()
@@ -370,74 +341,72 @@ function specialize(m::_Model)
     foreach(c -> cons[c] = Constraint(cons_union, get_constraint(m, c)), keys(cons))
     foreach(o -> objs[o] = Objective(objs_union, get_objective(m, o)), keys(objs))
 
-    max_vars = Ref(_max_vars(m))
-    max_cons = Ref(_max_cons(m))
-    max_objs = Ref(_max_objs(m))
+    maxvars = Ref(max_vars(m))
+    maxcons = Ref(max_cons(m))
+    maxobjs = Ref(max_objs(m))
 
     specialized = Ref(true)
 
-    _Model(vars, cons, objs, max_vars, max_cons, max_objs, m.sense, specialized,
-        get_kind(m), _best_bound(m), get_time_stamp(m))
+    Model(vars, cons, objs, maxvars, maxcons, maxobjs, m.sense, specialized,
+        get_kind(m), best_bound(m), get_time_stamp(m))
 end
 
 """
-    _is_empty(m::Model)
+    is_empty(m::Model)
 
-DOCSTRING
+Check if the model is empty.
 """
-function _is_empty(m::_Model)
-    return length_objs(m) + length_vars(m) == 0
-end
+is_empty(m::Model) = length_objs(m) + length_vars(m) == 0
 
 """
-    _set_domain!(m::Model, x, values)
+    set_domain!(m::Model, x, values) # [1]
+    set_domain!(m::Model, x, a::Tuple, b::Tuple) # [2]
+    set_domain!(m::Model, x, d::D) where {D <: AbstractDomain} # [3]
 
-DOCSTRING
+Set the domain of variable `x` to `values`. The domain can be a collection of values or a range.
 
-# Arguments:
-- `m`: DESCRIPTION
-- `x`: DESCRIPTION
-- `values`: DESCRIPTION
+# Arguments
+- `m::Model`: the model
+- `x`: the variable id
+- `values`: the domain values [1]
+- `a::Tuple`: the lower bound of the range [2]
+- `b::Tuple`: the upper bound of the range [2]
+- `d::D`: the domain [3]
 """
-function _set_domain!(m::_Model, x, values)
+function set_domain!(m::Model, x, values)
     d = domain(values)
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
-function _set_domain!(m::_Model, x, a::Tuple, b::Tuple)
+function set_domain!(m::Model, x, a::Tuple, b::Tuple)
     d = domain(a, b)
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
-# function _set_domain!(m::_Model, x,r::R) where {R <: AbstractRange}
-#     d = domain(r)
-#     m.variables[x] = Variable(d, get_cons_from_var(m, x))
-# end
-
-function _set_domain!(m::_Model, x, d::D) where {D <: AbstractDomain}
+function set_domain!(m::Model, x, d::D) where {D <: AbstractDomain}
     m.variables[x] = Variable(d, get_cons_from_var(m, x))
 end
 
 """
-    domain_size(m::Model, x) = begin
+    domain_size(m::Model, x)
 
-DOCSTRING
+Return the size of the domain of variable `x`.
 """
-domain_size(m::_Model, x) = domain_size(get_variable(m, x))
+domain_size(m::Model, x) = domain_size(get_variable(m, x))
 
 """
-    max_domains_size(m::Model, vars) = begin
+    max_domains_size(m::Model, vars)
 
-DOCSTRING
+Return the maximum domain size of a collection of variables.
 """
-max_domains_size(m::_Model, vars) = maximum(map(x -> domain_size(m, x), vars))
+max_domains_size(m::Model, vars) = maximum(map(x -> domain_size(m, x), vars))
 
 """
     empty!(m::Model)
 
-DOCSTRING
+Empty the model.
 """
-function Base.empty!(m::_Model)
+function Base.empty!(m::Model)
     empty!(m.variables)
     empty!(m.constraints)
     empty!(m.objectives)
@@ -447,24 +416,49 @@ function Base.empty!(m::_Model)
     m.specialized[] = false
 end
 
-# Non modificating cost and objective computations
+"""
+    draw(m::Model)
 
-draw(m::_Model) = map(rand, get_variables(m))
+Draw random values from the domains of the variables in `m`.
+"""
+draw(m::Model) = map(rand, get_variables(m))
 
-compute_cost(c::Constraint, values, X) = apply(c, map(x -> values[x], c.vars), X)
-function compute_costs(m, values, X)
+"""
+    compute_costs(m::Model, values, X) # [1]
+    compute_costs(m::Model, values, cons, X) # [2]
+
+Compute the costs of the constraints in `m` given the values of the variables in `values`.
+
+# Arguments
+- `m::Model`: the model
+- `values`: the values of the variables
+- `cons`: the constraints to consider [2]
+- `X`: a configuration
+"""
+function compute_costs(m::Model, values, X)
     return sum(c -> compute_cost(c, values, X), get_constraints(m); init = 0.0)
 end
-function compute_costs(m, values, cons, X)
+function compute_costs(m::Model, values, cons, X)
     return sum(c -> compute_cost(c, values, X), view(get_constraints(m), cons); init = 0.0)
 end
 
-compute_objective(m, values; objective = 1) = apply(get_objective(m, objective), values)
+"""
+    compute_objective(m::Model, values, objective)
 
-function update_domain!(m, x, d)
+Compute the objective of `m` given the values of the variables in `values`.
+"""
+compute_objective(m::Model, values; objective = 1) = apply(
+    get_objective(m, objective), values)
+
+"""
+    update_domain!(m::Model, x, d)
+
+Update the domain of variable `x` with `d`.
+"""
+function update_domain!(m::Model, x, d)
     if isempty(get_variable(m, x))
         old_d = get_variable(m, x).domain
-        _set_domain!(m, x, d.domain)
+        set_domain!(m, x, d.domain)
     else
         old_d = get_variable(m, x).domain
         are_continuous = typeof(d) <: ContinuousDomain && typeof(old_d) <: ContinuousDomain
@@ -473,10 +467,137 @@ function update_domain!(m, x, d)
         else
             intersect_domains(convert(RangeDomain, old_d), convert(RangeDomain, d))
         end
-        _set_domain!(m, x, new_d)
+        set_domain!(m, x, new_d)
     end
 end
 
-sense(m::_Model) = m.sense[]
-sense!(m::_Model, ::Val{:min}) = m.sense[] = 1
-sense!(m::_Model, ::Val{:max}) = m.sense[] = -1
+"""
+    sense(m::Model)
+
+Return the sense of the model. Mainly to figure out if it is a minimization or maximization problem.
+"""
+sense(m::Model) = m.sense[]
+
+"""
+    sense!(m::Model, ::Val{:min})
+    sense!(m::Model, ::Val{:max})
+
+Set the sense of the model to minimization or maximization.
+"""
+sense!(m::Model, ::Val{:min}) = m.sense[] = 1
+sense!(m::Model, ::Val{:max}) = m.sense[] = -1
+
+"""
+    describe(m::Model)
+
+Provide a detailed description of the model, including the type of problem (CSP or COP), the sense (minimization or maximization), the kind, the number and details of variables, constraints, and objectives.
+"""
+function describe(m::Model)
+    # Determine if the model is CSP or COP
+    model_type = is_sat(m) ? "Constraint Satisfaction Problem (CSP)" :
+                 "Constraint Optimization Problem (COP)"
+
+    # Determine the sense of the model
+    sense_str = sense(m) == 1 ? "Minimization" : "Maximization"
+
+    # Retrieve the kind of model
+    model_kind = get_kind(m)
+
+    # Format objectives
+    objectives_str = if length_objs(m) > 0
+        obj_details = join(
+            ["\t\tObjective $(i): $(o)" for (i, o) in enumerate(values(get_objectives(m)))],
+            "\n")
+        "Objectives:\n$obj_details"
+    else
+        "No objectives defined."
+    end
+
+    # Format variables
+    variables_str = if length_vars(m) > 0
+        var_details = mapreduce(
+            x -> "\t\tx$(x[1]): " * string(get_domain(x[2])) * "\n",
+            *, pairs(m.variables); init = ""
+        )[1:(end - 1)]
+        "Variables: $(length_vars(m))\n$var_details"
+    else
+        "No variables defined."
+    end
+
+    # Format constraints
+    constraints_str = if length_cons(m) > 0
+        con_details = mapreduce(c -> "\t\tc$(c[1]): " * string(c[2].vars) * "\n",
+            *, pairs(m.constraints); init = "")[1:(end - 1)]
+        "Constraints: $(length_cons(m))\n$con_details"
+    else
+        "No constraints defined."
+    end
+
+    # Include best known bound if available
+    best_bound_str = isnothing(best_bound(m)) ? "No bound available." :
+                     "Best known bound: $(best_bound(m))"
+
+    # Construct the complete description
+    description = """
+    Model Description:
+    Type: $model_type
+    Sense: $sense_str
+    Kind: $model_kind
+    $objectives_str
+    $variables_str
+    $constraints_str
+    $best_bound_str
+    Time of construction: $(get_time_stamp(m)) seconds since epoch
+    """
+
+    return description
+end
+
+@testitem "Model" tags=[:model] begin
+    import LocalSearchSolvers: is_empty, length_vars, length_cons, length_objs, is_sat
+    import LocalSearchSolvers: is_specialized, sense, get_kind, get_time_stamp, describe
+    import LocalSearchSolvers: variable!, constraint!, objective!, update_domain!
+    import LocalSearchSolvers: max_domains_size, specialize, empty!
+
+    m = model()
+    @test is_empty(m)
+    @test length_vars(m) == 0
+    @test length_cons(m) == 0
+    @test length_objs(m) == 0
+    @test is_sat(m)
+    @test !is_specialized(m)
+    @test sense(m) == 1
+    @test get_kind(m) == :generic
+    @test is_empty(m)
+    @test get_time_stamp(m) isa Float64
+    @test describe(m) isa String
+
+    x = variable!(m)
+    y = variable!(m)
+    z = variable!(m)
+    @test length_vars(m) == 3
+    @test !is_empty(m)
+
+    constraint!(m, sum, [x, y, z])
+    @test length_cons(m) == 1
+
+    objective!(m, x -> x[1] - x[2] + x[3])
+    @test length_objs(m) == 1
+
+    update_domain!(m, x, domain(1:10))
+    update_domain!(m, y, domain(1:5))
+    update_domain!(m, z, domain(1:2))
+
+    @test max_domains_size(m, [x, y, z]) == 9
+
+    m_special = specialize(m)
+    @test is_specialized(m_special)
+
+    println(describe(m))
+    println(describe(m_special))
+
+    empty!(m)
+    @test is_empty(m)
+
+    println(describe(m))
+end

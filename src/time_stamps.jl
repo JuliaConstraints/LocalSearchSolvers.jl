@@ -12,7 +12,7 @@ function TimeStamps(ts::Float64 = zero(Float64))
     t = zero(Float64)
     return TimeStamps(ts, t, t, t, t, t, t)
 end
-TimeStamps(model::_Model) = TimeStamps(get_time_stamp(model))
+TimeStamps(model::Model) = TimeStamps(get_time_stamp(model))
 
 add_time!(stamps, ts, ::Val{1}) = stamps.ts1 = ts
 add_time!(stamps, ts, ::Val{2}) = stamps.ts2 = ts

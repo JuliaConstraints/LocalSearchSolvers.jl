@@ -18,7 +18,7 @@ set_sat!(c, b) = c.solution = b
 compute_cost(m, config::Configuration) = compute_cost(m, get_values(config))
 compute_cost!(m, config::Configuration) = set_value!(config, compute_cost(m, config))
 
-function Configuration(m::_Model, X)
+function Configuration(m::Model, X)
     values = draw(m)
     val = compute_costs(m, values, X)
     sol = val ≈ 0.0

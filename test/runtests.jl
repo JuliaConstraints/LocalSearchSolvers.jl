@@ -14,8 +14,8 @@ using TestItemRunner
 @everywhere const LS = LocalSearchSolvers
 
 @testset "LocalSearchSolvers.jl" begin
-    # include("Aqua.jl")
-    # include("ExplicitImports.jl")
+    include("Aqua.jl")
+    include("ExplicitImports.jl")
     # include("JET.jl")
     include("TestItemRunner.jl")
     include("internal.jl")

@@ -11,7 +11,7 @@ An internal solver type called by MetaSolver when multithreading is enabled.
 """
 mutable struct _SubSolver <: AbstractSolver
     meta_local_id::Tuple{Int, Int}
-    model::_Model
+    model::Model
     options::Options
     pool::Pool
     state::State

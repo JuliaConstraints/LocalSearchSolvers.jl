@@ -83,6 +83,13 @@ function constraint(f, vars)
     return Constraint(g, collect(Int == Int32 ? map(Int, vars) : vars))
 end
 
+"""
+    compute_cost(c::Constraint, values, X)
+
+Compute the cost of constraint `c` given the values of the variables in `values`.
+"""
+compute_cost(c::Constraint, values, X) = apply(c, map(x -> values[x], c.vars), X)
+
 @testitem "Constraint" tags=[:constraint, :model] begin
     import LocalSearchSolvers as LS
 
@@ -93,6 +100,7 @@ end
     @test 3 ∈ c
     @info c typeof(c)
     add!(c, 4)
+    @test LS.compute_cost(c, [1, 2, 3, 4], nothing) == 10
     @test 4 ∈ c
     @test LS.get_vars(c) == [1, 2, 3, 4]
     delete!(c, 4)

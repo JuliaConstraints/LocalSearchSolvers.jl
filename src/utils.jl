@@ -102,8 +102,8 @@ end
 
     @test apply(fc, 1, [1, 2, 3]) === 7.0
 
-    f(x) = x + 1.0
-    fc = FC(f)
+    g(x) = x + 1.0
+    gc = FC(g)
 
-    @test apply(fc, 1) === 2.0
+    @test apply(gc, 1) === 2.0
 end

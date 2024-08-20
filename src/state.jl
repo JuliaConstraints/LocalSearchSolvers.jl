@@ -31,7 +31,7 @@ end
 const State = Union{EmptyState, _State}
 
 state() = EmptyState()
-function state(m::_Model, pool = pool(); opt = false)
+function state(m::Model, pool = pool(); opt = false)
     X = Matrix{Float64}(undef, m.max_vars[], CompositionalNetworks.max_icn_length())
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
     config = Configuration(m, X)
