@@ -25,8 +25,8 @@ Distributed = "1"
 JSON = "0.21"
 Lazy = "0.15"
 OrderedCollections = "1"
-TestItems = "0.1, 1"
-julia = "1.6"
+TestItems = "1"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
