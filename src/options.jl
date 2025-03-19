@@ -5,6 +5,12 @@ const print_levels = Dict(
     :verbose => 3
 )
 
+const log_modes = Dict(
+    :silent => 0,  # No output
+    :minimal => 1, # Only progress bars
+    :full => 2     # Full logging with progress bars
+)
+
 """
     Options()
 # Arguments:
@@ -41,6 +47,18 @@ mutable struct Options
     tabu_delta::Float64
     time_limit::Tuple{Bool, Float64} # seconds
 
+    # Logger options
+    log_level::Symbol
+    log_mode::Symbol
+    log_to_file::Bool
+    log_file::String
+    progress_mode::Symbol
+    progress_bar_width::Int
+    progress_update_interval::Float64
+    show_sub_progress::Bool
+    show_remote_progress::Bool
+    progress_layout::Symbol
+
     function Options(;
             dynamic = false,
             info_path = "",
@@ -52,7 +70,19 @@ mutable struct Options
             tabu_time = 0,
             tabu_local = 0,
             tabu_delta = 0.0,
-            time_limit = (false, 1.0) # seconds
+            time_limit = (false, 1.0), # seconds
+
+            # Logger options
+            log_level = :info,
+            log_mode = :full,
+            log_to_file = false,
+            log_file = "solver.log",
+            progress_mode = :mixed,
+            progress_bar_width = 50,
+            progress_update_interval = 0.1,
+            show_sub_progress = true,
+            show_remote_progress = true,
+            progress_layout = :stacked
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
                  " and objectives types. Dynamic elements that add a new type will raise an error!"
@@ -90,7 +120,19 @@ mutable struct Options
             tabu_time,
             tabu_local,
             tabu_delta,
-            new_time_limit
+            new_time_limit,
+
+            # Logger options
+            log_level,
+            log_mode,
+            log_to_file,
+            log_file,
+            progress_mode,
+            progress_bar_width,
+            progress_update_interval,
+            show_sub_progress,
+            show_remote_progress,
+            progress_layout
         )
     end
 end
@@ -279,6 +321,156 @@ DOCSTRING
 """
 _time_limit!(options, time::Tuple{Bool, Float64}) = options.time_limit = time
 _time_limit!(options, time::Float64) = options.time_limit = (false, time)
+
+# Logger option accessors
+
+"""
+    _log_level(options, default = nothing)
+
+Get the log level from options. If a default value is provided and the option is not set, return the default.
+"""
+_log_level(options, default = nothing) = default === nothing ? options.log_level : default
+
+"""
+    _log_level!(options, level)
+
+Set the log level in options.
+"""
+_log_level!(options, level) = options.log_level = level
+
+"""
+    _log_mode(options, default = nothing)
+
+Get the log mode from options. If a default value is provided and the option is not set, return the default.
+"""
+_log_mode(options, default = nothing) = default === nothing ? options.log_mode : default
+
+"""
+    _log_mode!(options, mode)
+
+Set the log mode in options.
+"""
+_log_mode!(options, mode) = options.log_mode = mode
+
+"""
+    _log_to_file(options, default = nothing)
+
+Get the log to file flag from options. If a default value is provided and the option is not set, return the default.
+"""
+_log_to_file(options, default = nothing) = default === nothing ? options.log_to_file :
+                                           default
+
+"""
+    _log_to_file!(options, flag)
+
+Set the log to file flag in options.
+"""
+_log_to_file!(options, flag) = options.log_to_file = flag
+
+"""
+    _log_file(options, default = nothing)
+
+Get the log file path from options. If a default value is provided and the option is not set, return the default.
+"""
+_log_file(options, default = nothing) = default === nothing ? options.log_file : default
+
+"""
+    _log_file!(options, path)
+
+Set the log file path in options.
+"""
+_log_file!(options, path) = options.log_file = path
+
+"""
+    _progress_mode(options, default = nothing)
+
+Get the progress mode from options. If a default value is provided and the option is not set, return the default.
+"""
+_progress_mode(options, default = nothing) = default === nothing ? options.progress_mode :
+                                             default
+
+"""
+    _progress_mode!(options, mode)
+
+Set the progress mode in options.
+"""
+_progress_mode!(options, mode) = options.progress_mode = mode
+
+"""
+    _progress_bar_width(options, default = nothing)
+
+Get the progress bar width from options. If a default value is provided and the option is not set, return the default.
+"""
+_progress_bar_width(options, default = nothing) = default === nothing ?
+                                                  options.progress_bar_width : default
+
+"""
+    _progress_bar_width!(options, width)
+
+Set the progress bar width in options.
+"""
+_progress_bar_width!(options, width) = options.progress_bar_width = width
+
+"""
+    _progress_update_interval(options, default = nothing)
+
+Get the progress update interval from options. If a default value is provided and the option is not set, return the default.
+"""
+_progress_update_interval(options, default = nothing) = default === nothing ?
+                                                        options.progress_update_interval :
+                                                        default
+
+"""
+    _progress_update_interval!(options, interval)
+
+Set the progress update interval in options.
+"""
+_progress_update_interval!(options, interval) = options.progress_update_interval = interval
+
+"""
+    _show_sub_progress(options, default = nothing)
+
+Get the show sub-solver progress flag from options. If a default value is provided and the option is not set, return the default.
+"""
+_show_sub_progress(options, default = nothing) = default === nothing ?
+                                                 options.show_sub_progress : default
+
+"""
+    _show_sub_progress!(options, flag)
+
+Set the show sub-solver progress flag in options.
+"""
+_show_sub_progress!(options, flag) = options.show_sub_progress = flag
+
+"""
+    _show_remote_progress(options, default = nothing)
+
+Get the show remote solver progress flag from options. If a default value is provided and the option is not set, return the default.
+"""
+_show_remote_progress(options, default = nothing) = default === nothing ?
+                                                    options.show_remote_progress : default
+
+"""
+    _show_remote_progress!(options, flag)
+
+Set the show remote solver progress flag in options.
+"""
+_show_remote_progress!(options, flag) = options.show_remote_progress = flag
+
+"""
+    _progress_layout(options, default = nothing)
+
+Get the progress layout from options. If a default value is provided and the option is not set, return the default.
+"""
+_progress_layout(options, default = nothing) = default === nothing ?
+                                               options.progress_layout : default
+
+"""
+    _progress_layout!(options, layout)
+
+Set the progress layout in options.
+"""
+_progress_layout!(options, layout) = options.progress_layout = layout
 
 function set_option!(options, name, value)
     eval(Symbol("_" * name * "!"))(options, value)

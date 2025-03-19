@@ -4,6 +4,8 @@ Abstract type to encapsulate the different solver types such as `Solver` or `_Su
 """
 abstract type AbstractSolver end
 
+# Logger fields will be added to concrete solver types
+
 # Dummy method to (not) add a TimeStamps to a solver
 add_time!(::AbstractSolver, i) = nothing
 
@@ -246,6 +248,29 @@ function _init!(s, ::Val{:local})
         s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
     state!(s)
     pool!(s)
+
+    # Initialize progress tracker if it exists
+    if !isnothing(s.progress_tracker)
+        reset_progress!(s.progress_tracker)
+
+        # Log initialization
+        if s.logger.config.log_mode == :full
+            log_info(s.logger,
+                "Initializing solver with $(length_vars(s)) variables and $(length_cons(s)) constraints")
+
+            # Log limits if set
+            if get_option(s, "iteration")[1]
+                log_info(
+                    s.logger, "Iteration limit: $(get_option(s, "iteration")[2])")
+            end
+
+            if get_option(s, "time_limit")[1]
+                log_info(s.logger,
+                    "Time limit: $(get_option(s, "time_limit")[2]) seconds")
+            end
+        end
+    end
+
     return has_solution(s)
 end
 
@@ -426,15 +451,82 @@ Search the space of configurations.
 function solve_while_loop!(s, stop, sat, iter, st)
     while stop_while_loop(s, stop, iter, st)
         iter += 1
+
+        # Update progress with iteration
+        if !isnothing(s.progress_tracker)
+            update_progress!(s.progress_tracker,
+                iteration = iter,
+                error = get_error(s),
+                objective = _optimizing(s) ? get_value(s) : nothing
+            )
+            display_progress!(s.progress_tracker, s.logger)
+
+            # Log solver state if needed
+            if s.logger.config.log_mode == :full
+                log_solver_state(
+                    s.logger,
+                    s.progress_tracker.solver_id,
+                    iter,
+                    get_error(s),
+                    is_sat(s),
+                    _optimizing(s) ? get_value(s) : nothing
+                )
+            end
+        end
+
         _verbose(
             s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-        _step!(s) && sat && break
+
+        # If step finds a solution, update progress and break if in satisfaction mode
+        if _step!(s) && sat
+            # Update progress if solution found
+            if !isnothing(s.progress_tracker)
+                update_progress!(s.progress_tracker, has_valid_solution = true)
+                display_progress!(s.progress_tracker, s.logger)
+
+                if s.logger.config.log_mode == :full
+                    log_info(s.logger, "Solution found at iteration $(iter)")
+                end
+            end
+            break
+        end
+
         _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+
+        # Check sub-solvers
         best_sub = _check_subs(s)
         if best_sub > 0
             bs = s.subs[best_sub]
             s.pool = deepcopy(bs.pool)
+
+            # Update progress if solution found from sub-solver
+            if !isnothing(s.progress_tracker) && sat
+                update_progress!(s.progress_tracker, has_valid_solution = true)
+                display_progress!(s.progress_tracker, s.logger)
+
+                if s.logger.config.log_mode == :full
+                    log_info(s.logger, "Solution found from sub-solver $(best_sub)")
+                end
+            end
+
             sat && break
+        end
+    end
+
+    # Finalize progress display
+    if !isnothing(s.progress_tracker)
+        finalize_progress!(s.progress_tracker, s.logger)
+
+        if s.logger.config.log_mode == :full
+            if is_sat(s)
+                log_info(s.logger, "Solving completed with valid solution")
+                if _optimizing(s)
+                    log_info(s.logger, "Best objective value: $(get_value(s))")
+                end
+            else
+                log_info(s.logger, "Solving completed without valid solution")
+                log_info(s.logger, "Final error: $(get_error(s))")
+            end
         end
     end
 end
@@ -472,15 +564,50 @@ post_process(::AbstractSolver) = nothing
 
 function solve!(s, stop = Atomic{Bool}(false))
     start_time = time()
+
+    # Log start of solving
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        log_info(s.logger, "Starting solver")
+    end
+
     add_time!(s, 1) # only used by MainSolver
     iter = 0 # only used by MainSolver
     sat = is_sat(s)
-    _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+
+    # Initialize and check if already solved
+    if _init!(s)
+        if sat
+            iter = typemax(0)
+
+            # Log already solved
+            if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+                log_info(s.logger, "Problem already satisfied during initialization")
+            end
+        else
+            _optimizing!(s)
+
+            # Log switching to optimization
+            if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+                log_info(s.logger, "Switching to optimization mode")
+            end
+        end
+    end
+
     add_time!(s, 2) # only used by MainSolver
+
+    # Main solving loop
     solve_for_loop!(s, stop, sat, iter, start_time)
+
     add_time!(s, 5) # only used by MainSolver
     remote_stop!(s)
     add_time!(s, 6) # only used by MainSolver
+
+    # Log end of solving
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        elapsed = time() - start_time
+        log_info(s.logger, "Solver finished in $(@sprintf("%.3f", elapsed)) seconds")
+    end
+
     post_process(s) # only used by MainSolver
 end
 

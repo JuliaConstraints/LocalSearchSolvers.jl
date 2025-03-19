@@ -23,6 +23,10 @@ mutable struct MainSolver <: MetaSolver
     strategies::MetaStrategy
     subs::Vector{_SubSolver}
     time_stamps::TimeStamps
+
+    # Logger fields
+    progress_tracker::Union{AbstractProgressTracker, Nothing}
+    logger::AbstractLogger
 end
 
 make_id(::Int, id, ::Val{:lead}) = (id, 0)
@@ -39,8 +43,18 @@ function solver(model = model();
     remotes = Dict{Int, Future}()
     subs = Vector{_SubSolver}()
     ts = TimeStamps(model)
-    return MainSolver(mlid, model, options, pool, rc_report, rc_sol, rc_stop,
-        remotes, state(), :not_called, strategies, subs, ts)
+
+    # Create progress tracker based on solver options
+    progress_tracker = create_progress_tracker_from_options(options, "Main")
+
+    # Create logger based on solver options
+    logger = create_logger_from_options(options)
+
+    return MainSolver(
+        mlid, model, options, pool, rc_report, rc_sol, rc_stop,
+        remotes, state(), :not_called, strategies, subs, ts,
+        progress_tracker, logger
+    )
 end
 
 # Forwards from TimeStamps

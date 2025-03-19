@@ -4,10 +4,14 @@ using Base.Threads
 using CompositionalNetworks
 using ConstraintDomains
 using Constraints
+using Dates
 using Dictionaries
 using Distributed
 using JSON
 using Lazy
+using Printf
+using ProgressBars
+using Term
 
 # Exports internal
 export constraint!, variable!, objective!, add!, add_var_to_cons!, add_value!
@@ -30,8 +34,15 @@ export o_dist_extrema, o_mincut
 export solver, solve!, specialize, specialize!, Options, get_values, best_values
 export best_value, time_info, status
 
-# Include utils
+# Exports Logger
+export LogLevel, ProgressMode, ProgressTracker, LoggerConfig
+export configure_logger, log_error, log_warn, log_info, log_debug
+export update_progress!, reset_progress!, enable_progress!, set_progress_mode!
+export display_progress!, finalize_progress!, format_progress_bar
+
+# Include utils and interfaces
 include("utils.jl")
+include("logger_interface.jl")
 
 # Include model related files
 include("variable.jl")
@@ -67,6 +78,14 @@ include("solvers/sub.jl")
 include("solvers/meta.jl")
 include("solvers/lead.jl")
 include("solvers/main.jl")
+
+# Include logger
+include("logger/types.jl")
+include("logger/config.jl")
+include("logger/progress.jl")
+include("logger/display.jl")
+include("logger/distributed.jl")
+include("logger/logger.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
