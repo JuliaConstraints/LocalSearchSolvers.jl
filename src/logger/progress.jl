@@ -91,6 +91,16 @@ function calculate_progress(tracker::ProgressTracker)
             error_reduction = 1.0 - (tracker.current_error / tracker.initial_error)
             return max(0.0, min(1.0, error_reduction))
         end
+    elseif tracker.mode == SMART
+        # Only show progress for time/iteration when limits are set
+        if !isnothing(tracker.total_iterations)
+            return min(1.0, tracker.current_iteration / tracker.total_iterations)
+        elseif !isnothing(tracker.total_time)
+            elapsed = time() - tracker.start_time
+            return min(1.0, elapsed / tracker.total_time)
+        end
+        # No progress display if no limits are set
+        return -1.0
     end
 
     # Default: indeterminate progress

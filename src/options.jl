@@ -74,14 +74,14 @@ mutable struct Options
 
             # Logger options
             log_level = :info,
-            log_mode = :full,
-            log_to_file = false,
-            log_file = "solver.log",
-            progress_mode = :mixed,
+            log_mode = :minimal,
+            log_to_file = true,
+            log_file = default_log_file_path(),
+            progress_mode = :smart,
             progress_bar_width = 50,
             progress_update_interval = 0.1,
-            show_sub_progress = true,
-            show_remote_progress = true,
+            show_sub_progress = false,
+            show_remote_progress = false,
             progress_layout = :stacked
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *

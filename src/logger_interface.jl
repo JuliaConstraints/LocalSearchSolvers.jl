@@ -25,6 +25,7 @@ Enumeration of progress tracking modes.
     ERROR_REDUCTION = 3  # Track progress by error reduction
     OBJECTIVE = 4   # Track progress by objective improvement
     MIXED = 5       # Automatically select best mode
+    SMART = 6       # Only show progress for time/iteration when limits are set
 end
 
 """

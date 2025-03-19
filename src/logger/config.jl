@@ -1,4 +1,23 @@
 # Configuration functions for the logging system
+using Dates
+
+"""
+    default_log_file_path()
+
+Generate the default path for log files: ~/.julia/constraints/logs/solver_YYYY-MM-DD_HHMMSS.log
+"""
+function default_log_file_path()
+    # Get Julia's user depot path (typically ~/.julia)
+    depot_path = DEPOT_PATH[1]
+
+    # Create logs directory if it doesn't exist
+    logs_dir = joinpath(depot_path, "constraints", "logs")
+    mkpath(logs_dir)
+
+    # Generate timestamped log filename
+    timestamp = Dates.format(now(), "yyyy-mm-dd_HHMMSS")
+    return joinpath(logs_dir, "solver_$(timestamp).log")
+end
 
 """
     configure_logger(;
@@ -126,9 +145,11 @@ function symbol_to_progress_mode(mode::Symbol)
         return OBJECTIVE
     elseif mode == :mixed
         return MIXED
+    elseif mode == :smart
+        return SMART
     else
-        @warn "Unknown progress mode: $mode, defaulting to MIXED"
-        return MIXED
+        @warn "Unknown progress mode: $mode, defaulting to SMART"
+        return SMART
     end
 end
 
@@ -291,9 +312,12 @@ function create_logger_from_options(options::Dict)
     progress_layout = get(options, "progress_layout", :stacked)
 
     # Determine destinations
-    destinations = [:console]
-    if get(options, "log_to_file", false)
+    destinations = Symbol[]
+    if get(options, "log_to_file", true)
         push!(destinations, :file)
+    end
+    if log_mode != :silent
+        push!(destinations, :console)
     end
 
     # Create a LoggerConfig
@@ -332,9 +356,12 @@ function create_logger_from_options(options::Options)
     progress_layout = get_option(options, "progress_layout")
 
     # Determine destinations
-    destinations = [:console]
+    destinations = Symbol[]
     if get_option(options, "log_to_file")
         push!(destinations, :file)
+    end
+    if log_mode != :silent
+        push!(destinations, :console)
     end
 
     # Create a LoggerConfig
@@ -373,9 +400,12 @@ function create_logger_config_from_options(options::Dict)
     progress_layout = get(options, "progress_layout", :stacked)
 
     # Determine destinations
-    destinations = [:console]
-    if get(options, "log_to_file", false)
+    destinations = Symbol[]
+    if get(options, "log_to_file", true)
         push!(destinations, :file)
+    end
+    if log_mode != :silent
+        push!(destinations, :console)
     end
 
     return LoggerConfig(
@@ -410,9 +440,12 @@ function create_logger_config_from_options(options::Options)
     progress_layout = get_option(options, "progress_layout")
 
     # Determine destinations
-    destinations = [:console]
+    destinations = Symbol[]
     if get_option(options, "log_to_file")
         push!(destinations, :file)
+    end
+    if log_mode != :silent
+        push!(destinations, :console)
     end
 
     return LoggerConfig(

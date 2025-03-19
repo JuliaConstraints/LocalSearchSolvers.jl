@@ -39,6 +39,7 @@ export LogLevel, ProgressMode, ProgressTracker, LoggerConfig
 export configure_logger, log_error, log_warn, log_info, log_debug
 export update_progress!, reset_progress!, enable_progress!, set_progress_mode!
 export display_progress!, finalize_progress!, format_progress_bar
+export default_log_file_path
 
 # Include utils and interfaces
 include("utils.jl")
