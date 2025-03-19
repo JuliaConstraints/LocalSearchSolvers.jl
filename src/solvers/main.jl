@@ -71,24 +71,56 @@ function _init!(s::MainSolver)
 end
 
 function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
-    @debug "debug stop" iter (time()-start_time)
-    if !isready(s.rc_stop)
-        s.status = :solution_limit
-        return false
-    end
+    # Get iteration and time limit settings
+    iter_settings = get_option(s, "iteration")
+    time_settings = get_option(s, "time_limit")
 
-    iter_sat = get_option(s, "iteration")[1] && has_solution(s)
-    iter_limit = iter > get_option(s, "iteration")[2]
-    if (iter_sat && iter_limit) || iter_limit
-        s.status = :iteration_limit
-        return false
-    end
+    # Extract variables matching logic table
+    I = iter_settings[1]  # Stop on iteration only with solution
+    L = iter > iter_settings[2]  # Reached iteration limit
+    S = has_solution(s)  # Has solution
+    T = time_settings[1]  # Stop on time only with solution
+    TL = time() - start_time > time_settings[2]  # Reached time limit
 
-    time_sat = get_option(s, "time_limit")[1] && has_solution(s)
-    time_limit = time() - start_time > get_option(s, "time_limit")[2]
-    if (time_sat && time_limit) || time_limit
-        s.status = :time_limit
-        return false
+    # Special case: both limits require solution
+    if I && T
+        # Stop if solution found and either limit reached
+        if S && (L || TL)
+            s.status = L ? :iteration_limit : :time_limit
+            _verbose(s.options,
+                "Stopping: solution found ($(S)) and $(s.status) reached (iter: $iter/$(iter_settings[2]), time: $(time()-start_time)/$(time_settings[2]))")
+
+            return false
+        end
+    else
+        # Handle iteration limit
+        should_stop_iteration = if I
+            L && S  # Stop only if limit reached AND has solution
+        else
+            L      # Stop if limit reached regardless of solution
+        end
+
+        # Handle time limit
+        should_stop_time = if T
+            TL && S  # Stop only if limit reached AND has solution
+        else
+            TL      # Stop if limit reached regardless of solution
+        end
+
+        if should_stop_iteration
+            s.status = :iteration_limit
+            _verbose(s.options,
+                "Stopping: iteration limit reached ($(iter)/$(iter_settings[2])) $(I ? "with solution ($(S))" : "(absolute)")")
+
+            return false
+        end
+
+        if should_stop_time
+            s.status = :time_limit
+            _verbose(s.options,
+                "Stopping: time limit reached ($(time()-start_time)/$(time_settings[2])) $(T ? "with solution ($(S))" : "(absolute)")")
+            return false
+        end
     end
 
     return true
