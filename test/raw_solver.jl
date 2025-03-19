@@ -89,12 +89,13 @@ end
     ]
 
     for m in models
-        # @info describe(m)
+        # describe(m)
         options = Options(
             print_level = :verbose,
             time_limit = Inf,
             iteration = Inf,
             info_path = "info.json",
+            log_level = :warn, # Silence info messages
             process_threads_map = Dict{Int, Int}(
                 [2 => 2, 3 => 1]
             ))
@@ -135,7 +136,6 @@ end
         # LocalSearchSolvers._values!(s, Dictionary{Int,Int}())
 
         # display(solution(s))
-        @info time_info(s)
         rm("info.json")
     end
 end
@@ -152,21 +152,20 @@ end
                                                  0 7 0 0 0 0 0 5 3]))
 
     s = solver(sudoku(3; start = sudoku_instance);
-        options = Options(print_level = :minimal, iteration = Inf, time_limit = 10))
-    display(Dictionary(1:length(sudoku_instance), sudoku_instance))
+        options = Options(
+            print_level = :minimal, log_level = :warn, iteration = Inf, time_limit = 10))
+    # display(Dictionary(1:length(sudoku_instance), sudoku_instance))
     solve!(s)
-    display(solution(s))
-    display(s.time_stamps)
+    # display(solution(s))
+    # display(s.time_stamps)
 end
 
 @testset "Raw solver: golomb" begin
-    s = solver(golomb(5); options = Options(print_level = :minimal, iteration = 1000))
+    s = solver(golomb(5);
+        options = Options(print_level = :minimal, log_level = :warn, iteration = 1000))
     solve!(s)
 
-    @info "Results golomb!"
-    @info "Values: $(get_values(s))"
-    @info "Sol (val): $(best_value(s))"
-    @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
+    # Results are logged to file via the solver's logger
 end
 
 @testset "Raw solver: mincut" begin
@@ -178,28 +177,20 @@ end
     graph[3, 5] = 2.0
     graph[4, 5] = 3.0
     s = solver(
-        mincut(graph, source = 1, sink = 5), options = Options(print_level = :minimal))
+        mincut(graph, source = 1, sink = 5), options = Options(
+            print_level = :minimal, log_level = :warn))
     solve!(s)
-    @info "Results mincut!"
-    @info "Values: $(get_values(s))"
-    @info "Sol (val): $(best_value(s))"
-    @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
+    # Results are logged to file via the solver's logger
 
     s = solver(mincut(graph, source = 1, sink = 5, interdiction = 1),
-        options = Options(print_level = :minimal))
+        options = Options(print_level = :minimal, log_level = :warn))
     solve!(s)
-    @info "Results 1-mincut!"
-    @info "Values: $(get_values(s))"
-    @info "Sol (val): $(best_value(s))"
-    @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
+    # Results are logged to file via the solver's logger
 
     s = solver(mincut(graph, source = 1, sink = 5, interdiction = 2);
-        options = Options(print_level = :minimal, time_limit = 15, iteration = Inf))
-    # @info describe(s)
+        options = Options(
+            print_level = :minimal, log_level = :warn, time_limit = 15, iteration = Inf))
+    # describe(s)
     solve!(s)
-    @info "Results 2-mincut!"
-    @info "Values: $(get_values(s))"
-    @info "Sol (val): $(best_value(s))"
-    @info "Sol (vals): $(!isnothing(best_value(s)) ? best_values(s) : nothing)"
-    @info time_info(s)
+    # Results are logged to file via the solver's logger
 end

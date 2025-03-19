@@ -77,7 +77,7 @@ mutable struct Options
             log_level = :info,
             log_mode = :minimal,
             log_to_file = true,
-            log_file = "solver.log", # Default will be set after construction
+            log_file = default_log_file_path(), # Use logs folder with timestamped filename
             progress_mode = :smart,
             progress_bar_width = 50,
             progress_update_interval = 0.1,
