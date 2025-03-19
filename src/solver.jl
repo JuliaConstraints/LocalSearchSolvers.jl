@@ -449,6 +449,10 @@ stop_while_loop(::AbstractSolver) = nothing
 Search the space of configurations.
 """
 function solve_while_loop!(s, stop, sat, iter, st)
+    # Track last progress update time for remote solvers
+    last_progress_update_time = time()
+    update_interval = get_option(s, "progress_update_interval", 0.1) * 10  # Less frequent than display updates
+
     while stop_while_loop(s, stop, iter, st)
         iter += 1
 
@@ -472,6 +476,20 @@ function solve_while_loop!(s, stop, sat, iter, st)
                     _optimizing(s) ? get_value(s) : nothing
                 )
             end
+
+            # For LeadSolver, periodically send progress updates to main solver
+            if s isa LeadSolver && time() - last_progress_update_time >= update_interval
+                send_progress_update(s, 1)  # Send to worker 1 (main)
+                last_progress_update_time = time()
+            end
+
+            # For MainSolver, periodically update progress from remote solvers
+            if s isa MainSolver &&
+               get_option(s, "show_remote_progress", true) &&
+               time() - last_progress_update_time >= update_interval
+                update_remote_progress!(s)
+                last_progress_update_time = time()
+            end
         end
 
         _verbose(
@@ -486,6 +504,11 @@ function solve_while_loop!(s, stop, sat, iter, st)
 
                 if s.logger.config.log_mode == :full
                     log_info(s.logger, "Solution found at iteration $(iter)")
+                end
+
+                # For LeadSolver, send immediate progress update when solution found
+                if s isa LeadSolver
+                    send_progress_update(s, 1)  # Send to worker 1 (main)
                 end
             end
             break

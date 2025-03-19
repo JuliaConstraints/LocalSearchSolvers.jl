@@ -141,8 +141,17 @@ function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
 end
 
 function remote_dispatch!(s::MainSolver)
+    # Register main solver for distributed logging
+    register_main_solver(s)
+
+    # Start remote solvers
     for (w, ls) in s.remotes
         remote_do(solve!, w, fetch(ls))
+    end
+
+    # Log start of remote solvers if in full mode
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        log_info(s.logger, "Started $(length(s.remotes)) remote solver(s)")
     end
 end
 
@@ -164,24 +173,52 @@ function post_process(s::MainSolver)
 end
 
 function remote_stop!(s::MainSolver)
+    # Clear stop channel if ready
     isready(s.rc_stop) && take!(s.rc_stop)
+
+    # Get current satisfaction status
     sat = is_sat(s)
-    @info "Remote stop: report main pool" best_values(s.pool) has_solution(s) s.rc_report s.rc_sol s.rc_stop length(s.remotes)
+
+    # Final update of progress from remote solvers
+    if !isnothing(s.progress_tracker) && get_option(s, "show_remote_progress", true)
+        update_remote_progress!(s)
+    end
+
+    # Log remote stop if in full mode
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        log_info(s.logger, "Collecting results from remote solvers")
+    end
+
+    # Collect results from remote solvers
     if !sat || !has_solution(s)
-        @warn "debugging remote stop" nworkers() length(s.remotes)
         while isready(s.rc_report) || isready(s.rc_sol)
             wait(s.rc_sol)
             t = take!(s.rc_sol)
-            @info "Remote stop: report remote pool" best_values(t) length(s.remotes)
+
+            # Log remote pool if in full mode
+            if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+                log_info(s.logger, "Received solution pool from remote solver")
+            end
+
+            # Update pool with remote results
             update_pool!(s, t)
+
+            # If we found a solution in satisfaction mode, we can stop
             if sat && has_solution(t)
                 empty!(s.rc_report)
                 break
             end
-            @info "mark 1"
+
+            # Clear report channel if ready
             isready(s.rc_report) && take!(s.rc_report)
-            @info "mark 2"
         end
     end
-    @info "Remote stop: report best pool" best_values(s.pool) length(s.remotes)
+
+    # Unregister main solver from distributed logging
+    unregister_main_solver(s)
+
+    # Log final status if in full mode
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        log_info(s.logger, "Remote solvers completed, has_solution=$(has_solution(s))")
+    end
 end

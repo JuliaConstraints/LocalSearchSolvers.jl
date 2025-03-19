@@ -46,7 +46,23 @@ end
 stop_while_loop(s::LeadSolver, ::Atomic{Bool}, ::Int, ::Float64) = isready(s.rc_stop)
 
 function remote_stop!(s::LeadSolver)
+    # Send final progress update to main solver
+    if !isnothing(s.progress_tracker)
+        # Log stopping if in full mode
+        if s.logger.config.log_mode == :full
+            log_info(s.logger, "Lead solver stopping, has_solution=$(has_solution(s))")
+        end
+
+        # Send final progress update to main solver (worker 1)
+        send_progress_update(s, 1)
+    end
+
+    # Clear stop channel if ready
     isready(s.rc_stop) && take!(s.rc_stop)
+
+    # Send solution pool to main solver
     put!(s.rc_sol, s.pool)
+
+    # Mark as reported
     take!(s.rc_report)
 end
