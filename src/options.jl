@@ -77,7 +77,7 @@ mutable struct Options
             log_level = :info,
             log_mode = :minimal,
             log_to_file = true,
-            log_file = default_log_file_path(),
+            log_file = "solver.log", # Default will be set after construction
             progress_mode = :smart,
             progress_bar_width = 50,
             progress_update_interval = 0.1,
@@ -86,16 +86,14 @@ mutable struct Options
             progress_layout = :stacked,
             use_progress_meter = true
     )
-        ds_str = "The model types are specialized to the starting domains, constraints," *
-                 " and objectives types. Dynamic elements that add a new type will raise an error!"
-        dynamic && specialize && @warn ds_str
+        # Use standard warnings instead of custom logger to avoid circular dependencies
+        if dynamic && specialize
+            @warn "The model types are specialized to the starting domains, constraints, and objectives types. Dynamic elements that add a new type will raise an error!"
+        end
 
-        notds_str = "The solver types are not specialized in a static model context," *
-                    " which is sub-optimal."
-        !dynamic && !specialize && @info notds_str
-
-        itertime_str = "Both iteration and time limits are disabled. " *
-                       "Optimization runs will run infinitely."
+        if !dynamic && !specialize
+            @info "The solver types are not specialized in a static model context, which is sub-optimal."
+        end
 
         new_iteration = if iteration isa Tuple{Bool, Union{Int, Float64}}
             iteration
@@ -109,7 +107,9 @@ mutable struct Options
             time_limit = (false, time_limit)
         end
 
-        new_iteration[2] == Inf && new_time_limit[2] == Inf && @warn itertime_str
+        if new_iteration[2] == Inf && new_time_limit[2] == Inf
+            @warn "Both iteration and time limits are disabled. Optimization runs will run infinitely."
+        end
 
         new(
             dynamic,
@@ -140,14 +140,7 @@ mutable struct Options
     end
 end
 
-"""
-    _verbose(settings, str)
-Temporary logging function. #TODO: use better log instead (LoggingExtra.jl)
-"""
-function _verbose(options, str)
-    pl = options.print_level
-    print_levels[pl] ≥ 3 && (@info str)
-end
+# _verbose function removed as it's no longer needed
 
 """
     _dynamic(options) = begin

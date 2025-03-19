@@ -127,6 +127,7 @@ function collect_remote_trackers(main_solver)
             push!(trackers, tracker)
         catch e
             # Log error but continue with other remote solvers
+            # Use direct warning since we can't use @ls_warn here (circular dependency)
             @warn "Error collecting progress from worker $worker_id: $e"
         end
     end
@@ -200,7 +201,7 @@ end
 
 Send a progress update from a remote solver to the main solver.
 """
-function send_progress_update(solver::AbstractSolver, main_worker_id::Int)
+function send_progress_update(solver, main_worker_id::Int)
     # Skip if no progress tracking
     isnothing(solver.progress_tracker) && return
 
@@ -260,6 +261,7 @@ function send_progress_update(solver::AbstractSolver, main_worker_id::Int)
         )
     catch e
         # Log error but continue
+        # Use direct warning since we can't use @ls_warn here (circular dependency)
         @warn "Error sending progress update to main worker: $e"
     end
 end
@@ -279,11 +281,11 @@ function initialize_distributed_logging()
 end
 
 """
-    register_main_solver(solver::AbstractSolver)
+    register_main_solver(solver)
 
 Register a main solver for distributed logging.
 """
-function register_main_solver(solver::AbstractSolver)
+function register_main_solver(solver)
     # Initialize distributed logging if needed
     initialize_distributed_logging()
 
@@ -292,11 +294,11 @@ function register_main_solver(solver::AbstractSolver)
 end
 
 """
-    unregister_main_solver(solver::AbstractSolver)
+    unregister_main_solver(solver)
 
 Unregister a main solver from distributed logging.
 """
-function unregister_main_solver(solver::AbstractSolver)
+function unregister_main_solver(solver)
     # Remove solver from registry if it exists
     if isdefined(Main, :MAIN_SOLVERS)
         delete!(Main.MAIN_SOLVERS, solver)

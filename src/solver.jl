@@ -88,7 +88,6 @@ end
 # Forward from options
 @forward AbstractSolver.options get_option
 @forward AbstractSolver.options set_option!
-@forward AbstractSolver.options _verbose
 
 # Forwards from pool (of solutions)
 @forward AbstractSolver.pool best_config
@@ -282,7 +281,7 @@ _init!(s, role::Symbol) = _init!(s, Val(role))
 Restart a solver.
 """
 function _restart!(s, k = 10)
-    _verbose(s, "\n============== RESTART!!!!================\n")
+    @ls_debug s.logger "\n============== RESTART!!!!================\n"
     _draw!(s)
     empty_tabu!(s)
     δ = ((k - 1) * get_option(s, "tabu_delta")) + get_option(s, "tabu_time") / k
@@ -332,19 +331,20 @@ function _move!(s, x::Int, dim::Int = 0)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
-        _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
+        @ls_debug s.logger "Compute costs: selected var(s) x_$x "*(dim == 0 ? "= $v" :
+                                                                   "⇆ x_$v")
 
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst = cons_x_v)
 
         cost = get_error(s)
         if cost < best_cost
-            _verbose(s, "cost = $cost < $best_cost")
+            @ls_debug s.logger "cost = $cost < $best_cost"
             tabu = false
             best_cost = cost
             dim == 0 ? best_values = [v] : best_swap = [v]
         elseif cost == best_cost
-            _verbose(s, "cost = best_cost = $cost")
+            @ls_debug s.logger "cost = best_cost = $cost"
             push!(dim == 0 ? best_values : best_swap, v)
         end
 
@@ -370,7 +370,7 @@ Iterate a step of the solver run.
 function _step!(s)
     # select worst variables
     x = _select_worse(s)
-    _verbose(s, "Selected x = $x")
+    @ls_debug s.logger "Selected x = $x"
 
     # Local move (change the value of the selected variable)
     best_values, best_swap, tabu = _move!(s, x)
@@ -389,7 +389,7 @@ function _step!(s)
 
     # update tabu list with either worst or selected variable
     insert_tabu!(s, x, tabu ? :tabu : :pick)
-    _verbose(s, "Tabu list: $(tabu_list(s))")
+    @ls_debug s.logger "Tabu list: $(tabu_list(s))"
 
     # Inc last improvement if tabu
     tabu ? _inc_last_improvement!(s) : _reset_last_improvement!(s)
@@ -397,12 +397,12 @@ function _step!(s)
     # Select the best move (value or swap)
     if x ∈ best_swap
         _value!(s, x, rand(best_values))
-        _verbose(s, "best_values: $best_values")
+        @ls_debug s.logger "best_values: $best_values"
     else
         _swap_value!(s, x, rand(best_swap))
-        _verbose(s, "best_swap : $best_swap")
+        @ls_debug s.logger "best_swap : $best_swap"
     end
-    _verbose(s, "After move: values=$(length(_values(s)) > 0 ? _values(s) : nothing)")
+    @ls_debug s.logger "After move: values=$(length(_values(s)) > 0 ? _values(s) : nothing)"
 
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
@@ -416,9 +416,9 @@ function _step!(s)
             _optimizing!(s)
             # Now compute the objective for this first solution
             _compute_objective!(s)
-            _verbose(s, "Switching to optimization")
+            @ls_debug s.logger "Switching to optimization"
         else
-            _verbose(s, "Solution found, pool has_solution=$(has_solution(s))")
+            @ls_debug s.logger "Solution found, pool has_solution=$(has_solution(s))"
             return true
         end
     end
@@ -492,8 +492,7 @@ function solve_while_loop!(s, stop, sat, iter, st)
             end
         end
 
-        _verbose(
-            s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
+        @ls_debug s.logger "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))"
 
         # If step finds a solution, update progress and break if in satisfaction mode
         if _step!(s) && sat
@@ -514,7 +513,7 @@ function solve_while_loop!(s, stop, sat, iter, st)
             break
         end
 
-        _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+        @ls_debug s.logger "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)"
 
         # Check sub-solvers
         best_sub = _check_subs(s)

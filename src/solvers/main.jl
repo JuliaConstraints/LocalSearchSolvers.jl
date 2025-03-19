@@ -101,8 +101,7 @@ function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
         # Stop if solution found and either limit reached
         if S && (L || TL)
             s.status = L ? :iteration_limit : :time_limit
-            _verbose(s.options,
-                "Stopping: solution found ($(S)) and $(s.status) reached (iter: $iter/$(iter_settings[2]), time: $(time()-start_time)/$(time_settings[2]))")
+            @ls_debug s.logger "Stopping: solution found ($(S)) and $(s.status) reached (iter: $iter/$(iter_settings[2]), time: $(time()-start_time)/$(time_settings[2]))"
 
             return false
         end
@@ -123,16 +122,14 @@ function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
 
         if should_stop_iteration
             s.status = :iteration_limit
-            _verbose(s.options,
-                "Stopping: iteration limit reached ($(iter)/$(iter_settings[2])) $(I ? "with solution ($(S))" : "(absolute)")")
+            @ls_debug s.logger "Stopping: iteration limit reached ($(iter)/$(iter_settings[2])) $(I ? "with solution ($(S))" : "(absolute)")"
 
             return false
         end
 
         if should_stop_time
             s.status = :time_limit
-            _verbose(s.options,
-                "Stopping: time limit reached ($(time()-start_time)/$(time_settings[2])) $(T ? "with solution ($(S))" : "(absolute)")")
+            @ls_debug s.logger "Stopping: time limit reached ($(time()-start_time)/$(time_settings[2])) $(T ? "with solution ($(S))" : "(absolute)")"
             return false
         end
     end

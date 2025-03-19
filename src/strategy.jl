@@ -7,9 +7,12 @@ function MetaStrategy(model;
         tenure = min(length_vars(model) ÷ 2, 10),
         tabu = tabu(tenure, tenure ÷ 2),
         # restart = restart(tabu, Val(:universal))
-        restart = restart(tabu, Val(:random); rp = 0.01)
+        restart = restart(tabu, Val(:random); rp = 0.01),
+        logger = nothing
 )
-    @info "MetaStrategy: $restart, $tabu, $tenure"
+    if !isnothing(logger)
+        @ls_info logger "MetaStrategy: $restart, $tabu, $tenure"
+    end
     return MetaStrategy(restart, tabu)
 end
 

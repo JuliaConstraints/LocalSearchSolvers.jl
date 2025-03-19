@@ -122,6 +122,7 @@ function symbol_to_log_level(level::Symbol)
     elseif level == :debug
         return DEBUG
     else
+        # Use direct println for warning since we can't use @ls_warn here (circular dependency)
         @warn "Unknown log level: $level, defaulting to INFO"
         return INFO
     end
@@ -148,6 +149,7 @@ function symbol_to_progress_mode(mode::Symbol)
     elseif mode == :smart
         return SMART
     else
+        # Use direct println for warning since we can't use @ls_warn here (circular dependency)
         @warn "Unknown progress mode: $mode, defaulting to SMART"
         return SMART
     end

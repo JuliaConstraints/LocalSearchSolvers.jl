@@ -9,6 +9,7 @@ using Dictionaries
 using Distributed
 using JSON
 using Lazy
+using Logging
 using Printf
 using ProgressBars
 using ProgressMeter
@@ -41,10 +42,26 @@ export configure_logger, log_error, log_warn, log_info, log_debug
 export update_progress!, reset_progress!, enable_progress!, set_progress_mode!
 export display_progress!, finalize_progress!, format_progress_bar
 export default_log_file_path
+export @ls_debug, @ls_info, @ls_warn, @ls_error
+export LSLoggerAdapter, convert_log_level, convert_to_logging_level
 
 # Include utils and interfaces
 include("utils.jl")
 include("logger_interface.jl")
+
+# Include options first since it's used by logger
+include("options.jl")
+
+# Include logger files to make macros available
+include("logger/types.jl")
+include("logger/config.jl")
+include("logger/progress.jl")
+include("logger/display.jl")
+include("logger/distributed.jl")
+include("logger/progress_meter.jl")
+include("logger/logging_adapter.jl")
+include("logger/macros.jl")
+include("logger/logger.jl")
 
 # Include model related files
 include("variable.jl")
@@ -73,22 +90,12 @@ include("strategies/termination.jl")
 include("strategy.jl") # meta strategy methods and structures
 
 # Include solvers
-include("options.jl")
 include("time_stamps.jl")
 include("solver.jl")
 include("solvers/sub.jl")
 include("solvers/meta.jl")
 include("solvers/lead.jl")
 include("solvers/main.jl")
-
-# Include logger
-include("logger/types.jl")
-include("logger/config.jl")
-include("logger/progress.jl")
-include("logger/display.jl")
-include("logger/distributed.jl")
-include("logger/progress_meter.jl")
-include("logger/logger.jl")
 
 # Include usual objectives
 include("objectives/extrema.jl")
