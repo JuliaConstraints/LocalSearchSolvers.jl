@@ -11,6 +11,7 @@ using JSON
 using Lazy
 using Printf
 using ProgressBars
+using ProgressMeter
 using Term
 
 # Exports internal
@@ -35,7 +36,7 @@ export solver, solve!, specialize, specialize!, Options, get_values, best_values
 export best_value, time_info, status
 
 # Exports Logger
-export LogLevel, ProgressMode, ProgressTracker, LoggerConfig
+export LogLevel, ProgressMode, ProgressTracker, ProgressMeterTracker, LoggerConfig
 export configure_logger, log_error, log_warn, log_info, log_debug
 export update_progress!, reset_progress!, enable_progress!, set_progress_mode!
 export display_progress!, finalize_progress!, format_progress_bar
@@ -86,6 +87,7 @@ include("logger/config.jl")
 include("logger/progress.jl")
 include("logger/display.jl")
 include("logger/distributed.jl")
+include("logger/progress_meter.jl")
 include("logger/logger.jl")
 
 # Include usual objectives

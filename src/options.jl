@@ -58,6 +58,7 @@ mutable struct Options
     show_sub_progress::Bool
     show_remote_progress::Bool
     progress_layout::Symbol
+    use_progress_meter::Bool
 
     function Options(;
             dynamic = false,
@@ -82,7 +83,8 @@ mutable struct Options
             progress_update_interval = 0.1,
             show_sub_progress = false,
             show_remote_progress = false,
-            progress_layout = :stacked
+            progress_layout = :stacked,
+            use_progress_meter = true
     )
         ds_str = "The model types are specialized to the starting domains, constraints," *
                  " and objectives types. Dynamic elements that add a new type will raise an error!"
@@ -132,7 +134,8 @@ mutable struct Options
             progress_update_interval,
             show_sub_progress,
             show_remote_progress,
-            progress_layout
+            progress_layout,
+            use_progress_meter
         )
     end
 end
@@ -471,6 +474,21 @@ _progress_layout(options, default = nothing) = default === nothing ?
 Set the progress layout in options.
 """
 _progress_layout!(options, layout) = options.progress_layout = layout
+
+"""
+    _use_progress_meter(options, default = nothing)
+
+Get the use progress meter flag from options. If a default value is provided and the option is not set, return the default.
+"""
+_use_progress_meter(options, default = nothing) = default === nothing ?
+                                                  options.use_progress_meter : default
+
+"""
+    _use_progress_meter!(options, flag)
+
+Set the use progress meter flag in options.
+"""
+_use_progress_meter!(options, flag) = options.use_progress_meter = flag
 
 function set_option!(options, name, value)
     eval(Symbol("_" * name * "!"))(options, value)

@@ -159,36 +159,43 @@ end
         solver_id::String = "Main",
         total_iterations::Union{Int, Nothing} = nothing,
         total_time::Union{Float64, Nothing} = nothing,
-        bar_width::Int = 50
+        bar_width::Int = 50,
+        update_interval::Float64 = 0.1,
+        bar_glyphs::Union{BarGlyphs, Nothing} = nothing
     )
 
-Create a new ProgressTracker with the specified settings.
+Create a new progress tracker with the specified settings using ProgressMeter.jl.
 """
 function create_progress_tracker(;
         mode::Union{ProgressMode, Symbol} = MIXED,
         solver_id::String = "Main",
         total_iterations::Union{Int, Nothing} = nothing,
         total_time::Union{Float64, Nothing} = nothing,
-        bar_width::Int = 50
+        bar_width::Int = 50,
+        update_interval::Float64 = 0.1,
+        bar_glyphs::Union{BarGlyphs, Nothing} = nothing
 )
     # Convert symbol to ProgressMode if needed
     if mode isa Symbol
         mode = symbol_to_progress_mode(mode)
     end
 
-    return ProgressTracker(
+    # Always use ProgressMeterTracker
+    return ProgressMeterTracker(
         mode = mode,
         solver_id = solver_id,
         total_iterations = total_iterations,
         total_time = total_time,
-        bar_width = bar_width
+        bar_width = bar_width,
+        update_interval = update_interval,
+        bar_glyphs = bar_glyphs
     )
 end
 
 """
     create_progress_tracker_from_options(options::Dict, solver_id::String = "Main")
 
-Create a ProgressTracker based on solver options.
+Create a progress tracker based on solver options using ProgressMeter.jl.
 """
 function create_progress_tracker_from_options(options::Dict, solver_id::String = "Main")
     # Extract relevant options
@@ -234,22 +241,25 @@ function create_progress_tracker_from_options(options::Dict, solver_id::String =
         end
     end
 
-    # Get bar width if available
+    # Get display options
     bar_width = get(options, "progress_bar_width", 50)
+    update_interval = get(options, "progress_update_interval", 0.1)
 
-    return ProgressTracker(
+    # Create tracker
+    return create_progress_tracker(
         mode = progress_mode,
         solver_id = solver_id,
         total_iterations = total_iterations,
         total_time = total_time,
-        bar_width = bar_width
+        bar_width = bar_width,
+        update_interval = update_interval
     )
 end
 
 """
     create_progress_tracker_from_options(options::Options, solver_id::String = "Main")
 
-Create a ProgressTracker based on solver options.
+Create a progress tracker based on solver options using ProgressMeter.jl.
 """
 function create_progress_tracker_from_options(options::Options, solver_id::String = "Main")
     # Extract relevant options using get_option
@@ -280,15 +290,18 @@ function create_progress_tracker_from_options(options::Options, solver_id::Strin
         total_time = time_option[2]
     end
 
-    # Get bar width
-    bar_width = get_option(options, "progress_bar_width")
+    # Get display options
+    bar_width = get_option(options, "progress_bar_width", 50)
+    update_interval = get_option(options, "progress_update_interval", 0.1)
 
-    return ProgressTracker(
+    # Create tracker
+    return create_progress_tracker(
         mode = progress_mode,
         solver_id = solver_id,
         total_iterations = total_iterations,
         total_time = total_time,
-        bar_width = bar_width
+        bar_width = bar_width,
+        update_interval = update_interval
     )
 end
 
