@@ -385,9 +385,12 @@ function _step!(s)
     #     !is_sat(s) ? _optimizing!(s) : return true
     # end
     if _compute!(s)
-        _verbose(s, "After compute: error=$(get_error(s)), is_sat=$(is_sat(s))")
         if !is_sat(s)
+            # Store first solution before switching to optimization mode
+            s.pool = pool(s.state.configuration)
             _optimizing!(s)
+            # Now compute the objective for this first solution
+            _compute_objective!(s)
             _verbose(s, "Switching to optimization")
         else
             _verbose(s, "Solution found, pool has_solution=$(has_solution(s))")

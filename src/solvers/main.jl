@@ -70,30 +70,6 @@ function _init!(s::MainSolver)
     _init!(s, :local)
 end
 
-# function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
-#     @debug "debug stop" iter (time()-start_time)
-#     if !isready(s.rc_stop)
-#         s.status = :solution_limit
-#         return false
-#     end
-
-#     iter_sat = get_option(s, "iteration")[1] && has_solution(s)
-#     iter_limit = iter > get_option(s, "iteration")[2]
-#     if (iter_sat && iter_limit) || iter_limit
-#         s.status = :iteration_limit
-#         return false
-#     end
-
-#     time_sat = get_option(s, "time_limit")[1] && has_solution(s)
-#     time_limit = time() - start_time > get_option(s, "time_limit")[2]
-#     if (time_sat && time_limit) || time_limit
-#         s.status = :time_limit
-#         return false
-#     end
-
-#     return true
-# end
-
 function stop_while_loop(s::MainSolver, ::Atomic{Bool}, iter, start_time)
     # Get iteration and time limit settings
     iter_settings = get_option(s, "iteration")
