@@ -324,7 +324,7 @@ function _move!(s, x::Int, dim::Int = 0)
         end
 
         if cost == 0 && is_sat(s)
-            s.pool == pool(s.state.configuration)
+            s.pool = pool(s.state.configuration)
             return best_values, best_swap, tabu
         end
 
@@ -377,11 +377,22 @@ function _step!(s)
         _swap_value!(s, x, rand(best_swap))
         _verbose(s, "best_swap : $best_swap")
     end
+    _verbose(s, "After move: values=$(length(_values(s)) > 0 ? _values(s) : nothing)")
 
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
+    # if _compute!(s)
+    #     !is_sat(s) ? _optimizing!(s) : return true
+    # end
     if _compute!(s)
-        !is_sat(s) ? _optimizing!(s) : return true
+        _verbose(s, "After compute: error=$(get_error(s)), is_sat=$(is_sat(s))")
+        if !is_sat(s)
+            _optimizing!(s)
+            _verbose(s, "Switching to optimization")
+        else
+            _verbose(s, "Solution found, pool has_solution=$(has_solution(s))")
+            return true
+        end
     end
 
     # Restart if necessary

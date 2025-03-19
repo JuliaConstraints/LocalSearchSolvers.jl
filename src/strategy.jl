@@ -6,9 +6,10 @@ end
 function MetaStrategy(model;
         tenure = min(length_vars(model) ÷ 2, 10),
         tabu = tabu(tenure, tenure ÷ 2),
-        # restart = restart(tabu, Val(:universal)),
-        restart = restart(tabu, Val(:random); rp = 0.05)
+        # restart = restart(tabu, Val(:universal))
+        restart = restart(tabu, Val(:random); rp = 0.01)
 )
+    @info "MetaStrategy: $restart, $tabu, $tenure"
     return MetaStrategy(restart, tabu)
 end
 
