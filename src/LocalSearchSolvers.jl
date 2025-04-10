@@ -9,6 +9,7 @@ using Dictionaries
 using Distributed
 using JSON
 using Lazy
+using TestItems
 using Logging
 using Printf
 using ProgressBars
