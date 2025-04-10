@@ -250,13 +250,11 @@ Add `x` to the constraint `c` list of restricted variables.
 """
 add_var_to_cons!(m::_Model, c, x) = _add!(get_constraint(m, c), x)
 
-"""    mts = - get_time_stamp(model)
-return TimeStamps(mts, mts, mts, mts, mts, mts, mts)
-end
-
+"""
     add!(m::M, x) where M <: Union{Model, AbstractSolver}
     add!(m::M, c) where M <: Union{Model, AbstractSolver}
     add!(m::M, o) where M <: Union{Model, AbstractSolver}
+
 Add a variable `x`, a constraint `c`, or an objective `o` to `m`.
 """
 function add!(m::_Model, x::Variable)

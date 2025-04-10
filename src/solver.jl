@@ -4,6 +4,8 @@ Abstract type to encapsulate the different solver types such as `Solver` or `_Su
 """
 abstract type AbstractSolver end
 
+# Logger fields will be added to concrete solver types
+
 # Dummy method to (not) add a TimeStamps to a solver
 add_time!(::AbstractSolver, i) = nothing
 
@@ -86,7 +88,6 @@ end
 # Forward from options
 @forward AbstractSolver.options get_option
 @forward AbstractSolver.options set_option!
-@forward AbstractSolver.options _verbose
 
 # Forwards from pool (of solutions)
 @forward AbstractSolver.pool best_config
@@ -238,13 +239,37 @@ function _init!(s, ::Val{:remote})
     end
 end
 
-function _init!(s, ::Val{:local}; pool = pool())
+function _init!(s, ::Val{:local})
     get_option(s, "tabu_time") == 0 && set_option!(s, "tabu_time", length_vars(s) ÷ 2) # 10?
     get_option(s, "tabu_local") == 0 &&
         set_option!(s, "tabu_local", get_option(s, "tabu_time") ÷ 2)
     get_option(s, "tabu_delta") == 0 && set_option!(
         s, "tabu_delta", get_option(s, "tabu_time") - get_option(s, "tabu_local")) # 20-30
     state!(s)
+    pool!(s)
+
+    # Initialize progress tracker if it exists
+    if !isnothing(s.progress_tracker)
+        reset_progress!(s.progress_tracker)
+
+        # Log initialization
+        if s.logger.config.log_mode == :full
+            log_info(s.logger,
+                "Initializing solver with $(length_vars(s)) variables and $(length_cons(s)) constraints")
+
+            # Log limits if set
+            if get_option(s, "iteration")[1]
+                log_info(
+                    s.logger, "Iteration limit: $(get_option(s, "iteration")[2])")
+            end
+
+            if get_option(s, "time_limit")[1]
+                log_info(s.logger,
+                    "Time limit: $(get_option(s, "time_limit")[2]) seconds")
+            end
+        end
+    end
+
     return has_solution(s)
 end
 
@@ -256,7 +281,7 @@ _init!(s, role::Symbol) = _init!(s, Val(role))
 Restart a solver.
 """
 function _restart!(s, k = 10)
-    _verbose(s, "\n============== RESTART!!!!================\n")
+    @ls_debug s.logger "\n============== RESTART!!!!================\n"
     _draw!(s)
     empty_tabu!(s)
     δ = ((k - 1) * get_option(s, "tabu_delta")) + get_option(s, "tabu_time") / k
@@ -306,24 +331,25 @@ function _move!(s, x::Int, dim::Int = 0)
         dim == 0 && v == old_v && continue
         dim == 0 ? _value!(s, x, v) : _swap_value!(s, x, v)
 
-        _verbose(s, "Compute costs: selected var(s) x_$x " * (dim == 0 ? "= $v" : "⇆ x_$v"))
+        @ls_debug s.logger "Compute costs: selected var(s) x_$x "*(dim == 0 ? "= $v" :
+                                                                   "⇆ x_$v")
 
         cons_x_v = union(get_cons_from_var(s, x), dim == 0 ? [] : get_cons_from_var(s, v))
         _compute!(s, cons_lst = cons_x_v)
 
         cost = get_error(s)
         if cost < best_cost
-            _verbose(s, "cost = $cost < $best_cost")
+            @ls_debug s.logger "cost = $cost < $best_cost"
             tabu = false
             best_cost = cost
             dim == 0 ? best_values = [v] : best_swap = [v]
         elseif cost == best_cost
-            _verbose(s, "cost = best_cost = $cost")
+            @ls_debug s.logger "cost = best_cost = $cost"
             push!(dim == 0 ? best_values : best_swap, v)
         end
 
         if cost == 0 && is_sat(s)
-            s.pool == pool(s.state.configuration)
+            s.pool = pool(s.state.configuration)
             return best_values, best_swap, tabu
         end
 
@@ -410,7 +436,7 @@ Iterate a step of the solver run.
 function _step!(s)
     # select worst variables
     x = _select_worse(s)
-    _verbose(s, "Selected x = $x")
+    @ls_debug s.logger "Selected x = $x"
 
     if typeof(get_variable(s, x).domain) <: ContinuousDomain
         # We perform coordinate descent over the variable axis
@@ -433,7 +459,7 @@ function _step!(s)
 
     # update tabu list with either worst or selected variable
     insert_tabu!(s, x, tabu ? :tabu : :pick)
-    _verbose(s, "Tabu list: $(tabu_list(s))")
+    @ls_debug s.logger "Tabu list: $(tabu_list(s))"
 
     # Inc last improvement if tabu
     tabu ? _inc_last_improvement!(s) : _reset_last_improvement!(s)
@@ -441,16 +467,30 @@ function _step!(s)
     # Select the best move (value or swap)
     if x ∈ best_swap
         _value!(s, x, rand(best_values))
-        _verbose(s, "best_values: $best_values")
+        @ls_debug s.logger "best_values: $best_values"
     else
         _swap_value!(s, x, rand(best_swap))
-        _verbose(s, "best_swap : $best_swap")
+        @ls_debug s.logger "best_swap : $best_swap"
     end
+    @ls_debug s.logger "After move: values=$(length(_values(s)) > 0 ? _values(s) : nothing)"
 
     # Compute costs and possibly evaluate objective functions
     # return true if a solution for sat is found
+    # if _compute!(s)
+    #     !is_sat(s) ? _optimizing!(s) : return true
+    # end
     if _compute!(s)
-        !is_sat(s) ? _optimizing!(s) : return true
+        if !is_sat(s)
+            # Store first solution before switching to optimization mode
+            s.pool = pool(s.state.configuration)
+            _optimizing!(s)
+            # Now compute the objective for this first solution
+            _compute_objective!(s)
+            @ls_debug s.logger "Switching to optimization"
+        else
+            @ls_debug s.logger "Solution found, pool has_solution=$(has_solution(s))"
+            return true
+        end
     end
 
     # Restart if necessary
@@ -479,17 +519,106 @@ stop_while_loop(::AbstractSolver) = nothing
 Search the space of configurations.
 """
 function solve_while_loop!(s, stop, sat, iter, st)
+    # Track last progress update time for remote solvers
+    last_progress_update_time = time()
+    update_interval = get_option(s, "progress_update_interval", 0.1) * 10  # Less frequent than display updates
+
     while stop_while_loop(s, stop, iter, st)
         iter += 1
-        _verbose(
-            s, "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))")
-        _step!(s) && sat && break
-        _verbose(s, "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)")
+
+        # Update progress with iteration
+        if !isnothing(s.progress_tracker)
+            update_progress!(s.progress_tracker,
+                iteration = iter,
+                error = get_error(s),
+                objective = _optimizing(s) ? get_value(s) : nothing
+            )
+            display_progress!(s.progress_tracker, s.logger)
+
+            # Log solver state if needed
+            if s.logger.config.log_mode == :full
+                log_solver_state(
+                    s.logger,
+                    s.progress_tracker.solver_id,
+                    iter,
+                    get_error(s),
+                    is_sat(s),
+                    _optimizing(s) ? get_value(s) : nothing
+                )
+            end
+
+            # For LeadSolver, periodically send progress updates to main solver
+            if s isa LeadSolver && time() - last_progress_update_time >= update_interval
+                send_progress_update(s, 1)  # Send to worker 1 (main)
+                last_progress_update_time = time()
+            end
+
+            # For MainSolver, periodically update progress from remote solvers
+            if s isa MainSolver &&
+               get_option(s, "show_remote_progress", true) &&
+               time() - last_progress_update_time >= update_interval
+                update_remote_progress!(s)
+                last_progress_update_time = time()
+            end
+        end
+
+        @ls_debug s.logger "\n\tLoop $(iter) ($(_optimizing(s) ? "optimization" : "satisfaction"))"
+
+        # If step finds a solution, update progress and break if in satisfaction mode
+        if _step!(s) && sat
+            # Update progress if solution found
+            if !isnothing(s.progress_tracker)
+                update_progress!(s.progress_tracker, has_valid_solution = true)
+                display_progress!(s.progress_tracker, s.logger)
+
+                if s.logger.config.log_mode == :full
+                    log_info(s.logger, "Solution found at iteration $(iter)")
+                end
+
+                # For LeadSolver, send immediate progress update when solution found
+                if s isa LeadSolver
+                    send_progress_update(s, 1)  # Send to worker 1 (main)
+                end
+            end
+            break
+        end
+
+        @ls_debug s.logger "vals: $(length(_values(s)) > 0 ? _values(s) : nothing)"
+
+        # Check sub-solvers
         best_sub = _check_subs(s)
         if best_sub > 0
             bs = s.subs[best_sub]
             s.pool = deepcopy(bs.pool)
+
+            # Update progress if solution found from sub-solver
+            if !isnothing(s.progress_tracker) && sat
+                update_progress!(s.progress_tracker, has_valid_solution = true)
+                display_progress!(s.progress_tracker, s.logger)
+
+                if s.logger.config.log_mode == :full
+                    log_info(s.logger, "Solution found from sub-solver $(best_sub)")
+                end
+            end
+
             sat && break
+        end
+    end
+
+    # Finalize progress display
+    if !isnothing(s.progress_tracker)
+        finalize_progress!(s.progress_tracker, s.logger)
+
+        if s.logger.config.log_mode == :full
+            if is_sat(s)
+                log_info(s.logger, "Solving completed with valid solution")
+                if _optimizing(s)
+                    log_info(s.logger, "Best objective value: $(get_value(s))")
+                end
+            else
+                log_info(s.logger, "Solving completed without valid solution")
+                log_info(s.logger, "Final error: $(get_error(s))")
+            end
         end
     end
 end
@@ -527,15 +656,50 @@ post_process(::AbstractSolver) = nothing
 
 function solve!(s, stop = Atomic{Bool}(false))
     start_time = time()
+
+    # Log start of solving
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        log_info(s.logger, "Starting solver")
+    end
+
     add_time!(s, 1) # only used by MainSolver
     iter = 0 # only used by MainSolver
     sat = is_sat(s)
-    _init!(s) && (sat ? (iter = typemax(0)) : _optimizing!(s))
+
+    # Initialize and check if already solved
+    if _init!(s)
+        if sat
+            iter = typemax(0)
+
+            # Log already solved
+            if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+                log_info(s.logger, "Problem already satisfied during initialization")
+            end
+        else
+            _optimizing!(s)
+
+            # Log switching to optimization
+            if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+                log_info(s.logger, "Switching to optimization mode")
+            end
+        end
+    end
+
     add_time!(s, 2) # only used by MainSolver
+
+    # Main solving loop
     solve_for_loop!(s, stop, sat, iter, start_time)
+
     add_time!(s, 5) # only used by MainSolver
     remote_stop!(s)
     add_time!(s, 6) # only used by MainSolver
+
+    # Log end of solving
+    if !isnothing(s.progress_tracker) && s.logger.config.log_mode == :full
+        elapsed = time() - start_time
+        log_info(s.logger, "Solver finished in $(@sprintf("%.3f", elapsed)) seconds")
+    end
+
     post_process(s) # only used by MainSolver
 end
 

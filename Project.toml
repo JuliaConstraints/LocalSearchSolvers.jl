@@ -1,7 +1,7 @@
 name = "LocalSearchSolvers"
 uuid = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
 authors = ["Jean-Francois Baffier"]
-version = "0.4.7"
+version = "0.4.9"
 
 [deps]
 CompositionalNetworks = "4b67e4b5-442d-4ef5-b760-3f5df3a57537"
@@ -12,7 +12,12 @@ Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Lazy = "50d2b5c4-7a5e-59d5-8109-a42b560f39c0"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 OrderedCollections = "bac558e1-5e72-5ebc-8fee-abe8a469f55d"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+ProgressBars = "49802e3a-d2f1-5c88-81d8-b72133a6f568"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+Term = "22787eb5-b846-44ae-b979-8e399b8463ab"
 TestItems = "1c621080-faea-4a02-84b6-bbd5e436b8fe"
 
 [compat]
@@ -24,9 +29,14 @@ Dictionaries = "0.4"
 Distributed = "1"
 JSON = "0.21"
 Lazy = "0.15"
+Logging = "1"
 OrderedCollections = "1"
-TestItems = "0.1, 1"
-julia = "1.6"
+Printf = "1"
+ProgressBars = "1"
+ProgressMeter = "1"
+Term = "2"
+TestItems = "1"
+julia = "1.10"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"

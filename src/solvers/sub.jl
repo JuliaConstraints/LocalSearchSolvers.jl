@@ -16,13 +16,28 @@ mutable struct _SubSolver <: AbstractSolver
     pool::Pool
     state::State
     strategies::MetaStrategy
+
+    # Logger fields
+    progress_tracker::Union{AbstractProgressTracker, Nothing}
+    logger::AbstractLogger
 end
 
 function solver(mlid, model, options, pool, ::RemoteChannel,
         ::RemoteChannel, ::RemoteChannel, strats, ::Val{:sub})
     sub_options = deepcopy(options)
-    set_option!(options, "print_level", :silent)
-    return _SubSolver(mlid, model, sub_options, pool, state(), strats)
+    set_option!(sub_options, "print_level", :silent)
+
+    # Create progress tracker for sub-solver
+    sub_id = "Sub$(mlid[2])"
+    progress_tracker = create_progress_tracker_from_options(sub_options, sub_id)
+
+    # Create logger for sub-solver
+    logger = create_logger_from_options(sub_options)
+
+    return _SubSolver(
+        mlid, model, sub_options, pool, state(), strats,
+        progress_tracker, logger
+    )
 end
 
 _init!(s::_SubSolver) = _init!(s, :local)
