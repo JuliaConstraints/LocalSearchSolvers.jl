@@ -363,6 +363,72 @@ function _move!(s, x::Int, dim::Int = 0)
 end
 
 """
+    armijo_line_search(f, x, d, fx; α0 = 1.0, β = 0.5, c = 1e-4)
+
+Determines the optimal step size of a line search algorithm via the Armijo condition.
+# Arguments:
+- `f`: a function to minimize
+- `x`: selected variable id
+- `d`: descent direction (e.g., negative gradient)
+- `fx`: value of f at `x`
+- `α0`: initial step size
+- `β`: step size reduction factor
+- `c`: Armijo condition constant
+"""
+function armijo_line_search(f, x, d, fx, xmin, xmax; α0 = 1.0, β = 0.5, c = 1e-4)
+    α = α0
+    while true
+        new_x = x + α * d
+        # Ensure new_x is within [xmin, xmax]
+        if new_x < xmin
+            new_x = xmin
+        elseif new_x > xmax
+            new_x = xmax
+        end
+        if f(new_x) <= fx + c * α * d * fx || α < 1e-8
+            break
+        end
+        α *= β
+    end
+    return α
+end
+
+"""
+    _coordinate_descent_move!(s, x)
+
+Runs an iteration of coordinate descent over axis "x".
+The derivative is (temporarily?) computed via finite difference.
+The step size is determined via the Armijo condition for line search.
+"""
+function _coordinate_descent_move!(s, x)
+    current_value = _value(s, x)
+    xmin = minimum(first, get_domain(s, x))
+    xmax = maximum(last, get_domain(s, x))
+
+    function f(val)
+        _value!(s, x, val)
+        _compute!(s)
+        return get_error(s)
+    end
+
+    current_error = f(current_value)
+    grad = (f(current_value + 1e-6) - f(current_value - 1e-6)) / (2e-6)
+
+    α = armijo_line_search(f, current_value, -grad, current_error, xmin, xmax)
+
+    new_value = clamp(current_value - α * grad,
+        minimum(first, get_domain(s, x)), maximum(last, get_domain(s, x)))
+
+    best_values = [new_value]
+
+    # revert to the original state
+    _value!(s, x, current_value)
+    _compute!(s)
+
+    return best_values, [x], false
+end
+
+"""
     _step!(s)
 
 Iterate a step of the solver run.
@@ -372,9 +438,13 @@ function _step!(s)
     x = _select_worse(s)
     @ls_debug s.logger "Selected x = $x"
 
-    # Local move (change the value of the selected variable)
-    best_values, best_swap, tabu = _move!(s, x)
-    # _compute!(s)
+    if typeof(get_variable(s, x).domain) <: ContinuousDomain
+        # We perform coordinate descent over the variable axis
+        best_values, best_swap, tabu = _coordinate_descent_move!(s, x)
+    else
+        # Local move (change the value of the selected variable)
+        best_values, best_swap, tabu = _move!(s, x)
+    end
 
     # If local move is bad (tabu), then try permutation
     if tabu

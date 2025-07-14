@@ -4,6 +4,7 @@ import ConstraintDomains
 import CompositionalNetworks
 @everywhere using Constraints
 using Dictionaries
+using Intervals
 @everywhere using LocalSearchSolvers
 using Test
 using TestItemRunner

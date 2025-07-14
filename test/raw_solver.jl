@@ -83,6 +83,52 @@ function sudoku(n; start = nothing)
     return m
 end
 
+function chemical_equilibrium(A, B, C)
+    m = model(; kind = :equilibrium)
+
+    N = length(C)
+    M = length(B)
+
+    d = domain(0 .. maximum(B))
+
+    # Add variables, number of moles per compound
+
+    foreach(_ -> variable!(m, d), 1:N)
+
+    # mass_conservation function
+    conserve = i -> (x -> begin
+        δ = abs(sum(A[:, i] .* x) - B[i])
+        return δ ≤ 1.e-6 ? 0.0 : δ
+    end
+    )
+
+    # Add constraints
+    for i in 1:M
+        constraint!(m, conserve(i), 1:N)
+    end
+
+    # computes the total energy freed by the reaction
+    free_energy = x -> sum(j -> x[j] * (C[j] + log(x[j] / sum(x))))
+
+    objective!(m, free_energy)
+
+    return m
+end
+
+function sum_squares(n)
+    m = model(; kind = :sum_squares)
+
+    d = domain(-10.0 .. 10.0)
+
+    foreach(_ -> variable!(m, d), 1:n)
+
+    ss = x -> sum(j -> j * x[j] * x[j], 1:n)
+
+    objective!(m, ss)
+
+    return m
+end
+
 @testset "Raw solver: internals" begin
     models = [
         sudoku(2)
@@ -193,4 +239,25 @@ end
     # describe(s)
     solve!(s)
     # Results are logged to file via the solver's logger
+end
+
+@testset "Raw solver: chemical equilibrium" begin
+    A = [2.0 1.0 3.0; 6.0 2.0 1.0; 1.0 2.0 4.0]
+    B = [20.0, 30.0, 25.0]
+    C = [-10.0, -8.0, -6.0]
+    m = chemical_equilibrium(A, B, C)
+    s = solver(m; options = Options(print_level = :minimal))
+    solve!(s)
+    display(solution(s))
+    display(s.time_stamps)
+end
+
+@testset "Raw solver: sum squares" begin
+    # Sanity check: simple quadratic function with a trivial minimum at 0
+    n = 10
+    m = sum_squares(n)
+    s = solver(m; options = Options(print_level = :minimal))
+    solve!(s)
+    display(solution(s))
+    display(s.time_stamps)
 end
