@@ -4,6 +4,7 @@ using Dictionaries
 using Random
 using Constraints
 import LocalSearchSolvers as LS
+include("../perf/tabu_scenarios.jl")
 
 @testset "Initialization preserves independent configurations and cost oracles" begin
     for n in (0,1,8,32), seed in 1:4
@@ -188,6 +189,44 @@ end
     generic=Dict(1=>1,2=>3,3=>0)
     @test LS._decay_tabu_entries!(generic) === nothing
     @test generic==Dict(2=>2,3=>-1)
+end
+
+@testset "Integer tabu fast paths preserve ordering, holes and nonpositive durations" begin
+    for count in 0:16,variant in 1:6
+        strategy=LS.tabu(4,2);table=LS.tabu_list(strategy)
+        for id in 1:count;set!(table,id,mod(id+variant,6)-1);end
+        for id in 1:4:count;delete!(table,id);end
+        for step in 1:8
+            before=collect(pairs(table))
+            expected=[key=>remaining-1 for (key,remaining) in before if remaining!=1]
+            @test LS.decay_tabu!(strategy)===nothing
+            @test collect(pairs(table))==expected
+            @test collect(keys(table))==first.(expected)
+            iseven(step) && LS.insert_tabu!(strategy,step,:pick)
+        end
+        @test LS.empty_tabu!(strategy)===table
+        @test isempty(table)
+        @test LS.empty_tabu!(strategy)===table
+        LS.insert_tabu!(strategy,1,:tabu)
+        @test LS.tabu_value(strategy,1)==4
+    end
+    for clock in (:accepted,:proposal)
+        strategy=LS.EventTabu(4;selected_tenure=2,clock)
+        LS.insert_tabu!(strategy,1,Val(:tabu))
+        LS._advance_proposal_tabu!(strategy,:rejected)
+        @test LS.tabu_value(strategy,1)==(clock==:accepted ? 4 : 3)
+        LS._advance_proposal_tabu!(strategy,:accepted)
+        @test LS.tabu_value(strategy,1)==(clock==:accepted ? 3 : 2)
+    end
+end
+
+@testset "Empty and nonexpiring integer tabu maintenance does not allocate per step" begin
+    for factory in (tabu_decay_case,tabu_empty_case)
+        case=factory(Dict());fixture=case.prepare()
+        for _ in 1:2;@test case.verify(fixture,case.operation(fixture));end
+        @test (@allocated case.operation(fixture))<=128
+        @test case.verify(fixture,case.operation(fixture))
+    end
 end
 
 @testset "Budget storage preserves integer and real limits" begin

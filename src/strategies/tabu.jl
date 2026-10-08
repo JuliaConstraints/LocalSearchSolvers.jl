@@ -91,7 +91,10 @@ Empty the tabu list.
 """
 # Filtering clears entries through the public API and retains the index buffers
 # for subsequent insertions. Decay below never deletes during a live traversal.
-empty_tabu!(ts) = filter!(_ -> false, tabu_list(ts))
+empty_tabu!(ts) = _clear_tabu_entries!(tabu_list(ts))
+_clear_tabu_entries!(table) = filter!(_ -> false, table)
+_clear_tabu_entries!(table::Dictionary{Int,Int}) =
+    isempty(table) ? table : filter!(_ -> false, table)
 empty_tabu!(::NoTabu) = nothing
 
 """
@@ -138,6 +141,15 @@ function _decay_tabu_entries!(table::Dictionary)
     filter!(!=(1), table)
     # Matching indices let Dictionaries update values without hashing each key.
     map!(remaining -> remaining - 1, table, table)
+    return nothing
+end
+
+function _decay_tabu_entries!(table::Dictionary{Int,Int})
+    isempty(table) && return nothing
+    # Filtering also rebuilds the Dictionary's indices. Integer tabu entries
+    # need that structural pass only when a duration actually expires.
+    any(==(1),table) && filter!(!=(1),table)
+    map!(remaining -> remaining - 1,table,table)
     return nothing
 end
 

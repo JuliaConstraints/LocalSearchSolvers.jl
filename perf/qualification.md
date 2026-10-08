@@ -109,3 +109,50 @@ signatures. It reported 11 and 3 possible allocations respectively: cold vector
 growth, generation-array resizing and full-evaluation fallback branches. Warm
 zero-allocation observations and zero JET findings do not prove static allocation
 freedom for all reachable cold or dynamic-model paths.
+
+## Integer tabu maintenance fast paths
+
+Private integer tabu tables now return immediately when empty and skip the
+structural filter/rehash when no duration equals one. Decay still subtracts one
+from every surviving entry. Empty clearing returns the same table without
+filtering it again. Nonempty clearing and generic external table protocols keep
+their previous paths. No tenure or accepted/proposal clock policy changed.
+
+A bounded 256-step owned-unit trace contained 60 steps with an expiring entry,
+103 with a nonempty nonexpiring table and 93 with an empty table. Thus the
+structural fast paths applied on 77% of this trace. Allocation profiling found
+one boxed filter-local value per structural call; no dependency source was edited.
+
+`tabu_scenarios.jl` supplies 1,024 decay calls on sixteen nonexpiring entries,
+and 1,024 empty decay/clear pairs. For a same-process comparison, exact before
+source from `35671c8daba2a293dd431dfe80f59da73bc7596d` was loaded into an
+in-memory module. Both versions used the same dictionary dependency, warmed
+operations, sample-order seed 91 and the two-core limits above. Collection was
+outside timing; all samples had zero measured compilation and collection.
+
+| Matched component work | Before bytes / objects | After bytes / objects | Before seconds (3 samples) | After seconds (3 samples) |
+|---|---:|---:|---|---|
+| 1,024 nonexpiring decays | 16,848–18,576 / 1,033–1,070 | 464 / 9 | .000074950, .000069362, .000072191 | .000025437, .000024956, .000025225 |
+| 1,024 empty decay/clear pairs | 33,232 / 2,057 | 464 / 9 | .000102115, .000094840, .000091440 | .000006731, .000006692, .000005359 |
+
+The in-memory comparison harness contributes constant overhead. All four
+PerfChecker collectors passed both real component factories and measured zero
+warm operation bytes/objects. Three GC and lock samples also measured zero
+allocation, collection, compilation and conflicts. Reachable fixture state
+stayed 1,560 bytes for decay and 544 bytes for empty maintenance; including the
+existing table result added 16 bytes in each case.
+
+Two typed units also executed 256 steps each per observation. Both workers'
+exact assignments and independent ring-sum errors agreed before/after in all
+three observations. Allocation changed from 468,400 / 12,119 to 462,448 / 11,747,
+70,224 / 1,930 to 67,824 / 1,780, and 489,008 / 12,639 to 482,784 / 12,250.
+Continuing units carry their state between observations, so these observations
+are paired separately. Wall times varied substantially on the shared machine;
+no overall episode speedup or scaling gain is claimed.
+
+All 14,746 LocalSearchSolvers package checks passed, including full Aqua and
+2,868 new order/tombstone/nonpositive-duration, event-clock and allocation
+checks. JET reported 4/6 findings for decay/empty operation specializations;
+AllocCheck reported 8/12 possible allocations on reachable structural filtering
+paths. Zero warm allocation applies to these specified states, rather than all
+tabu states. Raw reports and the comparison module were not saved.
