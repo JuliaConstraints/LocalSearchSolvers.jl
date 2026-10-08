@@ -205,3 +205,54 @@ observations. Bytes / objects are 463,520 / 11,770 versus 463,024 / 11,759;
 Continuing units carry their state; task scheduling adds small allocation
 variation. No overall episode allocation reduction, throughput or scaling gain
 is claimed. Raw reports and comparison definitions are not saved.
+
+## Public block commit boundary
+
+The solver-level commit wrapper passes a block move's already-owned fields
+through the runtime model/state boundary, then reconstructs the same immutable
+move inside the concrete operation. Variable order, replacements, provenance
+and extension dispatch are retained. Concrete search contexts keep their
+existing path. The wrapper avoids boxing the whole 48-byte move; this specified
+one-symbol metadata tuple still requires a 16-byte box per public commit.
+
+`public_commit_scenarios.jl` performs exactly 2,048 commits per operation,
+alternating all-one/all-zero eight-variable blocks in a 32-variable model. Full
+and incremental cost policies have independent final truth, objective and
+untouched-variable checks. The baseline is LocalSearchSolvers
+`dca296e339cbdf617e2645f1871983a134920d80`, with unchanged CBLS
+`2c453ddee7f3af7433573969916caec1918fe8d4`, MetaStrategist
+`0b761608726025d2fec402ad18b6e1773045fa2b` and resolved dependencies. Two-core
+limits apply. Collection is requested outside timed operations.
+
+| Warm reused fixture, 2,048 commits | Before bytes / objects | After bytes / objects | Before seconds (3 samples) | After seconds (3 samples) |
+|---|---:|---:|---|---|
+| full-cost | 98,368 / 2,050 | 32,832 / 2,050 | .000261261, .000257887, .000277554 | .000250550, .000248867, .000249055 |
+| incremental | 98,368 / 2,050 | 32,832 / 2,050 | .000422237, .000330133, .000336291 | .000392586, .000384827, .000390847 |
+
+A same-process comparison loads the original/final wrapper from source in
+memory, randomizes their order (seed 91), warms twice after each method change
+and takes six paired observations. Allocation is consistently 98,432 versus
+32,896 bytes, with 2,050 objects on both sides; its invocation wrapper adds
+constant bytes relative to the table. Full-cost times span .000245–.000280 s
+before and .000247–.000280 s after; incremental times span .000328–.000366 s
+before and .000342–.000387 s after. These shared-machine timings do not establish
+a throughput improvement. All samples have zero compilation and collection.
+
+All 16,725 package checks and full Aqua pass, including 1,740 new tests of atomic
+scores, borrowed affected-constraint storage and external move dispatch with
+mutable identity-bearing provenance. They cover integer/float assignments,
+static full/incremental policies and dynamic full-cost models. Eight allocation
+checks cover the specified integer metadata case. The existing concrete typed
+The 1,740 score/dispatch checks also pass with the original wrapper loaded from
+the baseline source in memory.
+candidate/commit case remains 80 bytes / three constant measurement objects
+across 1,024 accepted/rejected cycles.
+
+All four PerfChecker collectors pass both policies and agree on 35,632 bytes /
+2,072 objects for their fresh-fixture operation. This scope includes first use
+of a newly prepared state and differs from the reused-fixture table. JET reports
+113 findings through broader solver fields for each policy; AllocCheck reports
+six possible allocations. Three GC and lock samples show zero collection,
+compilation or conflicts. Reachable state stays 34,321 bytes (full) or 34,985
+bytes (incremental), unchanged with the `nothing` result. Raw reports and
+temporary comparison definitions are not saved.

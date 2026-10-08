@@ -5,6 +5,17 @@ using Random
 using Constraints
 import LocalSearchSolvers as LS
 include("../perf/tabu_scenarios.jl")
+include("../perf/public_commit_scenarios.jl")
+
+mutable struct CommitIdentityProbe
+    expected::Any
+    observations::Vector{Bool}
+end
+function LS.value_after(move::LS.MetaMove{T,CommitIdentityProbe}, values, variable) where T
+    push!(move.provenance.observations,move===move.provenance.expected)
+    index=LS._replacement_index(move,variable)
+    iszero(index) ? values[variable] : move.replacements[index]
+end
 
 @testset "Initialization preserves independent configurations and cost oracles" begin
     for n in (0,1,8,32), seed in 1:4
@@ -235,6 +246,52 @@ end
         @test LS.get_option(options,Val(:iteration))===limit
         LS.set_option!(options,Val(:iteration),limit)
         @test LS.get_option(options,Val(:iteration))===limit
+    end
+end
+
+@testset "Public block commits retain extension dispatch, metadata and atomic scores" begin
+    for incremental in (false,true),dynamic in (false,true),T in (Int,Float64)
+        # Frozen sum invariants require typed values; dynamic models exercise
+        # the original full-cost evaluator on their Any-valued input instead.
+        dynamic && incremental && continue
+        model=LS.model()
+        foreach(_->LS.variable!(model,LS.domain(T.(0:3))),1:4)
+        evaluator=incremental ? Constraints.bind_error(Constraints.make_error(:sum);op=<=,val=3) :
+            ((values;X)->Float64(sum(values)>3))
+        LS.constraint!(model,evaluator,1:4);LS.objective!(model,sum)
+        solver=LS.solver(model;options=LS.Options(;dynamic,iteration=1,
+            print_level=:silent,log_mode=:silent,log_to_file=false,progress_mode=:none,
+            process_threads_map=Dict(1=>1)))
+        LS._init!(solver)
+        scope=LS.MetaVariable(:block,1:4)
+        probes=[CommitIdentityProbe(nothing,Bool[]) for _ in 1:3]
+        moves=(LS.MetaMove(scope,T[0,0,0,0];provenance=probes[1]),
+            LS.MetaMove(scope,[4,2],T[2,2];provenance=probes[2]),
+            LS.MetaMove(scope,[2,4],T[0,0];provenance=probes[3]))
+        for (probe,move) in zip(probes,moves);probe.expected=move;end
+        for _ in 1:16,move in moves
+            affected=LS._commit!(solver,move)
+            @test affected===LS._neighborhood_workspace(solver.state).affected_constraints
+            @test affected==[1]
+            incremental ? LS._compute_committed!(solver;cons_lst=affected) :
+                LS._compute!(solver;cons_lst=affected)
+            values=collect(LS.get_values(solver));expected=Float64(sum(values)>3)
+            @test LS.get_error(solver)==expected
+            @test solver.state.configuration.solution==iszero(expected)
+            @test solver.state.configuration.value==(iszero(expected) ? sum(values) : expected)
+            @test all(iszero,values[[1,3]])
+        end
+        @test all(probe->!isempty(probe.observations) && all(probe.observations),probes)
+        @test all(iszero,LS.get_values(solver))
+    end
+end
+
+@testset "Public integer block commits keep the bounded metadata-boxing cost" begin
+    for incremental in (false,true)
+        case=public_commit_case(Dict("incremental"=>incremental));fixture=case.prepare()
+        for _ in 1:2;@test case.verify(fixture,case.operation(fixture));end
+        @test (@allocated case.operation(fixture))<=34_816
+        @test case.verify(fixture,case.operation(fixture))
     end
 end
 

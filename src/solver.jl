@@ -385,7 +385,19 @@ end
 
 _candidate_rank(s, move::AbstractMove) = _candidate_rank(s.model, s.state, s.logger, move)
 
-_commit!(s, move::AbstractMove) = _commit!(s.model, s.state, move)
+function _commit!(s, move::AbstractMove)
+    if s isa AbstractSolver && move isa MetaMove
+        # Pass already-owned fields through the runtime model/state boundary;
+        # boxing the entire immutable block move costs more than its metadata.
+        return _commit_meta_parts!(s.model, s.state, move.meta_variable,
+            move.variables, move.replacements, move.provenance)
+    end
+    return _commit!(s.model, s.state, move)
+end
+
+function _commit_meta_parts!(model, state, id, variables, replacements, provenance)
+    return _commit!(model, state, MetaMove(id, variables, replacements, provenance))
+end
 
 function _commit!(model, state, move::AbstractMove)
     values = _state_assignment(state)
