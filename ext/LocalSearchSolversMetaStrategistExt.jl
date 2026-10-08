@@ -160,6 +160,15 @@ function LS._validate_execution_builder(builder::ExecutionBuilder,s)
     LS.get_option(s,Val(:dynamic)) && throw(ArgumentError("prepared execution requires dynamic=false; use the historical loop for dynamic models"))
     nothing
 end
+
+# Type descriptions are immutable metadata. Print each distinct evaluator type
+# once per receipt, retaining the same per-constraint order and identity bytes.
+function evaluator_types(model)
+    descriptions=Dict{Type,String}()
+    Tuple(get!(descriptions,typeof(c.f)) do
+        string(typeof(c.f))
+    end for c in LS.get_constraints(model))
+end
 function (builder::ExecutionBuilder)(s;unit_id=string(getpid(),':',s.meta_local_id,':',time_ns()),restored=nothing,borrowed=())
     LS.get_option(s,Val(:dynamic)) && throw(ArgumentError("prepared execution requires dynamic=false; use the historical loop for dynamic models"))
     lock(builder.lock) do
@@ -182,7 +191,7 @@ function (builder::ExecutionBuilder)(s;unit_id=string(getpid(),':',s.meta_local_
             resources=(;process=getpid(),threads=Threads.nthreads(),
                 model=(;scope=isempty(builder.model_reference) ? :process_local : :externally_identified,
                     reference=builder.model_reference,identity=string(objectid(s.model)),
-                    evaluator_types=Tuple(string(typeof(c.f)) for c in LS.get_constraints(s.model))),
+                    evaluator_types=evaluator_types(s.model)),
                 cost_contract=LS._has_incremental(s.state) ? :incremental : :full))
         push!(builder.last_decisions,(mode=prepared.mode,reason=prepared.reason,
             semantic_key=prepared.semantic_key,shape_key=prepared.shape_key,receipt=MS.receipt_snapshot(receipt)))

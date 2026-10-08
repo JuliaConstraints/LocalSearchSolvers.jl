@@ -48,8 +48,7 @@ end
 function state(m::_Model, pool = pool(); opt = false)
     X = Matrix{Float64}(undef, m.max_vars[], CompositionalNetworks.max_icn_length())
     lc, lv = length_cons(m) > 0, length_vars(m) > 0
-    config = Configuration(m, X)
-    input = _constraint_input(config, m)
+    config, input = _initial_configuration(m, X)
     neighborhood = _neighborhood_workspace(config, m)
     invariants, has_incremental = _constraint_invariants(m, config, X, input)
     indexing = _state_indexing(m)

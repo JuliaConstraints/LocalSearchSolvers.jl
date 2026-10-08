@@ -4,6 +4,39 @@ using Dictionaries
 using Random
 import LocalSearchSolvers as LS
 
+@testset "Initialization preserves independent configurations and cost oracles" begin
+    for n in (0,1,8,32), seed in 1:4
+        model=LS.model()
+        foreach(_->LS.variable!(model,LS.domain(0:7)),1:n)
+        for width in unique((0,min(1,n),min(4,n),n))
+            LS.constraint!(model,(values;X)->Float64(sum(values;init=0)>7),1:width)
+        end
+        LS.objective!(model,values->sum(values;init=0))
+        model=LS.specialize(model)
+        external=Matrix{Float64}(undef,n,32)
+        Random.seed!(seed)
+        reference=LS.Configuration(model,external)
+        Random.seed!(seed)
+        state=LS.state(model)
+        @test collect(LS.get_values(state))==collect(reference.values)
+        @test state.configuration.solution==reference.solution
+        @test state.configuration.value==reference.value
+        @test state.configuration.values!==reference.values
+        other=LS.state(model)
+        @test state.constraint_input!==other.constraint_input
+        @test state.neighborhood.changes!==other.neighborhood.changes
+    end
+end
+
+@testset "Union reduction covers empty, repeated and abstract types" begin
+    @test LS._to_union(())===Union{}
+    @test LS._to_union(Int)===Int
+    @test LS._to_union(fill(Int,128))===Int
+    @test LS._to_union((Int,Float64,Int))===Union{Int,Float64}
+    @test LS._to_union(Set([Integer,Int,Float64]))===Union{Integer,Float64}
+    @test LS._to_union((Vector,Vector{Int}))===Vector
+end
+
 function objective_allocations(context, move)
     LS._candidate_objective(context, move, 1)
     @allocated LS._candidate_objective(context, move, 1)

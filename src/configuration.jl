@@ -21,7 +21,20 @@ compute_cost!(m::_Model, config::Configuration) = set_value!(config, compute_cos
 function Configuration(m::_Model, X)
     values = draw(m)
     val = compute_costs(m, values, X)
+    return _configuration(m,values,val)
+end
+
+function _configuration(m,values,val)
     sol = val ≈ 0.0
     opt = sol && !is_sat(m)
     return Configuration(sol, opt ? sense(m) * compute_objective(m, values) : val, values)
+end
+
+"Initialize with the same ephemeral input protocol used during candidate evaluation."
+function _initial_configuration(m::_Model,X)
+    values=draw(m)
+    max_arity=maximum(c->length(c.vars),get_constraints(m);init=0)
+    input=Vector{eltype(values)}(undef,max_arity)
+    val=sum(c->compute_cost(c,values,X,input),get_constraints(m);init=0.0)
+    return _configuration(m,values,val),input
 end

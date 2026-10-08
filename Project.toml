@@ -27,6 +27,9 @@ MetaStrategist = "989f9ba8-86ac-4138-b458-047055bae907"
 LocalSearchSolversMetaStrategistExt = "MetaStrategist"
 
 [compat]
+Aqua = "0.8"
+Test = "1"
+TestItemRunner = "1"
 MetaStrategist = "0.1.1"
 CompositionalNetworks = "0.6.2"
 ConstraintDomains = "0.4.1"
@@ -47,8 +50,9 @@ julia = "1.12"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+MetaStrategist = "989f9ba8-86ac-4138-b458-047055bae907"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 TestItemRunner = "f8b46487-2199-4994-9208-9a1283c18c0a"
 
 [targets]
-test = ["Aqua", "Test", "TestItemRunner"]
+test = ["Aqua", "MetaStrategist", "Test", "TestItemRunner"]

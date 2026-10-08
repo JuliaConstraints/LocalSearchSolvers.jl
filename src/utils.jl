@@ -2,7 +2,14 @@
     _to_union(datatype)
 Make a minimal `Union` type from a collection of data types.
 """
-_to_union(datatype) = Union{(isa(datatype, Type) ? [datatype] : datatype)...}
+_to_union(datatype::Type) = datatype
+function _to_union(datatypes)
+    result=Union{}
+    for datatype in datatypes
+        result=Union{result,datatype}
+    end
+    result
+end
 
 """
     _find_rand_argmax(d, excluded = nothing)
