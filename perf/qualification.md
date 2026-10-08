@@ -81,3 +81,25 @@ Remaining candidate-cycle allocation stacks identify 16-byte boxing in the
 solver wrapper for `_compute_committed_costs!`, rather than candidate or commit
 evaluation. Restore still copies the owned baseline graph and builds immutable
 receipt metadata. Raw profiles and bulk analyzer reports are not committed.
+
+## Concrete cost-finalization barrier
+
+A subsequent increment combines cost updates and finalization behind one
+function barrier receiving the actual model and state. It preserves the public
+full and committed compute methods and their Boolean satisfaction result. The
+discarded Float64 cost result no longer crosses an abstract solver-field boundary.
+
+Against the preceding owned-input increment, the identical 1,024 candidate case
+changed from 32,848 bytes / 2,051 objects to 80 bytes / 3 objects. Three warm
+before times were .000818237/.000844200/.000828420 s; after
+.000763471/.000781376/.000755201 s. No compile or collection time was recorded.
+The small timing difference is operational; the eliminated per-commit boxing
+is the measured result. Full-operation JET findings changed from 99 to 98;
+ownership, pool and solver-shell dispatch remain, so this is not an
+inference-clean full lifecycle.
+
+All 11,878 LocalSearchSolvers checks passed after this increment. Eighteen added
+checks cover full and incremental cost paths, infeasible-to-feasible transitions,
+objective values, exact assignments and bounded allocation over 128 pairs of
+commits through a concrete search context. The prepared typed iteration already
+used concrete model/state cost updates; no typed-episode speedup is claimed.

@@ -2,6 +2,7 @@ module PerformanceContractTests
 using Test
 using Dictionaries
 using Random
+using Constraints
 import LocalSearchSolvers as LS
 
 @testset "Initialization preserves independent configurations and cost oracles" begin
@@ -25,6 +26,54 @@ import LocalSearchSolvers as LS
         other=LS.state(model)
         @test state.constraint_input!==other.constraint_input
         @test state.neighborhood.changes!==other.neighborhood.changes
+    end
+end
+
+function committed_cycles(solver, context, moves, repetitions)
+    for _ in 1:repetitions, move in moves
+        affected=LS._commit!(context,move)
+        LS._compute_committed!(solver;cons_lst=affected)
+    end
+    nothing
+end
+function full_cycles(solver, context, moves, repetitions)
+    for _ in 1:repetitions, move in moves
+        affected=LS._commit!(context,move)
+        LS._compute!(solver;cons_lst=affected)
+    end
+    nothing
+end
+
+@testset "Solver cost barriers preserve satisfaction and objective after commits" begin
+    for incremental in (false,true)
+        model=LS.model()
+        foreach(_->LS.variable!(model,LS.domain(0:3)),1:2)
+        evaluator=incremental ? Constraints.bind_error(Constraints.make_error(:sum);op=<=,val=3) :
+            ((values;X)->Float64(sum(values)>3))
+        LS.constraint!(model,evaluator,1:2)
+        LS.objective!(model,sum)
+        solver=LS.solver(model;options=LS.Options(dynamic=false,iteration=1,
+            print_level=:silent,log_mode=:silent,log_to_file=false,progress_mode=:none,
+            process_threads_map=Dict(1=>1)))
+        LS._init!(solver)
+        context=LS._search_context(solver)
+        scope=LS.MetaVariable(:pair,1:2)
+        moves=(LS.MetaMove(scope,[1,1]),LS.MetaMove(scope,[2,2]))
+        cycles=incremental ? committed_cycles : full_cycles
+        cycles(solver,context,moves,1)
+        @test LS.get_error(solver)==1.0
+        @test !LS.has_solution(solver.state)
+        affected=LS._commit!(solver,first(moves))
+        solved=incremental ? LS._compute_committed!(solver;cons_lst=affected) :
+            LS._compute!(solver;cons_lst=affected)
+        @test solved===true
+        @test LS.get_error(solver)==0.0
+        @test solver.state.configuration.value==2.0
+        @test LS.has_solution(solver.state)
+        cycles(solver,context,moves,128)
+        @test (@allocated cycles(solver,context,moves,128))<=128
+        @test LS.get_error(solver)==1.0
+        @test collect(LS.get_values(solver))==[2,2]
     end
 end
 

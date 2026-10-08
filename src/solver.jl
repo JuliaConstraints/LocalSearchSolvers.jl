@@ -495,13 +495,21 @@ function _finish_compute!(s, model, state, o)
 end
 
 function _compute!(s; o::Int = 1, cons_lst = ())
-    _compute_costs!(s; cons_lst)
-    return _finish_compute!(s, o)
+    return _compute!(s, s.model, s.state, o, cons_lst)
+end
+
+function _compute!(s, model, state, o, cons_lst)
+    _compute_costs!(model, state, cons_lst)
+    return _finish_compute!(s, model, state, o)
 end
 
 function _compute_committed!(s; o::Int = 1, cons_lst = ())
-    _compute_committed_costs!(s; cons_lst)
-    return _finish_compute!(s, o)
+    return _compute_committed!(s, s.model, s.state, o, cons_lst)
+end
+
+function _compute_committed!(s, model, state, o, cons_lst)
+    _compute_committed_costs!(model, state, cons_lst)
+    return _finish_compute!(s, model, state, o)
 end
 
 """
