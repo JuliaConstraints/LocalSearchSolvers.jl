@@ -14,9 +14,15 @@ end
 const Pool = Union{EmptyPool, _Pool}
 
 pool() = EmptyPool()
+# Bit values cannot refer back to the outer configuration. Keep the dictionary's
+# existing deep-copy semantics and private indices and assignment storage.
+function _owned_configuration(config::Configuration{T}) where T
+    isbitstype(T) || return deepcopy(config)
+    return Configuration(config.solution, config.value, deepcopy(config.values))
+end
 function pool(config::Configuration)
     best = 1
-    configs = [deepcopy(config)]
+    configs = [_owned_configuration(config)]
     status = full_pool
     value = get_value(config)
     return _Pool(best, configs, status, value)

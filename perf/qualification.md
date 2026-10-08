@@ -156,3 +156,52 @@ checks. JET reported 4/6 findings for decay/empty operation specializations;
 AllocCheck reported 8/12 possible allocations on reachable structural filtering
 paths. Zero warm allocation applies to these specified states, rather than all
 tabu states. Raw reports and the comparison module were not saved.
+
+## Owned pool snapshots for bit-valued assignments
+
+For bit-valued assignments, pool construction copies the configuration's scalar
+fields directly and uses the dictionary's existing deep-copy operation. This
+avoids traversing the outer configuration while retaining private indices and
+assignment storage. Other assignment types retain whole-configuration copying,
+including mutable values that refer back to the configuration. Published pools
+remain independent snapshots. Multi-solution history copying is unchanged.
+
+`pool_scenarios.jl` measures 128 new snapshots and 128 admitted publications,
+with independent storage, assignment and score checks. The baseline is
+LocalSearchSolvers `d26a070f8d87176a8f8bc9c172c59c683b3c2bd5`; CBLS
+`2c453ddee7f3af7433573969916caec1918fe8d4`, MetaStrategist
+`f64bfa4d68f3f80b08eee473a3bfc90f56e0fb5d` and resolved dependencies are unchanged.
+The two-core limits above apply. Collection is outside the timed operations;
+all listed samples have zero measured compilation and collection time.
+
+| Warm matched work | Before bytes / objects | After bytes / objects | Before seconds (3 samples) | After seconds (3 samples) |
+|---|---:|---:|---|---|
+| 128 snapshots, 32 values | 376,832 / 3,456 | 366,592 / 3,072 | .000092786, .000086679, .000089554 | .000074356, .000067374, .000069694 |
+| 128 snapshots, 128 values | 1,086,464 / 3,584 | 1,076,224 / 3,200 | .000191976, .000173846, .000162958 | .000144801, .000198854, .000152885 |
+| 128 publications, 32 values | 376,832 / 3,456 | 366,592 / 3,072 | .000102561, .000102870, .000094848 | .000073571, .000133590, .000077920 |
+| 128 publications, 128 values | 1,086,464 / 3,584 | 1,076,224 / 3,200 | .000169269, .000166231, .000169857 | .000148833, .000148345, .000171521 |
+
+All 14,977 package checks pass, including full Aqua and 231 new checks for
+ordered assignments with dictionary holes, private storage, exact floating-point
+score bits, dictionary copy semantics, shared mutable values and root cycles.
+These new checks and concurrent publication checks also pass with the original
+pool method loaded directly from the baseline commit in memory.
+
+All four PerfChecker collectors pass both 32-value cases, agreeing on
+366,592 bytes / 3,072 objects. Snapshot JET has zero findings; publication JET
+has 98 findings through its broader dynamic solver paths. AllocCheck reports
+52/223 possible allocations respectively. Snapshotting intentionally allocates
+private storage. Three GC and lock samples show no compilation, collection or
+conflicts. Reachable snapshot fixture state stays 1,504 bytes, or 3,104 bytes
+including its independently owned result. Publication fixture size changes
+from 5,795 to 7,379 bytes when its initially empty pool acquires one snapshot;
+with its scalar result it is 7,387 bytes, consistent across samples.
+
+A same-process comparison loaded each original/final pool method directly from
+its source, warmed two episodes, then ran two private typed units for exactly
+256 steps each per observation. Both assignments and errors match in all three
+observations. Bytes / objects are 463,520 / 11,770 versus 463,024 / 11,759;
+67,824 / 1,780 versus 68,736 / 1,796; and 482,784 / 12,250 versus the same values.
+Continuing units carry their state; task scheduling adds small allocation
+variation. No overall episode allocation reduction, throughput or scaling gain
+is claimed. Raw reports and comparison definitions are not saved.
