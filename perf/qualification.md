@@ -103,3 +103,9 @@ checks cover full and incremental cost paths, infeasible-to-feasible transitions
 objective values, exact assignments and bounded allocation over 128 pairs of
 commits through a concrete search context. The prepared typed iteration already
 used concrete model/state cost updates; no typed-episode speedup is claimed.
+
+Scoped AllocCheck subsequently executed the same concrete candidate and commit
+signatures. It reported 11 and 3 possible allocations respectively: cold vector
+growth, generation-array resizing and full-evaluation fallback branches. Warm
+zero-allocation observations and zero JET findings do not prove static allocation
+freedom for all reachable cold or dynamic-model paths.
