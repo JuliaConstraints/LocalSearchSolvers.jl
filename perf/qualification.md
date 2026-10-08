@@ -242,9 +242,9 @@ All 16,725 package checks and full Aqua pass, including 1,740 new tests of atomi
 scores, borrowed affected-constraint storage and external move dispatch with
 mutable identity-bearing provenance. They cover integer/float assignments,
 static full/incremental policies and dynamic full-cost models. Eight allocation
-checks cover the specified integer metadata case. The existing concrete typed
-The 1,740 score/dispatch checks also pass with the original wrapper loaded from
-the baseline source in memory.
+checks cover the specified integer metadata case. The 1,740 score/dispatch
+checks also pass with the original wrapper loaded from the baseline source in
+memory. The existing concrete typed
 candidate/commit case remains 80 bytes / three constant measurement objects
 across 1,024 accepted/rejected cycles.
 
