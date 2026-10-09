@@ -175,6 +175,24 @@ end
 
 _compute_cost!(s, ind, c) = _compute_cost!(s.state, ind, c)
 
+@inline _rebuild_owned_invariant!(invariant, input) = rebuild_invariant!(invariant, input)
+const _IntegerSumOperator = Union{
+    typeof(==), typeof(!=), typeof(<), typeof(<=), typeof(>), typeof(>=)}
+function _rebuild_owned_invariant!(
+        invariant::Constraints.SumInvariant{Vector{Int}, Int, F, Int},
+        input::Vector{Int}) where {F <: _IntegerSumOperator}
+    length(invariant.coefficients) == length(input) ||
+        throw(DimensionMismatch("sum coefficients and values must have the same length"))
+    # Machine integer arithmetic wraps, so regrouping this sum preserves its exact result.
+    # Accumulate directly instead of allocating the product vector used by multi-array mapreduce.
+    total = zero(Int)
+    @inbounds for index in eachindex(input)
+        total += invariant.coefficients[index] * input[index]
+    end
+    invariant.total = total
+    return invariant_value(invariant)
+end
+
 function _compute_cost!(s::_State, ind, c)
     old_cost = _cons_cost(s, ind)
     values = _state_assignment(s)
@@ -188,7 +206,7 @@ function _compute_cost!(s::_State, ind, c)
             synchronize_invariant!(invariant, input, value)
         else
             input = constraint_input!(_constraint_input(s), c, values)
-            rebuild_invariant!(invariant, input)
+            _rebuild_owned_invariant!(invariant, input)
         end
     end
     return _store_constraint_cost!(s, ind, c, old_cost, new_cost)

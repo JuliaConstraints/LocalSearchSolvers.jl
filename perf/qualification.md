@@ -361,3 +361,80 @@ observations allocate 290,888 bytes each with no compilation, collection or
 observed conflicts. Reachable fixture/result sizes remain 4,304/280,832 bytes:
 the smaller allocation total removes temporary work, not retained output.
 Verified redacted heap and temporary reports are removed.
+
+## Owned integer sum refresh, 2026-10-09
+
+The owned solver refreshes machine-Int sum invariants directly instead of
+materializing a coefficient/product vector through multi-array mapreduce. The
+specialization requires Vector{Int} coefficients and inputs, Int total/target,
+and one of the six built-in comparison operators. Machine integer wraparound
+makes regrouping exact. Other numeric types and custom operators keep the
+original Constraints rebuild extension; no frozen dependency is modified.
+
+The matched baseline is LocalSearchSolvers
+184b42113e99f7ede5983cbe495060bb37a61aec. Other sources and package versions
+match, including CBLS evaluator 93e83b6 and MetaStrategist 8bcf8b2. Julia 1.13.1
+uses CPUs 0/2, two Julia threads and one GC thread. Three complete warmups precede
+five observations of each exact operation, with zero compilation/recompilation
+throughout.
+
+| 4,096 integer refreshes | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Full, 32 constraints | 10,485,760 / 262,144 | 0 / 0 |
+| Full, 128 constraints | 41,943,040 / 1,048,576 | 0 / 0 |
+| Full, 512 constraints | 167,772,160 / 4,194,304 | 0 / 0 |
+| Partial, 32 constraints | 655,360 / 16,384 | 0 / 0 |
+| Partial, 128 constraints | 655,360 / 16,384 | 0 / 0 |
+| Partial, 512 constraints | 655,360 / 16,384 | 0 / 0 |
+
+Full refreshes take .002722–.002770 / .011040–.011469 / .062085–.063798 s
+before and .001147–.001208 / .004813–.004953 / .019601–.019737 s after for
+32/128/512 constraints. The original 512 case includes .008695–.009259 s GC;
+the new integer rows have no collection. Partial refreshes take
+.000230–.000252 / .000398–.000414 / .001070–.001118 s before and
+.000123–.000124 / .000280–.000287 / .000940–.000947 s after.
+Float64 controls retain 10,485,760 / 262,144 for full refreshes and
+655,360 / 16,384 for partial refreshes, with overlapping timings.
+
+Complete owned reset-plus-128-step episodes allocate 417,600–417,760 bytes /
+5,558–5,559 objects before and 274,240–274,400 / 1,974–1,975 after at 32
+variables. At 128 variables, the before range is 1,085,720–1,151,296 /
+16,914–16,916, including one byte outlier; the after range is
+512,280–512,440 / 2,578–2,579. Final assignments, objectives, invariants and
+iteration counts match. These episodes remain infeasible, with errors 14 and
+47; their elapsed-time ranges overlap. No episode speed or search-quality
+improvement is claimed.
+
+All 5,847 new regression assertions pass before and after, including an
+independent BigInt modular-arithmetic oracle, overflow, empty/mismatched inputs,
+exact Float32/Float64 fallback bits, custom rebuild call counts and public
+weighted constraints with repeated scope ids. The full updated suite passes
+39,834 assertions including Aqua.
+
+The complete diagnostic proof is executable in
+[invariant_trace_scenarios.jl](invariant_trace_scenarios.jl). Six independent
+128-step solves cover seeds 41–43 and 32/128 variables. All 9,263 audit events
+and 5,388 candidates, final state identities, and the next 64 UInt64 RNG values
+per run match the baseline golden identities. Every available truth audit agrees
+on score and feasibility; no event is dropped. Only wall-clock fields are
+excluded. The source records each full SHA-256 identity and verifies it before
+and after. To reproduce with the qualified dependency environment, include that
+file and, for each seed/size, prepare and run invariant_trace_case, then assert
+case.verify(fixture,result).
+
+All four native collectors pass all ten refresh/control/episode scenarios.
+Chairmarks and the allocation profiler confirm 0 / 0 for each integer refresh;
+BenchmarkTools records one 16-byte scalar result at its boundary. Float controls
+retain their original allocations. Fresh complete episodes use 274,304 / 1,975
+and 512,344 / 2,579; one Chairmarks 32-variable sample uses 257,880 / 1,973.
+These lifecycle variations are retained, not treated as a whole-solver zero
+allocation result.
+
+All nine diagnostic adapters complete for full integer-128. JET stays at zero
+findings and AllocCheck falls from 13 to 9 possible allocations. SnoopCompile
+records 12.812747 s inference; load/first/warm latency is
+1.062137 / 3.906423 / .005707 s under that adapter lifecycle. Three GC and lock
+samples each record 16 bytes / one boundary object, with zero compilation,
+collection or observed conflicts. Reachable fixture state stays 190,443 bytes,
+or 190,451 with the scalar result. The verified redacted heap snapshot and
+temporary reports are removed.
