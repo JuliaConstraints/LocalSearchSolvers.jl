@@ -313,3 +313,51 @@ case latency is 1.155/.289/.000127 s. Three GC and lock observations allocate
 720,968 bytes each, with no compilation, collection or observed conflicts.
 Reachable fixture state stays 4,304 bytes, or 280,832 with the 128 retained moves.
 The verified redacted heap snapshot and temporary reports are removed.
+
+## Already sorted partial moves, 2026-10-09
+
+Partial moves now retain their already-owned id and replacement vectors when
+the ids are sorted and the collected replacements are a `Vector`. Unsorted ids
+and non-vector collections keep the original permutation/indexing path. Caller
+inputs and independently retained moves remain separate snapshots.
+
+The baseline is `b5c7e8426f2840c763872090f334cdb95e101cec` in the temporary
+LocalSearchSolvers checkout. Other dependency sources and versions match. The
+same Julia/CPU/thread settings and three-warmup/five-observation protocol apply;
+every measured row has zero compilation, recompilation and collection.
+
+| 128 sorted partial moves | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| 8 ids | 86,088 / 1,283 | 36,936 / 515 |
+| 32 ids | 208,968 / 1,283 | 86,088 / 515 |
+| 128 ids | 720,968 / 1,283 | 290,888 / 515 |
+| 512 ids | 2,671,688 / 1,923 | 1,071,176 / 771 |
+| 2,048 ids | 10,536,008 / 1,923 | 4,216,904 / 771 |
+
+The 128-id case takes .0000995–.0001071 s before and .0000537–.0000566 s
+after; the 2,048-id case takes .001405–.001492 s before and
+.000816–.000876 s after. Unsorted requests retain their previous allocation
+totals and overlapping timing ranges. These fixed-work measurements do not
+establish application throughput or search quality.
+
+For 256 construct/public-commit/refresh cycles over 32/128 variables, bytes fall
+from 413,696/1,437,696 to 167,936/577,536 and objects from 2,816 to 1,280.
+The 128-variable cycle takes .001290–.001332 s before and .001106–.001167 s
+after. Its assignment, objective and invariant values match. The full-move
+control retains 167,936 bytes and 1,280 objects.
+
+All 17,262 constructor checks pass before and after, including 64 additional
+checks for matrix/view/range/tuple/generator replacements and retained ownership.
+The updated full suite passes 33,987 assertions including Aqua. All four native
+collectors pass sorted/unsorted 8/128/2,048-id cases and both complete cycles.
+Their constructor allocation profiles match the table. Fresh complete-cycle
+scopes agree on 173,664/594,352 bytes and 1,328/1,330 objects. An unsorted
+Chairmarks observation retains the previously seen 192-byte/four-object outlier.
+
+All nine native diagnostic adapters complete for sorted partial-128. JET stays
+at zero findings; AllocCheck falls from 27 to 25. The lifecycle records .000015 s
+inference and 1.157/.308/.0000793 s load/first/warm latency. Three GC and lock
+observations allocate 290,888 bytes each with no compilation, collection or
+observed conflicts. Reachable fixture/result sizes remain 4,304/280,832 bytes:
+the smaller allocation total removes temporary work, not retained output.
+Verified redacted heap and temporary reports are removed.

@@ -88,6 +88,36 @@ struct CountedScope{T} <: LS.AbstractMetaVariable
     variables::T
     calls::Base.RefValue{Int}
 end
+
+@testset "Sorted partial requests retain replacement collection semantics" begin
+    group = LS.MetaVariable(:group, 1:6)
+    for ids in (collect(1:6), collect(6:-1:1))
+        for replacements in (collect(11:16), Tuple(11:16), 11:16,
+                reshape(collect(11:16),2,3), view(reshape(collect(11:16),2,3),:,:),
+                (value for value in 11:16))
+            values = collect(replacements)
+            expected = [values[findfirst(==(id),ids)] for id in 1:6]
+            move = LS.MetaMove(group, ids, replacements)
+            @test move.variables == collect(1:6)
+            @test move.replacements == expected
+            @test move.variables isa Vector{Int} && move.replacements isa Vector{Int}
+            @test move.variables !== ids && move.variables !== group.variables
+            @test move.replacements !== replacements && move.replacements !== values
+        end
+    end
+    requests = [1,2,3]
+    replacements = [7,8,9]
+    first_move = LS.MetaMove(group, requests, replacements)
+    second_move = LS.MetaMove(group, requests, replacements)
+    requests[1] = 6
+    replacements[1] = 10
+    @test first_move.variables == [1,2,3] && first_move.replacements == [7,8,9]
+    first_move.variables[1] = 4
+    first_move.replacements[1] = 11
+    @test second_move.variables == [1,2,3] && second_move.replacements == [7,8,9]
+    @test second_move.variables !== first_move.variables
+    @test second_move.replacements !== first_move.replacements
+end
 LS.meta_variable_id(group::CountedScope) = group.id
 function LS.scope(group::CountedScope)
     group.calls[] += 1

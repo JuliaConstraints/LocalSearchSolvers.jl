@@ -6,11 +6,12 @@ function constructor_case(parameters)
     count = get(parameters, "variables", 128)
     repetitions = get(parameters, "repetitions", 128)
     kind = get(parameters, "kind", "partial")
+    ordered = get(parameters, "ordered", false)
     kind in ("variable", "full", "partial") || throw(ArgumentError("constructor kind $kind"))
     prepare = () -> begin
         ids = collect(1:count)
         group = LS.MetaVariable(:block, ids)
-        requested = kind == "partial" ? reverse(ids) : copy(ids)
+        requested = kind == "partial" && !ordered ? reverse(ids) : copy(ids)
         replacements = [100+id for id in requested]
         (;ids, group, requested, replacements)
     end
@@ -25,7 +26,7 @@ function constructor_case(parameters)
     verify = (state, result) -> begin
         length(result) == repetitions &&
             state.ids == collect(1:count) && state.group.variables == state.ids &&
-            state.requested == (kind == "partial" ? reverse(state.ids) : state.ids) &&
+            state.requested == (kind == "partial" && !ordered ? reverse(state.ids) : state.ids) &&
             state.replacements == [100+id for id in state.requested] &&
             all(value -> value.variables == state.ids &&
                 value.variables !== state.ids && value.variables !== state.group.variables &&
@@ -42,6 +43,7 @@ end
 function construction_commit_case(parameters)
     count = get(parameters, "variables", 32)
     repetitions = get(parameters, "repetitions", 128)
+    partial = get(parameters, "partial", false)
     prepare = () -> begin
         model = LS.model()
         foreach(_ -> LS.variable!(model, LS.domain(0:3)), 1:count)
@@ -61,7 +63,8 @@ function construction_commit_case(parameters)
     operation = state -> begin
         total = 0.0
         for _ in 1:repetitions, replacements in state.replacements
-            move = LS.MetaMove(state.group, replacements)
+            move = partial ? LS.MetaMove(state.group, state.group.variables, replacements) :
+                LS.MetaMove(state.group, replacements)
             affected = LS._commit!(state.solver, move)
             LS._compute_committed!(state.solver; cons_lst=affected)
             total += LS.get_value(state.solver)

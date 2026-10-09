@@ -127,9 +127,14 @@ function MetaMove(variable::AbstractMetaVariable, variables, replacements;
     length(ids) == length(values) ||
         throw(DimensionMismatch("a meta-move needs one replacement per variable"))
     isempty(ids) && throw(ArgumentError("a meta-move cannot be empty"))
-    order = sortperm(ids)
-    sorted_ids = ids[order]
-    sorted_values = values[order]
+    # These vectors are already owned. Sorted requests need no permutation or second copy.
+    # Keep the original indexing path for non-vector replacement collections.
+    sorted_ids, sorted_values = if values isa Vector && issorted(ids)
+        ids, values
+    else
+        order = sortperm(ids)
+        ids[order], values[order]
+    end
     allunique(sorted_ids) ||
         throw(ArgumentError("a meta-move cannot change a variable twice"))
     _move_inside_scope(variable, sorted_ids) ||
