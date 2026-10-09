@@ -588,3 +588,97 @@ removed.
 The complete standard Pkg.test("LocalSearchSolvers"; allow_reresolve=false)
 also passes all 159,853 assertions with offline resolution after the isolated
 Random test-target repairs in MetaStrategist 710b656 and CBLS 8d5e877.
+
+
+## Compact private pool snapshots, 2026-10-09
+
+Int, Float32 and Float64 assignment snapshots now rebuild their Dictionary from
+owned collected keys and values. This avoids recursively copying bit arrays
+that were already collected. Indices, hashes, assignment storage and returned
+snapshots remain private; deleted slots are compacted in the same order as the
+reference deep-copy path. Other bit-value types retain dictionary deep-copy
+extensions, and mutable values retain the complete root deep copy for cycles
+and shared payloads. Metadata reads precede copying, in the original order.
+
+The baseline is 1603b05463b99fbaceb92174559733b7dbdbd0bb. Versions and other
+dependency sources match, including MetaStrategist 6c65073, CBLS 8d5e877 and
+Dictionaries 0.4.6. Julia 1.13.1 uses CPUs 0/2, two Julia threads and one GC
+thread. Three exact warmups precede five observations; compilation,
+recompilation and collection are zero for all nineteen measured workloads.
+
+| 128 retained public pool snapshots | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Int or Float64, 32 values | 367,712 / 3,074 | 224,352 / 1,666 |
+| Int or Float64, 128 values | 1,077,344 / 3,202 | 729,184 / 1,794 |
+| Int or Float64, 2,048 values | 14,824,544 / 3,842 | 10,550,368 / 2,178 |
+| Float32, 32 values | 334,944 / 3,074 | 207,968 / 1,666 |
+| Float32, 128 values | 938,080 / 3,202 | 659,552 / 1,794 |
+| Float32, 2,048 values | 12,727,392 / 3,842 | 9,501,792 / 2,178 |
+| Int or Float64, 128 values with deleted keys | 724,064 / 3,074 | 466,016 / 1,666 |
+| Mutable shared nodes with root cycles, 32 values | 666,720 / 12,418 | 666,720 / 12,418 |
+| Custom bit-value copy callback, 32 values | 371,808 / 3,330 | 371,808 / 3,330 |
+
+Int-128 takes .000171–.000183 s before and .000101–.000118 s after;
+Float32-128 takes .000164–.000171 s before and .000091–.000097 s after.
+Larger Float64 timing ranges overlap. The custom control performs exactly
+128 dictionary copy callbacks per operation; callbacks mutate the source
+metadata, while saved snapshots retain the metadata read before each copy.
+The original subsequent pool-value read observes the callback mutation.
+
+For complete owned reset plus 128-step episodes:
+
+| Values / variables | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Int / 32 | 274,240–274,400 / 1,974–1,975 | 250,720–250,880 / 1,743–1,744 |
+| Int / 128 | 512,280–512,440 / 2,578–2,579 | 455,160–455,320 / 2,347–2,348 |
+| Float32 / 32 | 267,936–268,096 / 2,006–2,007 | 247,104–247,264 / 1,775–1,776 |
+| Float32 / 128 | 485,592–485,752 / 2,706–2,707 | 439,896–440,056 / 2,475–2,476 |
+| Float64 / 32 | 274,752–274,912 / 2,006–2,007 | 234,808–251,392 / 1,773–1,776 |
+| Float64 / 128 | 514,328–514,488 / 2,706–2,707 | 457,208–522,784 / 2,475–2,477 |
+
+The Float64-128 range retains a larger transient allocation, above the baseline
+byte range, despite fewer objects. Episode timing ranges overlap and final
+errors remain 14/47. No uniform whole-episode byte reduction, application
+throughput, search-quality or zero-allocation solver claim is made.
+
+All 1,050 snapshot assertions pass before and after: the original 231 ownership
+checks plus 819 added checks for empty/deleted dictionaries, six value types,
+independent later mutations, custom dictionary copy calls and callback metadata
+order. A separate six-case getter audit preserves solution/value/values/value
+reads on both versions. An earlier broad bit-value path was excluded after it
+skipped an observable custom dictionary copy extension; its collector evidence
+is not used to qualify the final implementation.
+
+The complete standard Pkg.test entries pass 160,672 LocalSearchSolvers and
+102,836 CBLS assertions, including Aqua, with offline resolution and
+allow_reresolve=false. The existing [integer](invariant_trace_scenarios.jl) and
+[floating](short_float_trace_scenarios.jl) proofs also pass on both versions:
+eighteen fresh 128-step solves, seeds 41–43, 32/128 variables and three value
+types preserve all 27,789 audit events, 16,164 candidates, final identities and
+1,152 subsequent RNG words. Truth audits agree and no event is dropped; only
+wall-clock fields are excluded. Prepare/run/verify both published trace
+factories across those seeds, sizes and precisions to reproduce.
+
+All 88 final native collector runs pass. Twelve snapshot/control workloads use
+BenchmarkTools, Chairmarks and CPU profiles at 128 snapshots, then allocation
+profiles at one snapshot. Six complete episodes and three refresh controls use
+all four collectors at their full workload; the custom callback control adds
+three full collectors and one bounded allocation profile. Each raw bundle is
+released after compact evidence is extracted. One Int/Float64 snapshot at
+32/128/2,048 values uses 1,808/5,752/82,480 bytes and 15/16/19 objects;
+Float32 uses 1,680/5,208/74,288 bytes with the same object counts. The one-copy
+mutable/custom controls use 5,264 / 99 and 2,960 / 28. Fresh complete
+Int/Float32/Float64-128 boundaries use 455,224 / 2,348,
+439,960 / 2,476 and 457,272 / 2,476. Fresh 32-variable boundaries retain
+lifecycle variation, including Float32 byte totals of 230,744–247,168.
+Chairmarks and allocation profiles confirm zero refresh allocations for all
+three value types; BenchmarkTools adds one 16-byte scalar boundary result.
+
+All nine diagnostic adapters complete for 128 public Int-128 pool snapshots.
+JET stays at zero findings; AllocCheck falls from 48 to 21 possible allocations.
+Inclusive inference is .269139 s; load/first/warm latency is
+.984324 / .477386 / .002051 s under the adapter lifecycle. Three GC and lock
+samples each use 729,184 bytes / 1,794 objects, with zero compilation,
+collection or observed conflicts. Reachable fixture state stays 5,344 bytes,
+or 700,696 with the retained result. The verified redacted heap snapshot and
+temporary reports are removed.

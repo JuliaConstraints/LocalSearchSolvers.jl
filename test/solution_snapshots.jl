@@ -63,4 +63,71 @@ end
     saved.values[1].owner.value = 9.0
     @test config.value == 2.0
 end
+
+@testset "Compact snapshots preserve deleted keys and later independent mutations" begin
+    for T in (Int,UInt128,Bool,Float16,Float32,Float64),count in (0,1,8,32),deleted in (:none,:one,:sparse,:all)
+        ids=collect(1:count)
+        values=T===Bool ? isodd.(ids) : T.(mod.(ids,8))
+        dictionary=Dictionary(ids,values)
+        remove=deleted===:none ? Int[] : deleted===:one ? (count==0 ? Int[] : [1]) :
+            deleted===:sparse ? collect(2:3:count) : ids
+        foreach(id->delete!(dictionary,id),remove)
+        config=LS.Configuration(false,-0.0,dictionary)
+        reference=deepcopy(config)
+        saved=LS.best_config(LS.pool(config))
+        expected=collect(pairs(reference.values))
+        @test isequal(collect(pairs(saved.values)),expected)
+        @test keys(saved.values)!==keys(dictionary)
+        @test saved.values.values!==dictionary.values
+        @test reinterpret(UInt64,saved.value)==reinterpret(UInt64,reference.value)
+        @test all(id->bitstring(saved.values[id])==bitstring(reference.values[id]),keys(saved.values))
+        set!(dictionary,count+101,T===Bool ? true : T(3))
+        @test isequal(collect(pairs(saved.values)),expected)
+        set!(saved.values,count+103,T===Bool ? false : T(5))
+        @test !haskey(dictionary,count+103)
+        @test !haskey(saved.values,count+101)
+    end
+end
+
+struct SnapshotBitValue
+    value::Int
+end
+const snapshot_dictionary_copy_calls=Ref(0)
+const snapshot_copy_callback_owner=Ref{Any}(nothing)
+function Base.deepcopy_internal(dictionary::Dictionary{Int,SnapshotBitValue},seen::IdDict)
+    snapshot_dictionary_copy_calls[]+=1
+    if snapshot_copy_callback_owner[]!==nothing
+        snapshot_copy_callback_owner[].solution=true
+        snapshot_copy_callback_owner[].value=99.0
+    end
+    invoke(Base.deepcopy_internal,Tuple{Dictionary,IdDict},dictionary,seen)
+end
+
+@testset "Custom bit-value dictionaries retain their deep-copy extension" begin
+    for count in (0,1,8),score in (0.0,-0.0,NaN,Inf)
+        dictionary=Dictionary(collect(1:count),SnapshotBitValue.(1:count))
+        config=LS.Configuration(false,score,dictionary)
+        snapshot_dictionary_copy_calls[]=0
+        saved=LS.best_config(LS.pool(config))
+        @test snapshot_dictionary_copy_calls[]==1
+        @test collect(pairs(saved.values))==collect(pairs(dictionary))
+        @test keys(saved.values)!==keys(dictionary) && saved.values.values!==dictionary.values
+        @test bitstring(saved.value)==bitstring(score)
+    end
+end
+
+@testset "Snapshot metadata is read before a custom copy callback" begin
+    config=LS.Configuration(false,-0.0,Dictionary([1],[SnapshotBitValue(7)]))
+    snapshot_dictionary_copy_calls[]=0
+    snapshot_copy_callback_owner[]=config
+    try
+        saved=LS.best_config(LS.pool(config))
+        @test snapshot_dictionary_copy_calls[]==1
+        @test !saved.solution && bitstring(saved.value)==bitstring(-0.0)
+        @test config.solution && config.value==99.0
+    finally
+        snapshot_copy_callback_owner[]=nothing
+    end
+end
+
 end
