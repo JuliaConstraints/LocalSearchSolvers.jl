@@ -74,6 +74,7 @@ end
 
 # A plain integer vector still needs an owned copy, but no argument expansion or conversion.
 _owned_variable_ids(variables::Vector{Int}) = copy(variables)
+_owned_variable_ids(variables::Union{UnitRange{Int}, StepRange{Int, Int}}) = collect(variables)
 _owned_variable_ids(variables) = Int[variables...]
 
 function MetaVariable(id::Symbol, variables;

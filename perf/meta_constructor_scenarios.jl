@@ -7,9 +7,11 @@ function constructor_case(parameters)
     repetitions = get(parameters, "repetitions", 128)
     kind = get(parameters, "kind", "partial")
     ordered = get(parameters, "ordered", false)
+    ranges = get(parameters, "ranges", false)
+    stride = get(parameters, "stride", 1)
     kind in ("variable", "full", "partial") || throw(ArgumentError("constructor kind $kind"))
     prepare = () -> begin
-        ids = collect(1:count)
+        ids = ranges ? (stride == 1 ? (1:count) : (1:stride:count*stride)) : collect(1:count)
         group = LS.MetaVariable(:block, ids)
         requested = kind == "partial" && !ordered ? reverse(ids) : copy(ids)
         replacements = [100+id for id in requested]
@@ -24,8 +26,9 @@ function constructor_case(parameters)
             for _ in 1:repetitions]
     end
     verify = (state, result) -> begin
+        expected_ids = ranges ? collect(1:stride:count*stride) : collect(1:count)
         length(result) == repetitions &&
-            state.ids == collect(1:count) && state.group.variables == state.ids &&
+            state.ids == expected_ids && state.group.variables == expected_ids &&
             state.requested == (kind == "partial" && !ordered ? reverse(state.ids) : state.ids) &&
             state.replacements == [100+id for id in state.requested] &&
             all(value -> value.variables == state.ids &&
@@ -44,6 +47,7 @@ function construction_commit_case(parameters)
     count = get(parameters, "variables", 32)
     repetitions = get(parameters, "repetitions", 128)
     partial = get(parameters, "partial", false)
+    range_ids = get(parameters, "range_ids", false)
     prepare = () -> begin
         model = LS.model()
         foreach(_ -> LS.variable!(model, LS.domain(0:3)), 1:count)
@@ -63,7 +67,8 @@ function construction_commit_case(parameters)
     operation = state -> begin
         total = 0.0
         for _ in 1:repetitions, replacements in state.replacements
-            move = partial ? LS.MetaMove(state.group, state.group.variables, replacements) :
+            ids = range_ids ? (1:count) : state.group.variables
+            move = partial ? LS.MetaMove(state.group, ids, replacements) :
                 LS.MetaMove(state.group, replacements)
             affected = LS._commit!(state.solver, move)
             LS._compute_committed!(state.solver; cons_lst=affected)

@@ -438,3 +438,65 @@ samples each record 16 bytes / one boundary object, with zero compilation,
 collection or observed conflicts. Reachable fixture state stays 190,443 bytes,
 or 190,451 with the scalar result. The verified redacted heap snapshot and
 temporary reports are removed.
+
+## Built-in integer range scopes, 2026-10-09
+
+UnitRange{Int} and StepRange{Int,Int} ids now use collect to obtain an owned
+Vector{Int}, avoiding argument expansion. Other ranges and iterables retain the
+original conversion path. The specialization is one method of the existing
+private ownership helper; public validation, sorting and replacement ownership
+are unchanged.
+
+The matched baseline is e145d7b4e67b11388ab3f0bbef2c39223cdba907. Other versions
+and sources match, including MetaStrategist 7eccefa and CBLS evaluator 93e83b6.
+Julia 1.13.1 uses CPUs 0/2, two Julia threads and one GC thread. Three complete
+warmups precede five observations; compilation, recompilation and GC are zero.
+
+| 128 retained range constructions | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Meta-variable, 8 ids | 60,488 / 1,539 | 19,528 / 259 |
+| Meta-variable, 128 ids | 1,014,856 / 17,283 | 146,504 / 259 |
+| Meta-variable, 2,048 ids | 23,017,544 / 657,411 | 2,109,512 / 387 |
+| Sorted partial move, 8 ids | 77,896 / 1,795 | 36,936 / 515 |
+| Sorted partial move, 128 ids | 1,159,240 / 17,539 | 290,888 / 515 |
+| Sorted partial move, 2,048 ids | 25,124,936 / 657,795 | 4,216,904 / 771 |
+| Stride-2 partial move, 2,048 ids | 26,169,416 / 723,075 | 4,216,904 / 771 |
+| Descending partial move, 2,048 ids | 31,444,040 / 658,947 | 10,536,008 / 1,923 |
+
+The 2,048-id sorted partial case takes .011279–.011657 s before and
+.000839–.000912 s after. Descending requests still perform the original
+permutation and take .011543–.011740 s before and .001657–.001712 s after.
+Vector controls retain their earlier allocation totals and overlapping timings.
+
+For 256 complete range construct/public-commit/refresh cycles at 32/128
+variables, bytes fall from 561,152/2,314,240 to 167,936/577,536; objects fall
+from 10,240/35,328 to 1,280/1,280. The 128-variable operation takes
+.002331–.002388 s before and .001088–.001136 s after. Results preserve
+assignments, objectives, invariant costs and owned replacement snapshots.
+The new range totals equal the existing vector controls. These fixed-work
+figures do not establish application throughput or search quality.
+
+All 5,271 added checks pass before and after, covering positive, negative,
+empty, ascending and descending built-in ranges; exact public errors; retained
+ownership; full custom range scopes with the same public call count; and
+unchanged conversion behavior for other numeric range types. The existing
+17,262 constructor checks also pass on both versions. The full updated suite
+passes 45,105 assertions including Aqua.
+
+All four native collectors pass 14 representative range/control/complete-cycle
+scenarios and agree on constructor allocation totals. Fresh complete cycle
+boundaries use 173,664 / 1,328 and 594,352 / 1,330, matching the vector control.
+Each raw bundle is released after compact counts are extracted.
+
+All nine native diagnostic adapters complete for partial range-128. JET stays
+at zero findings and AllocCheck falls from 26 to 25 possible allocations.
+Inference/load/first/warm adapter observations are
+.299295 / 1.248579 / .498515 / .000101 s. Three GC and lock samples each
+allocate 290,888 bytes with zero compilation, collection or observed conflicts.
+Reachable fixture/result sizes stay 2,192/278,720 bytes. The verified redacted
+heap snapshot and temporary reports are removed.
+
+The published six-run invariant proof also passes with this package combination:
+all 9,263 events, 5,388 candidates, final identities and subsequent RNG values
+still match. CBLS's full suite passes 102,836 assertions against the updated
+LocalSearchSolvers and MetaStrategist checkouts.
