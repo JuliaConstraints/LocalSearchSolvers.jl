@@ -500,3 +500,91 @@ The published six-run invariant proof also passes with this package combination:
 all 9,263 events, 5,388 candidates, final identities and subsequent RNG values
 still match. CBLS's full suite passes 102,836 assertions against the updated
 LocalSearchSolvers and MetaStrategist checkouts.
+
+## Short floating sum refresh, 2026-10-09
+
+Owned Float32/Float64 sum invariants with zero, one or two terms now use the
+reference scalar multiplication and addition order without materializing a
+product vector. The six built-in comparisons and Int/Float32/Float64 targets
+are covered. NaN totals, longer sums, mismatched shapes, custom operators and
+other numeric types retain the reference rebuild. NaN payload selection can
+depend on lowering and register allocation, so the exceptional result always
+delegates. No dependency source or solver state layout changes.
+
+The matched baseline is d1c3b81ea7d091909fd187c7d6f808a03392f9a0, with
+MetaStrategist 7eccefa and CBLS evaluator 93e83b6 otherwise unchanged. Julia
+1.13.1 uses CPUs 0/2, two Julia threads and one GC thread. Three complete warmups
+precede five observations; compilation, recompilation and GC are zero.
+
+| 4,096 paired finite refreshes | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Float32 full, 32 variables | 8,388,608 / 262,144 | 0 / 0 |
+| Float32 full, 128 variables | 33,554,432 / 1,048,576 | 0 / 0 |
+| Float32 full, 512 variables | 134,217,728 / 4,194,304 | 0 / 0 |
+| Float64 full, 32 variables | 10,485,760 / 262,144 | 0 / 0 |
+| Float64 full, 128 variables | 41,943,040 / 1,048,576 | 0 / 0 |
+| Float64 full, 512 variables | 167,772,160 / 4,194,304 | 0 / 0 |
+| Float32 partial, each size | 524,288 / 16,384 | 0 / 0 |
+| Float64 partial, each size | 655,360 / 16,384 | 0 / 0 |
+
+Float32 full-128 takes .011531–.011780 s before and .008625–.008678 s after;
+Float64 full-128 takes .011344–.011607 s before and .008485–.008842 s after.
+Full-512 takes .054894–.057937 / .055105–.055936 s before and
+.034512–.035554 / .034035–.034798 s after for Float32 / Float64.
+Partial-128 takes .000399–.000411 / .000405–.000416 s before and
+.000336–.000343 / .000328–.000339 s after. Small partial-512 changes are not
+claimed as application throughput.
+
+For complete owned reset plus 128-step episodes:
+
+| Precision / variables | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Float32 / 32 | 382,624–382,784 / 5,590–5,591 | 267,936–268,096 / 2,006–2,007 |
+| Float32 / 128 | 944,344–944,504 / 17,042–17,043 | 485,592–485,752 / 2,706–2,707 |
+| Float64 / 32 | 418,112–418,272 / 5,590–5,591 | 274,752–274,912 / 2,006–2,007 |
+| Float64 / 128 | 1,087,768–1,087,928 / 17,042–17,043 | 514,328–514,488 / 2,706–2,707 |
+
+Episode timing ranges overlap, and final errors remain 14/47; these deliberately
+infeasible fixed-work fixtures establish neither search quality nor whole-solver
+zero allocation. Integer controls stay at zero refresh allocations. Three-term
+Float32/Float64 controls retain 10,485,760 / 262,144 for full-32 and
+983,040 / 24,576 for partial-32; the full control shows a small timing increase,
+so unchanged fallback throughput is not claimed.
+
+All 114,748 added assertions pass on the baseline and final source, including
+exceptional payloads, arbitrary bit patterns, empty sums, exact errors, reference
+fallbacks, custom rebuild call counts and public weighted repeated-scope truth.
+The complete updated suite passes 159,853 assertions including Aqua. A broader
+lazy broadcast reduction was rejected after 1,551 of 3,584 normal floating
+trials changed result bits; it is absent from the source.
+
+The executable [short_float_trace_scenarios.jl](short_float_trace_scenarios.jl)
+covers both precisions, seeds 41–43 and 32/128 variables. All 18,526 audit events,
+10,776 candidates, final identities and the next 64 UInt64 RNG values per run
+match the twelve baseline golden identities. Independent truth audits agree
+and no event is dropped. Only wall-clock fields are excluded. Include the file,
+then prepare/run/verify each short_float_trace_case with its precision, size and
+seed to reproduce against the qualified dependency environment.
+
+All 88 native collector runs pass. The twelve finite refresh cases, four
+complete episode cases and two integer controls each use BenchmarkTools,
+Chairmarks, CPU profiling and allocation profiling. Chairmarks and allocation
+profiles confirm 0 / 0 for finite refreshes; BenchmarkTools adds one 16-byte
+scalar result at its boundary. Fresh complete episodes report
+268,000 / 2,007, 485,656 / 2,707, 274,816 / 2,007 and 514,392 / 2,707.
+The four longer controls use the first three collectors at 4,096 refreshes;
+allocation profiles use sixteen refreshes, yielding 40,960 / 1,024 full and
+3,840 / 96 partial. Each bundle is released after extracting compact counts.
+
+All nine diagnostic adapters complete for full Float64-128. JET remains at zero
+findings and AllocCheck remains at thirteen possible allocations. SnoopCompile
+records 13.662513 s inference; load/first/warm latency is
+1.099570 / 4.231554 / .009536 s under that adapter lifecycle. Three GC and lock
+samples each record one 16-byte boundary object, with no compilation, collection
+or observed conflicts. Reachable fixture state remains 194,555 bytes, or 194,563
+with the result. The verified redacted heap snapshot and temporary reports are
+removed.
+
+The complete standard Pkg.test("LocalSearchSolvers"; allow_reresolve=false)
+also passes all 159,853 assertions with offline resolution after the isolated
+Random test-target repairs in MetaStrategist 710b656 and CBLS 8d5e877.

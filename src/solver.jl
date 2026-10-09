@@ -176,11 +176,11 @@ end
 _compute_cost!(s, ind, c) = _compute_cost!(s.state, ind, c)
 
 @inline _rebuild_owned_invariant!(invariant, input) = rebuild_invariant!(invariant, input)
-const _IntegerSumOperator = Union{
+const _OwnedSumOperator = Union{
     typeof(==), typeof(!=), typeof(<), typeof(<=), typeof(>), typeof(>=)}
 function _rebuild_owned_invariant!(
         invariant::Constraints.SumInvariant{Vector{Int}, Int, F, Int},
-        input::Vector{Int}) where {F <: _IntegerSumOperator}
+        input::Vector{Int}) where {F <: _OwnedSumOperator}
     length(invariant.coefficients) == length(input) ||
         throw(DimensionMismatch("sum coefficients and values must have the same length"))
     # Machine integer arithmetic wraps, so regrouping this sum preserves its exact result.
@@ -189,6 +189,25 @@ function _rebuild_owned_invariant!(
     @inbounds for index in eachindex(input)
         total += invariant.coefficients[index] * input[index]
     end
+    invariant.total = total
+    return invariant_value(invariant)
+end
+
+function _rebuild_owned_invariant!(
+        invariant::Constraints.SumInvariant{Vector{T}, T, F, V},
+        input::Vector{T}) where {
+        T <: Union{Float32, Float64}, F <: _OwnedSumOperator,
+        V <: Union{Int, Float32, Float64}}
+    count = length(input)
+    (count > 2 || length(invariant.coefficients) != count) &&
+        return rebuild_invariant!(invariant, input)
+    # Preserve the original scalar multiplication and addition order exactly.
+    # Longer floating sums retain the reference reduction and its rounding behavior.
+    total = count == 0 ? zero(T) : count == 1 ? invariant.coefficients[1] * input[1] :
+        invariant.coefficients[1] * input[1] + invariant.coefficients[2] * input[2]
+    # NaN payload selection can depend on lowering and register allocation.
+    # Delegate exceptional results to the reference implementation on every platform.
+    isnan(total) && return rebuild_invariant!(invariant, input)
     invariant.total = total
     return invariant_value(invariant)
 end

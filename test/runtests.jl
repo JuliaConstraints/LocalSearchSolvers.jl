@@ -22,6 +22,7 @@ const LS = LocalSearchSolvers
     include("meta_move_constructors.jl")
     include("meta_move_ranges.jl")
     include("integer_invariant_refresh.jl")
+    include("short_float_invariant_refresh.jl")
     include("Aqua.jl")
     include("TestItemRunner.jl")
     include("internal.jl")
