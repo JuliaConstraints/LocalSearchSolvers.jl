@@ -72,9 +72,13 @@ end
     @test LS.get_error(solver) == incremental_cost
 end
 
+# A plain integer vector still needs an owned copy, but no argument expansion or conversion.
+_owned_variable_ids(variables::Vector{Int}) = copy(variables)
+_owned_variable_ids(variables) = Int[variables...]
+
 function MetaVariable(id::Symbol, variables;
         provenance = (source = :explicit,))
-    collected = sort!(Int[variables...])
+    collected = sort!(_owned_variable_ids(variables))
     isempty(collected) && throw(ArgumentError("a meta-variable scope cannot be empty"))
     all(>(0), collected) ||
         throw(ArgumentError("meta-variable ids must be strictly positive"))
@@ -99,9 +103,26 @@ struct MetaMove{T, P} <: AbstractMove
     provenance::P
 end
 
+_move_inside_scope(variable::AbstractMetaVariable, ids) =
+    all(id -> id in scope(variable), ids)
+function _move_inside_scope(variable::MetaVariable, ids)
+    variables = scope(variable)
+    # Public scopes can be edited after construction. Preserve membership semantics when
+    # their original sorted order is no longer present.
+    issorted(variables) || return all(id -> id in variables, ids)
+    position = firstindex(variables)
+    for id in ids
+        while position <= lastindex(variables) && variables[position] < id
+            position += 1
+        end
+        (position > lastindex(variables) || variables[position] != id) && return false
+    end
+    return true
+end
+
 function MetaMove(variable::AbstractMetaVariable, variables, replacements;
         provenance = (source = :subproblem,))
-    ids = Int[variables...]
+    ids = _owned_variable_ids(variables)
     values = collect(replacements)
     length(ids) == length(values) ||
         throw(DimensionMismatch("a meta-move needs one replacement per variable"))
@@ -111,7 +132,7 @@ function MetaMove(variable::AbstractMetaVariable, variables, replacements;
     sorted_values = values[order]
     allunique(sorted_ids) ||
         throw(ArgumentError("a meta-move cannot change a variable twice"))
-    all(id -> id in scope(variable), sorted_ids) ||
+    _move_inside_scope(variable, sorted_ids) ||
         throw(ArgumentError("a meta-move must stay inside its meta-variable scope"))
     return MetaMove(meta_variable_id(variable), sorted_ids, sorted_values, provenance)
 end
@@ -130,7 +151,7 @@ function MetaMove(variable::AbstractMetaVariable, replacements::AbstractVector;
         throw(DimensionMismatch("a full-scope meta-move needs one replacement per variable"))
     return MetaMove(
         meta_variable_id(variable),
-        Int[variables...],
+        _owned_variable_ids(variables),
         collect(replacements),
         provenance,
     )

@@ -19,6 +19,7 @@ const LS = LocalSearchSolvers
     include("performance_contracts.jl")
     include("prepared_workspace_regressions.jl")
     include("proposal_strategies.jl")
+    include("meta_move_constructors.jl")
     include("Aqua.jl")
     include("TestItemRunner.jl")
     include("internal.jl")

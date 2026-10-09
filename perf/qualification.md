@@ -256,3 +256,60 @@ six possible allocations. Three GC and lock samples show zero collection,
 compilation or conflicts. Reachable state stays 34,321 bytes (full) or 34,985
 bytes (incremental), unchanged with the `nothing` result. Raw reports and
 temporary comparison definitions are not saved.
+
+## Meta-variable and move construction, 2026-10-09
+
+Plain `Vector{Int}` variable ids now use an owned copy rather than argument
+expansion. Other input iterables retain their original conversion path. Partial
+moves validate sorted ids against a sorted `MetaVariable` scope in one forward
+pass. Edited unsorted scopes keep ordinary membership checks, and custom scope
+implementations keep their original public calls and short-circuit behavior.
+Every move still owns fresh variable and replacement vectors.
+
+The baseline is `bcc516b6fa1d3edc9732bebb38a009719491c8d1` in a temporary
+source checkout. Dependency versions and source paths match except for
+LocalSearchSolvers; CBLS evaluator source is `93e83b6` and MetaStrategist is
+`8bcf8b2`. Julia 1.13.1 uses CPUs 0/2, two Julia threads and one GC thread.
+Three complete warmups precede five observations of each exact operation.
+Compilation, recompilation and GC totals are zero in all measured rows.
+
+| 128 retained constructions | Before bytes / objects | After bytes / objects |
+| --- | ---: | ---: |
+| Full move, 8 ids | 41,032 / 643 | 36,936 / 515 |
+| Full move, 128 ids | 294,984 / 643 | 290,888 / 515 |
+| Full move, 2,048 ids | 9,482,312 / 197,763 | 4,216,904 / 771 |
+| Partial move, 8 ids | 90,184 / 1,411 | 86,088 / 1,283 |
+| Partial move, 128 ids | 725,064 / 1,411 | 720,968 / 1,283 |
+| Partial move, 2,048 ids | 15,801,416 / 198,915 | 10,536,008 / 1,923 |
+| Meta-variable, 8 ids | 23,624 / 387 | 19,528 / 259 |
+| Meta-variable, 128 ids | 150,600 / 387 | 146,504 / 259 |
+| Meta-variable, 2,048 ids | 7,374,920 / 197,379 | 2,109,512 / 387 |
+
+The 2,048-id partial case takes .065358–.065829 s before and
+.001616–.001697 s after. The 128-id full case takes .000239–.000262 s before
+and .0000227–.0000347 s after. These are fixed construction workloads on a
+shared machine. They do not establish application throughput or search quality.
+
+Complete construct/public-commit/cost-refresh cycles create 256 full moves and
+retain the same assignment, objective and invariant values. For 32/128 variables,
+bytes fall from 176,128/585,728 to 167,936/577,536 and objects from 1,536 to
+1,280. The 128-variable operation takes .001490–.001527 s before and
+.001152–.001222 s after. Fresh native collector scopes include initial workspace
+capacity and use 173,664/594,352 bytes and 1,328/1,330 objects.
+
+The new 17,198 public-constructor checks pass before and after. They cover edited
+and duplicated scope storage, missing ids, empty/duplicate requests, exact errors,
+input conversion, independent retained vectors and custom scope call counts.
+A separate 62,208-case membership oracle also matches the original semantics.
+The updated full suite passes 33,923 assertions including Aqua. All four native
+collectors pass nine constructor cases and both complete commit cases. Constructor
+allocation profiles agree with the table; one Chairmarks partial-2,048 observation
+includes 192 additional bytes/four objects and a .023979 s timing outlier.
+
+All nine diagnostic adapters complete for partial-128. JET remains at zero
+findings and AllocCheck at 27 expected possible allocations. The SnoopCompile
+adapter records .000015 s inference under its lifecycle; separate load/first/warm
+case latency is 1.155/.289/.000127 s. Three GC and lock observations allocate
+720,968 bytes each, with no compilation, collection or observed conflicts.
+Reachable fixture state stays 4,304 bytes, or 280,832 with the 128 retained moves.
+The verified redacted heap snapshot and temporary reports are removed.
