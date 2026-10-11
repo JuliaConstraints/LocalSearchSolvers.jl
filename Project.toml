@@ -1,7 +1,7 @@
 name = "LocalSearchSolvers"
 uuid = "2b10edaa-728d-4283-ac71-07e312d6ccf3"
 authors = ["Jean-Francois Baffier"]
-version = "0.4.11"
+version = "0.4.12"
 
 [deps]
 CompositionalNetworks = "4b67e4b5-442d-4ef5-b760-3f5df3a57537"
@@ -31,9 +31,9 @@ Aqua = "0.8"
 Test = "1"
 TestItemRunner = "1"
 MetaStrategist = "0.1.1"
-CompositionalNetworks = "0.6.2"
-ConstraintDomains = "0.4.1"
-Constraints = "0.5.11"
+CompositionalNetworks = "0.6.4"
+ConstraintDomains = "0.4.2"
+Constraints = "0.5.12"
 Dates = "1"
 Dictionaries = "0.4"
 Distributed = "1"
@@ -46,7 +46,7 @@ ProgressMeter = "1"
 Random = "1"
 Term = "2"
 TestItems = "1"
-julia = "1.12"
+julia = "1.13"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
